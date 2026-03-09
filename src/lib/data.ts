@@ -46,6 +46,35 @@ async function fetchIngredientsByIds(ids: string[]): Promise<Ingredient[]> {
   return records.map((r) => parseIngredient(r.fields, r.id));
 }
 
+/**
+ * Extract linked record IDs from a recipe record.
+ * First tries the "Ingredients" field name; if that returns nothing,
+ * scans all fields for arrays of Airtable record IDs (strings starting with "rec").
+ */
+function extractLinkedIngredientIds(
+  record: Airtable.Record<Airtable.FieldSet>
+): string[] {
+  // Try the expected field name first
+  const direct = record.get("Ingredients") as string[] | undefined;
+  if (Array.isArray(direct) && direct.length > 0) {
+    return direct;
+  }
+
+  // Fallback: scan all fields for arrays of record IDs
+  for (const value of Object.values(record.fields)) {
+    if (
+      Array.isArray(value) &&
+      value.length > 0 &&
+      typeof value[0] === "string" &&
+      (value[0] as string).startsWith("rec")
+    ) {
+      return value as string[];
+    }
+  }
+
+  return [];
+}
+
 function parseRecipe(
   record: Airtable.Record<Airtable.FieldSet>,
   ingredients: Ingredient[] = []
@@ -80,7 +109,7 @@ export async function getAllRecipes(includeIngredients = false): Promise<Recipe[
   const allIngIds = new Set<string>();
 
   for (const record of records) {
-    const ids = (record.get("Ingredients") as string[]) || [];
+    const ids = extractLinkedIngredientIds(record);
     idsByRecipe.set(record.id, ids);
     ids.forEach((id) => allIngIds.add(id));
   }
@@ -100,7 +129,7 @@ export async function getAllRecipes(includeIngredients = false): Promise<Recipe[
 export async function getRecipeById(id: string): Promise<Recipe | null> {
   try {
     const record = await base(RECIPES_TABLE).find(id);
-    const ingredientIds = (record.get("Ingredients") as string[]) || [];
+    const ingredientIds = extractLinkedIngredientIds(record);
 
     let ingredients: Ingredient[] = [];
     try {

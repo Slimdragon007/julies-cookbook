@@ -54,7 +54,7 @@ export default async function RecipePage({
       </div>
 
       {recipe.caloriesPerServing && (
-        <div className="bg-linen rounded-lg px-5 py-4 mb-8 inline-block">
+        <div className="bg-linen rounded-lg px-5 py-4 mb-6 inline-block">
           <span className="text-warm-dark font-display text-2xl">
             {Math.round(recipe.caloriesPerServing)}
           </span>
@@ -62,14 +62,13 @@ export default async function RecipePage({
         </div>
       )}
 
-      {recipe.cuisineTag && (
-        <span className="inline-block bg-white border border-border text-warm text-xs px-3 py-1 rounded-full mb-6 ml-3">
-          {recipe.cuisineTag}
-        </span>
-      )}
-
-      {recipe.dietaryTags.length > 0 && (
-        <div className="flex gap-2 mb-6">
+      {(recipe.cuisineTag || recipe.dietaryTags.length > 0) && (
+        <div className="flex flex-wrap gap-2 mb-8">
+          {recipe.cuisineTag && (
+            <span className="bg-white border border-border text-warm text-xs px-3 py-1 rounded-full">
+              {recipe.cuisineTag}
+            </span>
+          )}
           {recipe.dietaryTags.map((tag) => (
             <span
               key={tag}

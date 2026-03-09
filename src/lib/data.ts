@@ -145,7 +145,17 @@ export async function getRecipeContext(): Promise<string> {
           { cal: 0, protein: 0, carbs: 0, fat: 0 }
         );
         line += `\n  Macros: ${Math.round(totals.cal)} cal, ${totals.protein.toFixed(1)}g protein, ${totals.carbs.toFixed(1)}g carbs, ${totals.fat.toFixed(1)}g fat`;
-        line += `\n  Ingredients: ${r.ingredients.map((i) => `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name} (${i.calories ?? "?"} cal)`.trim()).join(", ")}`;
+        line += `\n  Ingredients: ${r.ingredients.map((i) => {
+          let s = `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name}`.trim();
+          const macros = [
+            i.calories != null ? `${i.calories} cal` : null,
+            i.protein != null ? `${i.protein}g protein` : null,
+            i.carbs != null ? `${i.carbs}g carbs` : null,
+            i.fat != null ? `${i.fat}g fat` : null,
+          ].filter(Boolean).join(", ");
+          if (macros) s += ` (${macros})`;
+          return s;
+        }).join("; ")}`;
       }
 
       return line;

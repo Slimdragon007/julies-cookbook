@@ -68,9 +68,33 @@ function parseRecipe(
   };
 }
 
-export async function getAllRecipes(): Promise<Recipe[]> {
+export async function getAllRecipes(includeIngredients = false): Promise<Recipe[]> {
   const records = await base(RECIPES_TABLE).select().all();
-  return records.map((record) => parseRecipe(record));
+
+  if (!includeIngredients) {
+    return records.map((record) => parseRecipe(record));
+  }
+
+  // Collect all ingredient IDs across all recipes, fetch in one batch
+  const idsByRecipe = new Map<string, string[]>();
+  const allIngIds = new Set<string>();
+
+  for (const record of records) {
+    const ids = (record.get("Ingredients") as string[]) || [];
+    idsByRecipe.set(record.id, ids);
+    ids.forEach((id) => allIngIds.add(id));
+  }
+
+  const allIngredients = await fetchIngredientsByIds(Array.from(allIngIds));
+  const ingMap = new Map(allIngredients.map((ing) => [ing.id, ing]));
+
+  return records.map((record) => {
+    const ids = idsByRecipe.get(record.id) || [];
+    const ingredients = ids
+      .map((id) => ingMap.get(id))
+      .filter((ing): ing is Ingredient => ing !== undefined);
+    return parseRecipe(record, ingredients);
+  });
 }
 
 export async function getRecipeById(id: string): Promise<Recipe | null> {
@@ -99,11 +123,32 @@ export async function getAllRecipeIds(): Promise<string[]> {
 }
 
 export async function getRecipeContext(): Promise<string> {
-  const recipes = await getAllRecipes();
+  const recipes = await getAllRecipes(true);
   return recipes
-    .map(
-      (r) =>
-        `- ${r.name}${r.cuisineTag ? ` (${r.cuisineTag})` : ""}${r.caloriesPerServing ? `, ${Math.round(r.caloriesPerServing)} cal/serving` : ""}${r.servings ? `, ${r.servings} servings` : ""}${r.dietaryTags.length ? `, ${r.dietaryTags.join("/")}` : ""}${r.cookTime ? `, ${r.cookTime} min cook` : ""}`
-    )
+    .map((r) => {
+      let line = `- ${r.name}`;
+      if (r.cuisineTag) line += ` (${r.cuisineTag})`;
+      if (r.servings) line += `, ${r.servings} servings`;
+      if (r.caloriesPerServing) line += `, ${Math.round(r.caloriesPerServing)} cal/serving`;
+      if (r.totalCalories) line += `, ${Math.round(r.totalCalories)} cal total`;
+      if (r.dietaryTags.length) line += `, ${r.dietaryTags.join("/")}`;
+      if (r.cookTime) line += `, ${r.cookTime} min cook`;
+
+      if (r.ingredients.length > 0) {
+        const totals = r.ingredients.reduce(
+          (acc, ing) => ({
+            cal: acc.cal + (ing.calories || 0),
+            protein: acc.protein + (ing.protein || 0),
+            carbs: acc.carbs + (ing.carbs || 0),
+            fat: acc.fat + (ing.fat || 0),
+          }),
+          { cal: 0, protein: 0, carbs: 0, fat: 0 }
+        );
+        line += `\n  Macros: ${Math.round(totals.cal)} cal, ${totals.protein.toFixed(1)}g protein, ${totals.carbs.toFixed(1)}g carbs, ${totals.fat.toFixed(1)}g fat`;
+        line += `\n  Ingredients: ${r.ingredients.map((i) => `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name} (${i.calories ?? "?"} cal)`.trim()).join(", ")}`;
+      }
+
+      return line;
+    })
     .join("\n");
 }

@@ -1,6 +1,7 @@
 import { getRecipeById, getAllRecipeIds } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import IngredientsSection from "@/components/IngredientsSection";
 
 export const revalidate = 60;
 
@@ -80,43 +81,11 @@ export default async function RecipePage({
         </div>
       )}
 
-      {recipe.ingredients.length > 0 && (
-        <section className="mb-8">
-          <h2 className="font-display text-xl text-warm-dark mb-4">
-            Ingredients
-          </h2>
-          <ul className="space-y-2 font-body text-sm">
-            {recipe.ingredients.map((ing) => (
-              <li
-                key={ing.id}
-                className="flex items-baseline gap-2 py-1 border-b border-border/50"
-              >
-                <span className="text-warm-dark">
-                  {ing.quantity && `${ing.quantity} `}
-                  {ing.unit && `${ing.unit} `}
-                  {ing.name}
-                </span>
-                {ing.calories && (
-                  <span className="text-warm-light text-xs ml-auto">
-                    {ing.calories} cal
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {recipe.preparation && (
-        <section className="mb-8">
-          <h2 className="font-display text-xl text-warm-dark mb-4">
-            Preparation
-          </h2>
-          <div className="font-body text-sm leading-relaxed text-warm-dark/80 whitespace-pre-line">
-            {recipe.preparation}
-          </div>
-        </section>
-      )}
+      <IngredientsSection
+        ingredients={recipe.ingredients}
+        defaultServings={recipe.servings}
+        preparation={recipe.preparation}
+      />
 
       {recipe.julieRating && (
         <div className="mt-8 text-center text-warm-light text-sm">

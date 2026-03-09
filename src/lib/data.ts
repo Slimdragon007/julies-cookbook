@@ -8,16 +8,27 @@ const base = new Airtable({
 const RECIPES_TABLE = "tblcDuujfu1rokjSU";
 const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
 
-function parseIngredient(record: Airtable.Record<Airtable.FieldSet>): Ingredient {
+// Ingredient field IDs (stable even if field names change in Airtable)
+const ING_FIELDS = {
+  name: "fld39u3mmhVCvMG1O",
+  quantity: "fldQBvNRyFEKNB9eV",
+  unit: "fldhovLVfCHfba1nM",
+  calories: "fldoXpPm8rZwPWxQY",
+  protein: "fldSWy4Feb88MMqxy",
+  carbs: "fldp7QNxNMpXzkBIU",
+  fat: "fldx8AY3eOHavt5r6",
+} as const;
+
+function parseIngredient(fields: Record<string, unknown>, id: string): Ingredient {
   return {
-    id: record.id,
-    name: (record.get("Name") as string) || "",
-    quantity: (record.get("Recipe QTY") as number) || null,
-    unit: (record.get("Unit") as string) || null,
-    calories: (record.get("Calories") as number) || null,
-    protein: (record.get("Protein_g") as number) || null,
-    carbs: (record.get("Carbs_g") as number) || null,
-    fat: (record.get("Fat_g") as number) || null,
+    id,
+    name: (fields[ING_FIELDS.name] as string) || "",
+    quantity: (fields[ING_FIELDS.quantity] as number) ?? null,
+    unit: (fields[ING_FIELDS.unit] as string) ?? null,
+    calories: (fields[ING_FIELDS.calories] as number) ?? null,
+    protein: (fields[ING_FIELDS.protein] as number) ?? null,
+    carbs: (fields[ING_FIELDS.carbs] as number) ?? null,
+    fat: (fields[ING_FIELDS.fat] as number) ?? null,
   };
 }
 
@@ -26,10 +37,13 @@ async function fetchIngredientsByIds(ids: string[]): Promise<Ingredient[]> {
 
   const formula = `OR(${ids.map((id) => `RECORD_ID()='${id}'`).join(",")})`;
   const records = await base(INGREDIENTS_TABLE)
-    .select({ filterByFormula: formula })
+    .select({
+      filterByFormula: formula,
+      returnFieldsByFieldId: true,
+    })
     .all();
 
-  return records.map(parseIngredient);
+  return records.map((r) => parseIngredient(r.fields, r.id));
 }
 
 function parseRecipe(
@@ -63,7 +77,14 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
   try {
     const record = await base(RECIPES_TABLE).find(id);
     const ingredientIds = (record.get("Ingredients") as string[]) || [];
-    const ingredients = await fetchIngredientsByIds(ingredientIds);
+
+    let ingredients: Ingredient[] = [];
+    try {
+      ingredients = await fetchIngredientsByIds(ingredientIds);
+    } catch (err) {
+      console.error(`[data] Failed to fetch ingredients for recipe ${id}:`, err);
+    }
+
     return parseRecipe(record, ingredients);
   } catch {
     return null;

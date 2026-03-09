@@ -8,10 +8,17 @@ interface Props {
   defaultServings: number | null;
 }
 
+const MACRO_FIELDS = [
+  { key: "calories", label: "Calories" },
+  { key: "protein", label: "Protein (g)" },
+  { key: "carbs", label: "Carbs (g)" },
+  { key: "fat", label: "Fat (g)" },
+] as const;
+
 export default function IngredientsSection({ ingredients, defaultServings }: Props) {
-  const base = defaultServings || 1;
-  const [servings, setServings] = useState(base);
-  const scale = servings / base;
+  const baseServings = defaultServings || 1;
+  const [servings, setServings] = useState(baseServings);
+  const scale = servings / baseServings;
 
   const totals = ingredients.reduce(
     (acc, ing) => ({
@@ -29,6 +36,8 @@ export default function IngredientsSection({ ingredients, defaultServings }: Pro
     return scaled % 1 === 0 ? String(scaled) : scaled.toFixed(1);
   }
 
+  const servingsLabel = servings === 1 ? "serving" : "servings";
+
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -42,7 +51,7 @@ export default function IngredientsSection({ ingredients, defaultServings }: Pro
             −
           </button>
           <span className="font-body text-sm text-warm-dark min-w-[5rem] text-center">
-            {servings} {servings === 1 ? "serving" : "servings"}
+            {servings} {servingsLabel}
           </span>
           <button
             onClick={() => setServings(servings + 1)}
@@ -89,35 +98,19 @@ export default function IngredientsSection({ ingredients, defaultServings }: Pro
             Total Macros
             {scale !== 1 && (
               <span className="text-warm-light font-body text-xs ml-2">
-                (scaled to {servings} {servings === 1 ? "serving" : "servings"})
+                (scaled to {servings} {servingsLabel})
               </span>
             )}
           </h3>
           <div className="grid grid-cols-4 gap-3 text-center">
-            <div>
-              <div className="font-display text-lg text-warm-dark">
-                {Math.round(totals.calories * scale)}
+            {MACRO_FIELDS.map(({ key, label }) => (
+              <div key={key}>
+                <div className="font-display text-lg text-warm-dark">
+                  {fmt(totals[key])}
+                </div>
+                <div className="text-xs text-warm-light">{label}</div>
               </div>
-              <div className="text-xs text-warm-light">Calories</div>
-            </div>
-            <div>
-              <div className="font-display text-lg text-warm-dark">
-                {(totals.protein * scale).toFixed(1)}
-              </div>
-              <div className="text-xs text-warm-light">Protein (g)</div>
-            </div>
-            <div>
-              <div className="font-display text-lg text-warm-dark">
-                {(totals.carbs * scale).toFixed(1)}
-              </div>
-              <div className="text-xs text-warm-light">Carbs (g)</div>
-            </div>
-            <div>
-              <div className="font-display text-lg text-warm-dark">
-                {(totals.fat * scale).toFixed(1)}
-              </div>
-              <div className="text-xs text-warm-light">Fat (g)</div>
-            </div>
+            ))}
           </div>
         </div>
       )}

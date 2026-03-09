@@ -31,10 +31,11 @@ export default function IngredientsSection({ ingredients, defaultServings, prepa
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
-  function fmt(val: number | null) {
+  function fmt(val: number | null, unit = "") {
     if (val === null) return "—";
     const scaled = val * scale;
-    return scaled % 1 === 0 ? String(scaled) : scaled.toFixed(1);
+    const num = scaled % 1 === 0 ? String(scaled) : scaled.toFixed(1);
+    return num + unit;
   }
 
   const servingsLabel = servings === 1 ? "serving" : "servings";
@@ -149,13 +150,13 @@ export default function IngredientsSection({ ingredients, defaultServings, prepa
                       {fmt(ing.calories)}
                     </td>
                     <td className="py-2 px-2 text-right text-warm-light">
-                      {fmt(ing.protein)}g
+                      {fmt(ing.protein, "g")}
                     </td>
                     <td className="py-2 px-2 text-right text-warm-light">
-                      {fmt(ing.carbs)}g
+                      {fmt(ing.carbs, "g")}
                     </td>
                     <td className="py-2 pl-2 text-right text-warm-light">
-                      {fmt(ing.fat)}g
+                      {fmt(ing.fat, "g")}
                     </td>
                   </tr>
                 ))}

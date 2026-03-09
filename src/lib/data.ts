@@ -76,3 +76,13 @@ export async function getAllRecipeIds(): Promise<string[]> {
     .all();
   return records.map((r) => r.id);
 }
+
+export async function getRecipeContext(): Promise<string> {
+  const recipes = await getAllRecipes();
+  return recipes
+    .map(
+      (r) =>
+        `- ${r.name}${r.cuisineTag ? ` (${r.cuisineTag})` : ""}${r.caloriesPerServing ? `, ${Math.round(r.caloriesPerServing)} cal/serving` : ""}${r.servings ? `, ${r.servings} servings` : ""}${r.dietaryTags.length ? `, ${r.dietaryTags.join("/")}` : ""}${r.cookTime ? `, ${r.cookTime} min cook` : ""}`
+    )
+    .join("\n");
+}

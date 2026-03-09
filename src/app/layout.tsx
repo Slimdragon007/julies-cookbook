@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lora } from "next/font/google";
 import "./globals.css";
+import ChatFAB from "@/components/ChatFAB";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({
           </div>
         </header>
         <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+        <ChatFAB />
       </body>
     </html>
   );

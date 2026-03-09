@@ -9,8 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        cream: "#FAF8F4",
+        linen: "#F0EAE0",
+        warm: "#8B7355",
+        "warm-light": "#A89279",
+        "warm-dark": "#6B5740",
+        border: "#E5DDD3",
+      },
+      fontFamily: {
+        display: ["Playfair Display", "serif"],
+        body: ["Lora", "serif"],
       },
     },
   },

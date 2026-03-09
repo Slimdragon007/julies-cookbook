@@ -81,23 +81,11 @@ export default async function RecipePage({
         </div>
       )}
 
-      {recipe.ingredients.length > 0 && (
-        <IngredientsSection
-          ingredients={recipe.ingredients}
-          defaultServings={recipe.servings}
-        />
-      )}
-
-      {recipe.preparation && (
-        <section className="mb-8">
-          <h2 className="font-display text-xl text-warm-dark mb-4">
-            Preparation
-          </h2>
-          <div className="font-body text-sm leading-relaxed text-warm-dark/80 whitespace-pre-line">
-            {recipe.preparation}
-          </div>
-        </section>
-      )}
+      <IngredientsSection
+        ingredients={recipe.ingredients}
+        defaultServings={recipe.servings}
+        preparation={recipe.preparation}
+      />
 
       {recipe.julieRating && (
         <div className="mt-8 text-center text-warm-light text-sm">

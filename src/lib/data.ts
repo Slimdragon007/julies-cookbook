@@ -41,7 +41,7 @@ function parseIngredient(fields: Record<string, unknown>, id: string): Ingredien
 function extractRecipeIds(fields: Record<string, unknown>): string[] {
   for (const [key, value] of Object.entries(fields)) {
     // Skip known ingredient fields
-    if (Object.values(ING_FIELDS).includes(key as string)) continue;
+    if ((Object.values(ING_FIELDS) as string[]).includes(key)) continue;
 
     if (
       Array.isArray(value) &&

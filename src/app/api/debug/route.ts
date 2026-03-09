@@ -83,15 +83,40 @@ export async function GET() {
       };
     }
 
+    // 6. Inspect the Ingredients table: fetch first 3 records to see their structure
+    const ingredientRecords = await base("tblbly81hGxUaEgM2")
+      .select({ maxRecords: 3 })
+      .all();
+
+    const ingredientTableSample = ingredientRecords.map((r) => ({
+      id: r.id,
+      fieldNames: Object.keys(r.fields),
+      fields: r.fields,
+    }));
+
+    // Also fetch one ingredient by field ID
+    const ingByIdRecords = ingredientRecords.length > 0
+      ? await base("tblbly81hGxUaEgM2")
+          .select({
+            maxRecords: 1,
+            filterByFormula: `RECORD_ID()='${ingredientRecords[0].id}'`,
+            returnFieldsByFieldId: true,
+          })
+          .all()
+      : [];
+
+    const ingredientByFieldId = ingByIdRecords[0]
+      ? { id: ingByIdRecords[0].id, fields: ingByIdRecords[0].fields }
+      : null;
+
+    // 7. List all tables in the base (via metadata API if available)
     return NextResponse.json({
       recipeId: recipe.id,
+      recipeFieldNames: Object.keys(recipe.fields),
       fieldsByName,
-      fieldsByFieldId,
       linkedRecordFields: linkedFields,
-      autoDetectedIngredientIds: autoDetectedIds,
-      ingredientData,
-      directGetIngredients: recipe.get("Ingredients"),
-      directGetIngredientsType: typeof recipe.get("Ingredients"),
+      ingredientTableSample,
+      ingredientByFieldId,
     });
   } catch (error) {
     return NextResponse.json({

@@ -32,36 +32,17 @@ function parseIngredient(fields: Record<string, unknown>, id: string): Ingredien
   };
 }
 
-async function fetchIngredientsByIds(ids: string[]): Promise<Ingredient[]> {
-  if (!ids.length) return [];
-
-  const formula = `OR(${ids.map((id) => `RECORD_ID()='${id}'`).join(",")})`;
-  const records = await base(INGREDIENTS_TABLE)
-    .select({
-      filterByFormula: formula,
-      returnFieldsByFieldId: true,
-    })
-    .all();
-
-  return records.map((r) => parseIngredient(r.fields, r.id));
-}
-
 /**
- * Extract linked record IDs from a recipe record.
- * First tries the "Ingredients" field name; if that returns nothing,
- * scans all fields for arrays of Airtable record IDs (strings starting with "rec").
+ * Extract the recipe record IDs that an ingredient is linked to.
+ * The Ingredients table has a linked record field pointing to Recipes
+ * (shown as "Recipe Names..." in Airtable). We auto-detect this field
+ * by scanning for arrays of record IDs.
  */
-function extractLinkedIngredientIds(
-  record: Airtable.Record<Airtable.FieldSet>
-): string[] {
-  // Try the expected field name first
-  const direct = record.get("Ingredients") as string[] | undefined;
-  if (Array.isArray(direct) && direct.length > 0) {
-    return direct;
-  }
+function extractRecipeIds(fields: Record<string, unknown>): string[] {
+  for (const [key, value] of Object.entries(fields)) {
+    // Skip known ingredient fields
+    if (Object.values(ING_FIELDS).includes(key as string)) continue;
 
-  // Fallback: scan all fields for arrays of record IDs
-  for (const value of Object.values(record.fields)) {
     if (
       Array.isArray(value) &&
       value.length > 0 &&
@@ -71,8 +52,53 @@ function extractLinkedIngredientIds(
       return value as string[];
     }
   }
-
   return [];
+}
+
+/**
+ * Fetch all ingredients and group them by recipe record ID.
+ * The link goes Ingredients → Recipes (not Recipes → Ingredients).
+ */
+async function fetchAllIngredientsByRecipe(): Promise<Map<string, Ingredient[]>> {
+  const records = await base(INGREDIENTS_TABLE)
+    .select({ returnFieldsByFieldId: true })
+    .all();
+
+  const byRecipe = new Map<string, Ingredient[]>();
+
+  for (const record of records) {
+    const ingredient = parseIngredient(record.fields, record.id);
+    const recipeIds = extractRecipeIds(record.fields);
+
+    for (const recipeId of recipeIds) {
+      const list = byRecipe.get(recipeId) || [];
+      list.push(ingredient);
+      byRecipe.set(recipeId, list);
+    }
+  }
+
+  return byRecipe;
+}
+
+/**
+ * Fetch ingredients for a single recipe by querying the Ingredients table.
+ */
+async function fetchIngredientsForRecipe(recipeId: string): Promise<Ingredient[]> {
+  // Fetch all ingredients that link to this recipe
+  // We use returnFieldsByFieldId and then filter client-side
+  const records = await base(INGREDIENTS_TABLE)
+    .select({ returnFieldsByFieldId: true })
+    .all();
+
+  const ingredients: Ingredient[] = [];
+  for (const record of records) {
+    const recipeIds = extractRecipeIds(record.fields);
+    if (recipeIds.includes(recipeId)) {
+      ingredients.push(parseIngredient(record.fields, record.id));
+    }
+  }
+
+  return ingredients;
 }
 
 function parseRecipe(
@@ -104,24 +130,11 @@ export async function getAllRecipes(includeIngredients = false): Promise<Recipe[
     return records.map((record) => parseRecipe(record));
   }
 
-  // Collect all ingredient IDs across all recipes, fetch in one batch
-  const idsByRecipe = new Map<string, string[]>();
-  const allIngIds = new Set<string>();
-
-  for (const record of records) {
-    const ids = extractLinkedIngredientIds(record);
-    idsByRecipe.set(record.id, ids);
-    ids.forEach((id) => allIngIds.add(id));
-  }
-
-  const allIngredients = await fetchIngredientsByIds(Array.from(allIngIds));
-  const ingMap = new Map(allIngredients.map((ing) => [ing.id, ing]));
+  // Fetch all ingredients in one batch and group by recipe
+  const ingredientsByRecipe = await fetchAllIngredientsByRecipe();
 
   return records.map((record) => {
-    const ids = idsByRecipe.get(record.id) || [];
-    const ingredients = ids
-      .map((id) => ingMap.get(id))
-      .filter((ing): ing is Ingredient => ing !== undefined);
+    const ingredients = ingredientsByRecipe.get(record.id) || [];
     return parseRecipe(record, ingredients);
   });
 }
@@ -129,11 +142,10 @@ export async function getAllRecipes(includeIngredients = false): Promise<Recipe[
 export async function getRecipeById(id: string): Promise<Recipe | null> {
   try {
     const record = await base(RECIPES_TABLE).find(id);
-    const ingredientIds = extractLinkedIngredientIds(record);
 
     let ingredients: Ingredient[] = [];
     try {
-      ingredients = await fetchIngredientsByIds(ingredientIds);
+      ingredients = await fetchIngredientsForRecipe(id);
     } catch (err) {
       console.error(`[data] Failed to fetch ingredients for recipe ${id}:`, err);
     }

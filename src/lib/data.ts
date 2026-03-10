@@ -167,39 +167,43 @@ export async function getRecipeContext(): Promise<string> {
   const recipes = await getAllRecipes(true);
   return recipes
     .map((r) => {
-      let line = `- ${r.name}`;
-      if (r.cuisineTag) line += ` (${r.cuisineTag})`;
-      if (r.servings) line += `, ${r.servings} servings`;
-      if (r.caloriesPerServing) line += `, ${Math.round(r.caloriesPerServing)} cal/serving`;
-      if (r.totalCalories) line += `, ${Math.round(r.totalCalories)} cal total`;
-      if (r.dietaryTags.length) line += `, ${r.dietaryTags.join("/")}`;
-      if (r.cookTime) line += `, ${r.cookTime} min cook`;
+      const totals = r.ingredients.reduce(
+        (acc, ing) => ({
+          cal: acc.cal + (ing.calories || 0),
+          protein: acc.protein + (ing.protein || 0),
+          carbs: acc.carbs + (ing.carbs || 0),
+          fat: acc.fat + (ing.fat || 0),
+        }),
+        { cal: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+
+      const servings = r.servings || 1;
+      const perServing = {
+        cal: Math.round(r.caloriesPerServing ?? totals.cal / servings),
+        protein: Math.round(totals.protein / servings),
+        carbs: Math.round(totals.carbs / servings),
+        fat: Math.round(totals.fat / servings),
+      };
+
+      const totalTime = (r.prepTime || 0) + (r.cookTime || 0);
+
+      let line = `## ${r.name}`;
+      if (r.cuisineTag) line += `\nCuisine: ${r.cuisineTag}`;
+      if (r.dietaryTags.length) line += `\nDietary: ${r.dietaryTags.join(", ")}`;
+      line += `\nServings: ${servings}`;
+      if (r.prepTime) line += `\nPrep: ${r.prepTime} min`;
+      if (r.cookTime) line += `\nCook: ${r.cookTime} min`;
+      if (totalTime) line += `\nTotal time: ${totalTime} min`;
+      line += `\nPer serving: ${perServing.cal} cal, ${perServing.protein}g protein, ${perServing.carbs}g carbs, ${perServing.fat}g fat`;
+      line += `\nTotal recipe: ${Math.round(totals.cal)} cal, ${Math.round(totals.protein)}g protein, ${Math.round(totals.carbs)}g carbs, ${Math.round(totals.fat)}g fat`;
 
       if (r.ingredients.length > 0) {
-        const totals = r.ingredients.reduce(
-          (acc, ing) => ({
-            cal: acc.cal + (ing.calories || 0),
-            protein: acc.protein + (ing.protein || 0),
-            carbs: acc.carbs + (ing.carbs || 0),
-            fat: acc.fat + (ing.fat || 0),
-          }),
-          { cal: 0, protein: 0, carbs: 0, fat: 0 }
-        );
-        line += `\n  Macros: ${Math.round(totals.cal)} cal, ${totals.protein.toFixed(1)}g protein, ${totals.carbs.toFixed(1)}g carbs, ${totals.fat.toFixed(1)}g fat`;
-        line += `\n  Ingredients: ${r.ingredients.map((i) => {
-          let s = `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name}`.trim();
-          const macros = [
-            i.calories != null ? `${i.calories} cal` : null,
-            i.protein != null ? `${i.protein}g protein` : null,
-            i.carbs != null ? `${i.carbs}g carbs` : null,
-            i.fat != null ? `${i.fat}g fat` : null,
-          ].filter(Boolean).join(", ");
-          if (macros) s += ` (${macros})`;
-          return s;
-        }).join("; ")}`;
+        line += `\nIngredients: ${r.ingredients.map((i) => {
+          return `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name}`.trim();
+        }).join(", ")}`;
       }
 
       return line;
     })
-    .join("\n");
+    .join("\n\n");
 }

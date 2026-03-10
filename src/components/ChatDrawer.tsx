@@ -64,10 +64,10 @@ function renderInline(text: string): React.ReactNode {
 }
 
 const QUICK_PROMPTS = [
-  "What's under 300 calories?",
-  "Suggest dinner tonight",
-  "What's the fastest recipe?",
-  "Something vegetarian?",
+  "What's high protein and under 400 cal?",
+  "What can I make in 30 minutes?",
+  "Suggest something dairy-free",
+  "Compare two recipes for me",
 ];
 
 export default function ChatDrawer({

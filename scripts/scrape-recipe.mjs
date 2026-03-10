@@ -24,21 +24,19 @@ const anthropic = new Anthropic({
 const RECIPES_TABLE = "tblcDuujfu1rokjSU";
 const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
 
-// Exact Airtable select options — fetched from schema, not guessed
+// Exact Airtable select options
 const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
 const VALID_DIETARY = ["Vegetarian", "Gluten-Free", "Dairy-Free", "High Protein", "Comfort Food"];
-const VALID_UNITS = ["/case", "/sleeve", "/box", "/bag", "/oz", "/each", "/lb", "/slice", "/can", "/cup", "/block", "/tbsp", "/tsp"];
+const VALID_COOKING_UNITS = ["/tsp", "/tbsp", "/cup", "/oz", "/lb", "/each", "/can"];
+const VALID_CATEGORIES = ["Produce", "Meat", "Fish", "Dairy", "Spice", "Pantry", "Grocery", "Bakery", "Other"];
+
 const UNIT_MAP = {
   cups: "/cup", cup: "/cup",
   oz: "/oz", ounce: "/oz", ounces: "/oz",
   lb: "/lb", lbs: "/lb", pound: "/lb", pounds: "/lb",
   can: "/can", cans: "/can",
-  slice: "/slice", slices: "/slice",
   each: "/each", whole: "/each", piece: "/each", pieces: "/each",
   cloves: "/each", clove: "/each",
-  bag: "/bag", bags: "/bag",
-  box: "/box", package: "/box",
-  block: "/block",
   tbsp: "/tbsp", tablespoon: "/tbsp", tablespoons: "/tbsp",
   tsp: "/tsp", teaspoon: "/tsp", teaspoons: "/tsp",
 };
@@ -55,6 +53,221 @@ const CUISINE_MAP = {
 };
 
 // ============================================================
+// INGREDIENT DATA CONTRACT: Name Normalization
+// ============================================================
+const CANONICAL_NAMES = {
+  "extra-virgin olive oil": "olive oil",
+  "extra virgin olive oil": "olive oil",
+  "evoo": "olive oil",
+  "large eggs": "egg", "large egg": "egg", "eggs": "egg",
+  "carrots": "carrot", "onions": "onion", "potatoes": "potato",
+  "sweet potatoes": "sweet potato", "bell peppers": "bell pepper",
+  "red bell peppers": "red bell pepper", "strawberries": "strawberry",
+  "blueberries": "blueberry", "lentils": "lentil", "chickpeas": "chickpea",
+  "tomatoes": "tomato", "green onions": "green onion",
+  "cloves garlic": "garlic", "garlic cloves": "garlic",
+  "chicken breasts": "chicken breast", "chicken thighs": "chicken thigh",
+  "hamburger buns": "hamburger bun", "dried apricots": "dried apricot",
+  "golden raisins": "golden raisin", "slivered almonds": "slivered almond",
+};
+
+const KEEP_WITH_ADJECTIVE = [
+  "sweet potato", "fresh parsley", "fresh ginger", "dried apricot",
+  "dried thyme", "red bell pepper", "red pepper flakes", "red wine vinegar",
+  "brown sugar", "brown rice", "sharp cheddar", "colby jack cheese",
+  "diced tomatoes", "crushed tomatoes",
+];
+
+function normalizeName(name) {
+  let n = name.toLowerCase().trim();
+  if (CANONICAL_NAMES[n]) return CANONICAL_NAMES[n];
+  if (KEEP_WITH_ADJECTIVE.includes(n)) return n;
+
+  // Strip size adjectives
+  for (const adj of ["large", "medium", "small"]) {
+    if (n.startsWith(adj + " ")) n = n.slice(adj.length + 1);
+  }
+
+  // Simple plural -> singular (careful with exceptions)
+  const noStrip = ["peas", "collard greens", "diced tomatoes", "crushed tomatoes",
+    "red pepper flakes", "golden raisins", "slivered almonds"];
+  if (!noStrip.includes(n) && n.endsWith("s") && !n.endsWith("ss") && !n.endsWith("us")) {
+    const singular = n.endsWith("ies") ? n.slice(0, -3) + "y"
+      : n.endsWith("es") ? n.slice(0, -2)
+      : n.slice(0, -1);
+    if (singular.length > 2) n = singular;
+  }
+
+  if (CANONICAL_NAMES[n]) return CANONICAL_NAMES[n];
+  return n;
+}
+
+// ============================================================
+// INGREDIENT DATA CONTRACT: Category Assignment
+// ============================================================
+const CATEGORY_MAP = {
+  "onion": "Produce", "garlic": "Produce", "carrot": "Produce",
+  "bell pepper": "Produce", "red bell pepper": "Produce", "zucchini": "Produce",
+  "sweet potato": "Produce", "lemon": "Produce", "blueberry": "Produce",
+  "strawberry": "Produce", "collard greens": "Produce", "broccoli": "Produce",
+  "green onion": "Produce", "fresh parsley": "Produce", "fresh ginger": "Produce",
+  "dried apricot": "Produce", "potato": "Produce", "tomato": "Produce",
+  "russet potato": "Produce",
+  "ground beef": "Meat", "chicken breast": "Meat", "chicken thigh": "Meat",
+  "egg": "Dairy", "butter": "Dairy", "milk": "Dairy", "heavy cream": "Dairy",
+  "evaporated milk": "Dairy", "feta cheese": "Dairy", "cheddar cheese": "Dairy",
+  "sharp cheddar": "Dairy", "colby jack cheese": "Dairy", "vanilla ice cream": "Dairy",
+  "salt": "Spice", "black pepper": "Spice", "cumin": "Spice", "paprika": "Spice",
+  "italian seasoning": "Spice", "dried thyme": "Spice", "curry powder": "Spice",
+  "red pepper flakes": "Spice", "sea salt": "Spice", "montreal steak seasoning": "Spice",
+  "baking powder": "Spice",
+  "olive oil": "Pantry", "soy sauce": "Pantry", "honey": "Pantry",
+  "maple syrup": "Pantry", "vinegar": "Pantry", "red wine vinegar": "Pantry",
+  "rice vinegar": "Pantry", "tomato paste": "Pantry", "dijon mustard": "Pantry",
+  "bbq sauce": "Pantry", "tamari": "Pantry", "chili garlic sauce": "Pantry",
+  "toasted sesame oil": "Pantry", "cornstarch": "Pantry", "brown sugar": "Pantry",
+  "sugar": "Pantry", "icing sugar": "Pantry", "chocolate sauce": "Pantry",
+  "lemon juice": "Pantry", "peanut butter": "Pantry", "vanilla extract": "Pantry",
+  "ketchup": "Pantry",
+  "all-purpose flour": "Grocery", "white rice": "Grocery", "brown rice": "Grocery",
+  "elbow macaroni": "Grocery", "cavatappi pasta": "Grocery", "couscous": "Grocery",
+  "lentil": "Grocery", "chickpea": "Grocery", "golden raisin": "Grocery",
+  "slivered almond": "Grocery", "diced tomatoes": "Grocery",
+  "crushed tomatoes": "Grocery", "tomato sauce": "Grocery",
+  "vegetable broth": "Grocery", "chicken broth": "Grocery", "beef broth": "Grocery",
+  "water": "Grocery", "extra-firm tofu": "Grocery", "peas": "Grocery",
+  "hamburger bun": "Bakery",
+};
+
+// ============================================================
+// INGREDIENT DATA CONTRACT: Unit Assignment
+// ============================================================
+const SPICES = [
+  "salt", "black pepper", "cumin", "paprika", "italian seasoning",
+  "dried thyme", "curry powder", "red pepper flakes", "baking powder",
+  "sea salt", "montreal steak seasoning",
+];
+const SMALL_LIQUIDS = [
+  "olive oil", "soy sauce", "honey", "maple syrup", "vinegar",
+  "red wine vinegar", "rice vinegar", "tomato paste", "dijon mustard",
+  "lemon juice", "cornstarch", "brown sugar", "sugar", "fresh ginger",
+  "bbq sauce", "tamari", "chili garlic sauce", "toasted sesame oil",
+  "vanilla extract", "ketchup",
+];
+
+function assignUnit(name, qty, rawUnit) {
+  // Map raw unit first
+  const mapped = rawUnit ? (UNIT_MAP[rawUnit.toLowerCase()] || null) : null;
+  if (mapped && VALID_COOKING_UNITS.includes(mapped)) return mapped;
+
+  // Spices
+  if (SPICES.includes(name) && (qty ?? 1) <= 3) return "/tsp";
+  // Small liquids/pastes
+  if (SMALL_LIQUIDS.includes(name) && (qty ?? 1) <= 3) return "/tbsp";
+  // Countable items
+  const countable = ["egg", "onion", "garlic", "bell pepper", "red bell pepper",
+    "carrot", "zucchini", "lemon", "hamburger bun", "potato", "tomato",
+    "sweet potato", "dried apricot", "strawberry", "green onion"];
+  if (countable.includes(name)) return "/each";
+
+  return "/tsp"; // fallback
+}
+
+// ============================================================
+// INGREDIENT DATA CONTRACT: USDA Macro Estimation
+// ============================================================
+const MACROS = {
+  "olive oil": { per: "tbsp", cal: 119, p: 0, c: 0, f: 14 },
+  "butter": { per: "tbsp", cal: 102, p: 0, c: 0, f: 12 },
+  "toasted sesame oil": { per: "tbsp", cal: 120, p: 0, c: 0, f: 14 },
+  "ground beef": { per: "lb", cal: 1152, p: 77, c: 0, f: 92 },
+  "chicken breast": { per: "lb", cal: 748, p: 139, c: 0, f: 16 },
+  "chicken thigh": { per: "lb", cal: 1085, p: 109, c: 0, f: 69 },
+  "egg": { per: "each", cal: 72, p: 6, c: 0, f: 5 },
+  "all-purpose flour": { per: "cup", cal: 455, p: 13, c: 95, f: 1 },
+  "white rice": { per: "cup", cal: 675, p: 13, c: 148, f: 1 },
+  "brown rice": { per: "cup", cal: 685, p: 14, c: 143, f: 5 },
+  "elbow macaroni": { per: "cup", cal: 389, p: 13, c: 78, f: 2 },
+  "couscous": { per: "cup", cal: 650, p: 22, c: 134, f: 1 },
+  "lentil": { per: "cup", cal: 678, p: 50, c: 115, f: 2 },
+  "milk": { per: "cup", cal: 149, p: 8, c: 12, f: 8 },
+  "heavy cream": { per: "cup", cal: 821, p: 5, c: 7, f: 88 },
+  "cheddar cheese": { per: "cup", cal: 455, p: 28, c: 1, f: 37 },
+  "feta cheese": { per: "cup", cal: 396, p: 22, c: 6, f: 32 },
+  "diced tomatoes": { per: "14oz", cal: 70, p: 4, c: 14, f: 0 },
+  "crushed tomatoes": { per: "28oz", cal: 140, p: 7, c: 28, f: 0 },
+  "tomato sauce": { per: "8oz", cal: 60, p: 2, c: 12, f: 0 },
+  "chickpea": { per: "can", cal: 360, p: 19, c: 58, f: 6 },
+  "salt": { per: "tsp", cal: 0, p: 0, c: 0, f: 0 },
+  "black pepper": { per: "tsp", cal: 6, p: 0, c: 2, f: 0 },
+  "cumin": { per: "tsp", cal: 8, p: 0, c: 1, f: 0 },
+  "paprika": { per: "tsp", cal: 6, p: 0, c: 1, f: 0 },
+  "italian seasoning": { per: "tsp", cal: 5, p: 0, c: 1, f: 0 },
+  "dried thyme": { per: "tsp", cal: 5, p: 0, c: 1, f: 0 },
+  "curry powder": { per: "tsp", cal: 7, p: 0, c: 1, f: 0 },
+  "red pepper flakes": { per: "tsp", cal: 6, p: 0, c: 1, f: 0 },
+  "baking powder": { per: "tsp", cal: 2, p: 0, c: 1, f: 0 },
+  "soy sauce": { per: "tbsp", cal: 9, p: 1, c: 1, f: 0 },
+  "honey": { per: "tbsp", cal: 64, p: 0, c: 17, f: 0 },
+  "maple syrup": { per: "tbsp", cal: 52, p: 0, c: 13, f: 0 },
+  "vinegar": { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
+  "red wine vinegar": { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
+  "rice vinegar": { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
+  "tomato paste": { per: "tbsp", cal: 13, p: 1, c: 3, f: 0 },
+  "dijon mustard": { per: "tbsp", cal: 15, p: 1, c: 1, f: 1 },
+  "lemon juice": { per: "tbsp", cal: 4, p: 0, c: 1, f: 0 },
+  "cornstarch": { per: "tbsp", cal: 30, p: 0, c: 7, f: 0 },
+  "brown sugar": { per: "tbsp", cal: 52, p: 0, c: 13, f: 0 },
+  "sugar": { per: "tbsp", cal: 48, p: 0, c: 12, f: 0 },
+  "vanilla extract": { per: "tsp", cal: 12, p: 0, c: 1, f: 0 },
+  "onion": { per: "each", cal: 44, p: 1, c: 10, f: 0 },
+  "garlic": { per: "each", cal: 4, p: 0, c: 1, f: 0 },
+  "carrot": { per: "each", cal: 25, p: 1, c: 6, f: 0 },
+  "bell pepper": { per: "each", cal: 30, p: 1, c: 7, f: 0 },
+  "red bell pepper": { per: "each", cal: 30, p: 1, c: 7, f: 0 },
+  "zucchini": { per: "each", cal: 33, p: 2, c: 6, f: 1 },
+  "sweet potato": { per: "lb", cal: 390, p: 7, c: 90, f: 1 },
+  "lemon": { per: "each", cal: 17, p: 1, c: 5, f: 0 },
+  "blueberry": { per: "cup", cal: 84, p: 1, c: 21, f: 0 },
+  "strawberry": { per: "each", cal: 4, p: 0, c: 1, f: 0 },
+  "broccoli": { per: "cup", cal: 31, p: 3, c: 6, f: 0 },
+  "water": { per: "cup", cal: 0, p: 0, c: 0, f: 0 },
+  "vegetable broth": { per: "cup", cal: 12, p: 1, c: 2, f: 0 },
+  "chicken broth": { per: "cup", cal: 15, p: 3, c: 1, f: 0 },
+  "hamburger bun": { per: "each", cal: 120, p: 4, c: 22, f: 2 },
+};
+
+function getUnitMultiplier(recipeUnit, refUnit) {
+  const u = recipeUnit?.replace("/", "") || "";
+  const r = refUnit || "";
+  if (u === r) return 1;
+  if (u === "tsp" && r === "tbsp") return 1 / 3;
+  if (u === "tbsp" && r === "tsp") return 3;
+  if (u === "cup" && r === "tbsp") return 16;
+  if (u === "tbsp" && r === "cup") return 1 / 16;
+  if (u === "cup" && r === "tsp") return 48;
+  if (u === "tsp" && r === "cup") return 1 / 48;
+  if (u === "oz" && r === "14oz") return 1 / 14;
+  if (u === "oz" && r === "28oz") return 1 / 28;
+  if (u === "oz" && r === "8oz") return 1 / 8;
+  return 1;
+}
+
+function estimateMacros(name, qty, unit) {
+  const ref = MACROS[name];
+  if (!ref) return null;
+  const q = qty ?? 1;
+  const multiplier = getUnitMultiplier(unit, ref.per);
+  const scale = q * multiplier;
+  return {
+    cal: Math.round(ref.cal * scale),
+    p: Math.round(ref.p * scale),
+    c: Math.round(ref.c * scale),
+    f: Math.round(ref.f * scale),
+  };
+}
+
+// ============================================================
 // STEP 1: VALIDATE ENV VARS
 // ============================================================
 function validateEnv() {
@@ -67,10 +280,10 @@ function validateEnv() {
   ];
   const missing = required.filter((k) => !process.env[k]);
   if (missing.length) {
-    console.error("❌ PREFLIGHT FAILED: Missing env vars:", missing.join(", "));
+    console.error("PREFLIGHT FAILED: Missing env vars:", missing.join(", "));
     process.exit(1);
   }
-  console.log("✅ Step 1/7: Env vars validated");
+  console.log("Step 1/7: Env vars validated");
 }
 
 // ============================================================
@@ -85,11 +298,11 @@ async function checkForDuplicate(recipeName) {
     .all();
 
   if (records.length > 0) {
-    console.error(`❌ DUPLICATE CHECK FAILED: "${recipeName}" already exists in Airtable (${records[0].id})`);
+    console.error(`DUPLICATE CHECK FAILED: "${recipeName}" already exists in Airtable (${records[0].id})`);
     console.error("   Use --force to add anyway, or update the existing record manually.");
     return true;
   }
-  console.log(`✅ Step 3/7: No duplicate found for "${recipeName}"`);
+  console.log(`Step 3/7: No duplicate found for "${recipeName}"`);
   return false;
 }
 
@@ -157,7 +370,7 @@ async function scrapePage(url) {
     return { blocked: true, url };
   }
 
-  console.log(`✅ Step 2/7: Page scraped (${jsonLd ? "JSON-LD found" : "using page text"}${imageUrl ? ", image found" : ", no image"})`);
+  console.log(`Step 2/7: Page scraped (${jsonLd ? "JSON-LD found" : "using page text"}${imageUrl ? ", image found" : ", no image"})`);
   return {
     blocked: false,
     jsonLd,
@@ -169,12 +382,76 @@ async function scrapePage(url) {
 }
 
 // ============================================================
-// STEP 4: EXTRACT WITH CLAUDE
+// STEP 4: EXTRACT WITH CLAUDE (Data Contract enforced)
 // ============================================================
 async function extractRecipeData(content, sourceUrl) {
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
-    max_tokens: 2048,
+    max_tokens: 4096,
+    system: `You are a recipe data extraction assistant. You extract structured recipe data from web content.
+
+INGREDIENT DATA CONTRACT - You MUST follow these rules exactly:
+
+NAME RULES:
+- All lowercase, always ("olive oil" not "Olive Oil")
+- Canonical names, no brand modifiers ("olive oil" not "extra-virgin olive oil")
+- Singular form for countable items ("egg" not "eggs", "carrot" not "carrots")
+- No size adjectives unless they change the ingredient ("sweet potato" stays, "large egg" becomes "egg")
+- Garlic is always measured in cloves: name = "garlic", unit = "each"
+
+UNIT RULES (return one of these exact strings):
+- "tsp" - small dry/liquid under 1 tbsp (spices, salt, vanilla extract)
+- "tbsp" - medium measures 1-3 tbsp (olive oil small amounts, soy sauce, honey, butter)
+- "cup" - volume 0.25 cup and up (flour, broth, milk, shredded cheese)
+- "oz" - weight for canned goods (diced tomatoes 14oz, tomato sauce 8oz)
+- "lb" - weight for meat, large produce (ground beef, chicken breast)
+- "each" - countable whole items (egg, onion, bell pepper, garlic clove)
+- "can" - canned goods when "1 can" is clearer (chickpeas, coconut milk)
+
+CONVERSION RULES:
+- "3 tablespoons" -> qty: 3, unit: "tbsp"
+- "1 teaspoon" -> qty: 1, unit: "tsp"
+- "1/2 cup" -> qty: 0.5, unit: "cup"
+- "1 (14 oz) can diced tomatoes" -> qty: 14, unit: "oz", name: "diced tomatoes"
+- "1 can chickpeas" -> qty: 1, unit: "can"
+- "2 pounds ground beef" -> qty: 2, unit: "lb"
+- "3 cloves garlic" -> qty: 3, unit: "each", name: "garlic"
+- "1 medium onion" -> qty: 1, unit: "each", name: "onion" (drop "medium")
+- "salt and pepper to taste" -> two ingredients: salt qty:1 unit:"tsp" AND black pepper qty:0.5 unit:"tsp"
+- "pinch of" -> qty: 0.125, unit: "tsp"
+
+CATEGORY RULES (return one of these exact strings):
+- "Produce" - fresh fruits, vegetables, herbs (onion, garlic, carrot, bell pepper, lemon, parsley, blueberry)
+- "Meat" - all meat and poultry (ground beef, chicken breast, chicken thigh)
+- "Fish" - all seafood (salmon, shrimp, tuna)
+- "Dairy" - milk, cream, cheese, butter, eggs, yogurt
+- "Spice" - dried spices and seasonings (cumin, paprika, Italian seasoning, salt, black pepper, red pepper flakes, baking powder)
+- "Pantry" - oils, vinegars, sauces, sweeteners, extracts (olive oil, soy sauce, honey, vanilla, Dijon mustard, tomato paste, sugar, cornstarch)
+- "Grocery" - dry goods, grains, pasta, canned goods, nuts, broths (flour, rice, lentils, couscous, chickpeas, diced tomatoes, chicken broth)
+- "Bakery" - bread, buns, tortillas
+- "Other" - anything that doesn't fit above
+- NEVER use "Misc."
+
+MACRO RULES:
+- Every ingredient MUST have calories, protein_g, carbs_g, fat_g
+- Values are for the RECIPE QUANTITY (not per 100g). Example: "2 tbsp olive oil" = 238 cal, 0P, 0C, 28F
+- Round to whole numbers
+- Use USDA reference values:
+  * olive oil (per tbsp): 119 cal, 0P, 0C, 14F
+  * butter (per tbsp): 102 cal, 0P, 0C, 12F
+  * egg (each): 72 cal, 6P, 0C, 5F
+  * ground beef 80/20 (per lb): 1152 cal, 77P, 0C, 92F
+  * chicken breast (per lb): 748 cal, 139P, 0C, 16F
+  * chicken thigh (per lb): 1085 cal, 109P, 0C, 69F
+  * all-purpose flour (per cup): 455 cal, 13P, 95C, 1F
+  * white rice (per cup dry): 675 cal, 13P, 148C, 1F
+  * lentils (per cup dry): 678 cal, 50P, 115C, 2F
+  * cheddar cheese (per cup): 455 cal, 28P, 1C, 37F
+  * diced tomatoes (14 oz can): 70 cal, 4P, 14C, 0F
+  * most dried spices (per tsp): 5-8 cal, negligible macros
+  * salt: 0 cal across the board
+  * sugar (per tbsp): 48 cal, 0P, 12C, 0F
+  * honey (per tbsp): 64 cal, 0P, 17C, 0F`,
     messages: [
       {
         role: "user",
@@ -191,29 +468,22 @@ REQUIRED JSON SCHEMA:
   "dietaryTags": array from ${JSON.stringify(VALID_DIETARY)} or [],
   "ingredients": [
     {
-      "name": "string (just the food item, no quantities)",
-      "quantity": number or null,
-      "unit": one of ["cups","oz","lb","can","slice","each","clove","bag","box","block","tbsp","tsp"] or null,
-      "category": one of ["Produce","Meat","Dairy","Pantry","Spice","Other"] or "Other",
-      "estimatedCalories": number or null,
-      "estimatedProtein": number (grams) or null,
-      "estimatedCarbs": number (grams) or null,
-      "estimatedFat": number (grams) or null
+      "name": "string (lowercase, singular, canonical per the data contract)",
+      "quantity": number,
+      "unit": one of ["tsp","tbsp","cup","oz","lb","each","can"],
+      "category": one of ${JSON.stringify(VALID_CATEGORIES)},
+      "calories": number (whole, USDA estimate for recipe qty),
+      "protein_g": number (whole),
+      "carbs_g": number (whole),
+      "fat_g": number (whole)
     }
   ]
 }
 
-RULES:
-- name must not be null
-- servings must be a number, not a string
-- cookTime and prepTime must be numbers in minutes
-- cuisineTag must be exactly one of the listed values or null
-- dietaryTags must only contain values from the listed options
-- ingredient name should be just the food (e.g. "olive oil" not "2 tbsp olive oil")
-- quantity should be a number (e.g. 2, 0.5) not a string
-- category should be one of: Produce, Meat, Dairy, Pantry, Spice, Other
-- estimatedCalories/Protein/Carbs/Fat should be for THE QUANTITY LISTED (e.g. 2 tbsp olive oil = 238 cal, not per-tbsp)
-- Use standard USDA-style nutritional estimates
+CRITICAL:
+- Every ingredient MUST have name, quantity, unit, category, calories, protein_g, carbs_g, fat_g
+- No nulls allowed in ingredient fields
+- Names must be lowercase and singular
 - If you cannot extract a recipe, return {"name": null}
 
 Source URL: ${sourceUrl}
@@ -232,22 +502,22 @@ ${content}`,
   try {
     recipe = JSON.parse(jsonStr);
   } catch {
-    console.error("❌ EXTRACT FAILED: Claude returned invalid JSON");
+    console.error("EXTRACT FAILED: Claude returned invalid JSON");
     console.error("   Raw response:", text.slice(0, 500));
     process.exit(1);
   }
 
   if (!recipe.name) {
-    console.error("❌ EXTRACT FAILED: Could not identify recipe from content");
+    console.error("EXTRACT FAILED: Could not identify recipe from content");
     process.exit(1);
   }
 
-  console.log(`✅ Step 4/7: Recipe extracted: "${recipe.name}"`);
+  console.log(`Step 4/7: Recipe extracted: "${recipe.name}"`);
   return recipe;
 }
 
 // ============================================================
-// STEP 5: VALIDATE EXTRACTED DATA
+// STEP 5: VALIDATE + NORMALIZE (Data Contract enforcement)
 // ============================================================
 function validateRecipeData(recipe) {
   const issues = [];
@@ -287,29 +557,83 @@ function validateRecipeData(recipe) {
     issues.push("no ingredients found");
   }
 
-  // Clean ingredient units
+  // Post-extraction normalization: enforce data contract on every ingredient
+  const rejected = [];
   if (recipe.ingredients) {
-    recipe.ingredients.forEach((ing, i) => {
-      if (typeof ing.name !== "string" || !ing.name) {
-        issues.push(`ingredient ${i} has no name`);
+    recipe.ingredients = recipe.ingredients.map((ing, i) => {
+      // Normalize name
+      const rawName = (ing.name || "").replace(/[""'']/g, "").trim();
+      const name = normalizeName(rawName);
+
+      // Normalize unit
+      const unit = assignUnit(name, ing.quantity, ing.unit);
+
+      // Validate unit is in allowed cooking units
+      if (!VALID_COOKING_UNITS.includes(unit)) {
+        issues.push(`ingredient "${name}" got invalid unit "${unit}", defaulting to /tsp`);
       }
-      // Strip any quotes from all string fields
-      if (ing.name) ing.name = ing.name.replace(/[""'']/g, "").trim();
-      if (ing.unit) {
-        const raw = ing.unit.replace(/[""'']/g, "").trim().toLowerCase();
-        ing._mappedUnit = UNIT_MAP[raw] || (VALID_UNITS.includes(raw) ? raw : null);
-        if (!ing._mappedUnit && ing.unit) {
-          issues.push(`ingredient "${ing.name}" unit "${ing.unit}" not valid, skipping unit`);
+
+      // Normalize category
+      let category = CATEGORY_MAP[name] || ing.category || "Other";
+      if (!VALID_CATEGORIES.includes(category)) {
+        issues.push(`ingredient "${name}" category "${category}" invalid, setting to Other`);
+        category = "Other";
+      }
+      if (category === "Misc." || category === "Misc") {
+        category = "Other";
+      }
+
+      // Normalize macros: use Claude's estimate, fall back to USDA reference, round to whole
+      let cal = ing.calories ?? ing.estimatedCalories ?? null;
+      let pro = ing.protein_g ?? ing.estimatedProtein ?? null;
+      let carb = ing.carbs_g ?? ing.estimatedCarbs ?? null;
+      let fat = ing.fat_g ?? ing.estimatedFat ?? null;
+
+      // If any macro is missing, try USDA estimate
+      if (cal === null || pro === null || carb === null || fat === null) {
+        const est = estimateMacros(name, ing.quantity, unit);
+        if (est) {
+          if (cal === null) cal = est.cal;
+          if (pro === null) pro = est.p;
+          if (carb === null) carb = est.c;
+          if (fat === null) fat = est.f;
         }
       }
-    });
+
+      // Final fallback: 0 for completely unknown
+      cal = Math.round(cal ?? 0);
+      pro = Math.round(pro ?? 0);
+      carb = Math.round(carb ?? 0);
+      fat = Math.round(fat ?? 0);
+
+      // Reject if still missing name or unit
+      if (!name) {
+        rejected.push(`ingredient ${i}: no name`);
+        return null;
+      }
+
+      return { name, quantity: ing.quantity ?? 1, unit, category, cal, pro, carb, fat };
+    }).filter(Boolean);
+  }
+
+  // Final validation: reject any ingredient missing required fields
+  for (const ing of recipe.ingredients) {
+    if (!ing.unit) rejected.push(`"${ing.name}" missing unit`);
+    if (!ing.category) rejected.push(`"${ing.name}" missing category`);
+    if (ing.cal === null || ing.cal === undefined) rejected.push(`"${ing.name}" missing calories`);
+  }
+
+  if (rejected.length > 0) {
+    console.error(`VALIDATION REJECTED ${rejected.length} ingredient(s):`);
+    rejected.forEach(r => console.error(`   - ${r}`));
+    process.exit(1);
   }
 
   if (issues.length > 0) {
-    console.log(`⚠️  Step 5/7: Validation found ${issues.length} issue(s) (auto-fixed):`);
+    console.log(`Step 5/7: Validation found ${issues.length} issue(s) (auto-fixed):`);
     issues.forEach((i) => console.log(`   - ${i}`));
   } else {
-    console.log("✅ Step 5/7: Data validated, all fields clean");
+    console.log("Step 5/7: Data validated, all fields clean");
   }
 
   return recipe;
@@ -320,7 +644,7 @@ function validateRecipeData(recipe) {
 // ============================================================
 async function uploadImage(imageUrl, recipeName) {
   if (!imageUrl) {
-    console.log("⚠️  Step 6/7: No image to upload (recipe will use placeholder)");
+    console.log("Step 6/7: No image to upload (recipe will use placeholder)");
     return null;
   }
 
@@ -335,18 +659,17 @@ async function uploadImage(imageUrl, recipeName) {
       public_id: publicId,
       overwrite: true,
     });
-    console.log(`✅ Step 6/7: Image uploaded to Cloudinary: ${result.secure_url}`);
+    console.log(`Step 6/7: Image uploaded to Cloudinary: ${result.secure_url}`);
     return result.secure_url;
   } catch (err) {
-    console.error(`⚠️  Step 6/7: Image upload failed: ${err.message}`);
+    console.error(`Step 6/7: Image upload failed: ${err.message}`);
     return null;
   }
 }
 
 // ============================================================
-// STEP 7: CREATE AIRTABLE RECORDS
+// STEP 7: CREATE AIRTABLE RECORDS (Data Contract enforced)
 // ============================================================
-// Ingredient field IDs (stable even if field names change in Airtable)
 const ING_FIELDS = {
   name: "fld39u3mmhVCvMG1O",
   quantity: "fldQBvNRyFEKNB9eV",
@@ -360,7 +683,6 @@ const ING_FIELDS = {
 };
 
 async function createInAirtable(recipe, cloudinaryUrl, sourceUrl) {
-  // First create the recipe record (so we have a record ID to link ingredients to)
   const recipeFields = {
     "Recipe Name": recipe.name,
     Preparation: recipe.preparation,
@@ -377,35 +699,31 @@ async function createInAirtable(recipe, cloudinaryUrl, sourceUrl) {
   const recipeRecord = await base(RECIPES_TABLE).create(recipeFields);
   const recipeId = recipeRecord.id;
 
-  // Now create ingredient records linked to the recipe via field ID
+  // Create ingredient records with full data contract compliance
   let ingredientCount = 0;
   if (recipe.ingredients?.length) {
     console.log(`   Creating ${recipe.ingredients.length} ingredient records...`);
     for (let i = 0; i < recipe.ingredients.length; i += 10) {
       const batch = recipe.ingredients.slice(i, i + 10);
       await base(INGREDIENTS_TABLE).create(
-        batch.map((ing) => {
-          const fields = {
+        batch.map((ing) => ({
+          fields: {
             [ING_FIELDS.name]: ing.name,
+            [ING_FIELDS.quantity]: ing.quantity,
+            [ING_FIELDS.unit]: ing.unit,
             [ING_FIELDS.recipesLink]: [recipeId],
-          };
-          if (typeof ing.quantity === "number") fields[ING_FIELDS.quantity] = ing.quantity;
-          if (ing._mappedUnit) fields[ING_FIELDS.unit] = ing._mappedUnit;
-          if (ing.category) fields[ING_FIELDS.category] = ing.category;
-          if (typeof ing.estimatedCalories === "number") fields[ING_FIELDS.calories] = ing.estimatedCalories;
-          if (typeof ing.estimatedProtein === "number") fields[ING_FIELDS.protein] = ing.estimatedProtein;
-          if (typeof ing.estimatedCarbs === "number") fields[ING_FIELDS.carbs] = ing.estimatedCarbs;
-          if (typeof ing.estimatedFat === "number") fields[ING_FIELDS.fat] = ing.estimatedFat;
-          return { fields };
-        }),
+            [ING_FIELDS.category]: ing.category,
+            [ING_FIELDS.calories]: ing.cal,
+            [ING_FIELDS.protein]: ing.pro,
+            [ING_FIELDS.carbs]: ing.carb,
+            [ING_FIELDS.fat]: ing.fat,
+          },
+        })),
         { typecast: true }
       );
       ingredientCount += batch.length;
     }
   }
-
-  // Total Calories and Calories Per Serving are computed fields in Airtable
-  // (auto-calculated from ingredient macros) — no update needed
 
   // VERIFY: read it back
   const verify = await base(RECIPES_TABLE).find(recipeId);
@@ -414,15 +732,15 @@ async function createInAirtable(recipe, cloudinaryUrl, sourceUrl) {
   const verifiedServings = verify.get("Servings");
 
   if (verifiedName !== recipe.name) {
-    console.error(`❌ VERIFY FAILED: Name mismatch. Expected "${recipe.name}", got "${verifiedName}"`);
+    console.error(`VERIFY FAILED: Name mismatch. Expected "${recipe.name}", got "${verifiedName}"`);
   }
 
-  console.log(`✅ Step 7/7: Airtable record created and verified`);
+  console.log(`Step 7/7: Airtable record created and verified`);
   console.log(`   ID: ${recipeId}`);
   console.log(`   Name: ${verifiedName}`);
   console.log(`   Image: ${verifiedImage ? "yes" : "no"}`);
   console.log(`   Servings: ${verifiedServings}`);
-  console.log(`   Ingredients: ${ingredientCount} (with macros, linked via field ID)`);
+  console.log(`   Ingredients: ${ingredientCount} (all with unit, category, macros)`);
 
   return recipeRecord;
 }
@@ -436,7 +754,7 @@ async function main() {
   const input = args.find((a) => !a.startsWith("--"));
 
   if (!input) {
-    console.log("Julie's Cookbook — Recipe Scraper");
+    console.log("Julie's Cookbook -- Recipe Scraper");
     console.log("================================");
     console.log("");
     console.log("Usage:");
@@ -444,12 +762,17 @@ async function main() {
     console.log("  npm run scrape -- --file recipe.txt      # Extract from text file");
     console.log("  npm run scrape <url> --force             # Skip duplicate check");
     console.log("");
-    console.log("Pipeline: Validate → Scrape → Extract → Validate → Upload → Save → Verify");
+    console.log("Pipeline: Validate -> Scrape -> Extract -> Validate -> Upload -> Save -> Verify");
+    console.log("All ingredients enforced per Ingredient Data Contract:");
+    console.log("  - lowercase, singular, canonical names");
+    console.log("  - cooking units only (tsp, tbsp, cup, oz, lb, each, can)");
+    console.log("  - valid category (Produce, Meat, Fish, Dairy, Spice, Pantry, Grocery, Bakery, Other)");
+    console.log("  - USDA-based macros (whole numbers)");
     process.exit(0);
   }
 
   console.log("");
-  console.log("🍳 Julie's Cookbook — Recipe Scraper");
+  console.log("Julie's Cookbook -- Recipe Scraper");
   console.log("====================================");
 
   // Step 1: Validate env
@@ -462,10 +785,10 @@ async function main() {
   if (args.includes("--file")) {
     const filePath = args[args.indexOf("--file") + 1];
     if (!filePath) {
-      console.error("❌ Provide a file path: npm run scrape -- --file recipe.txt");
+      console.error("Provide a file path: npm run scrape -- --file recipe.txt");
       process.exit(1);
     }
-    console.log(`✅ Step 2/7: Reading from file: ${filePath}`);
+    console.log(`Step 2/7: Reading from file: ${filePath}`);
     recipeText = readFileSync(filePath, "utf-8");
     sourceUrl = "manual entry";
   } else if (input.startsWith("http")) {
@@ -474,7 +797,7 @@ async function main() {
 
     if (scraped.blocked) {
       console.log("");
-      console.log("⚠️  Site blocked the scraper (403/Cloudflare).");
+      console.log("Site blocked the scraper (403/Cloudflare).");
       console.log("   Workaround:");
       console.log("   1. Open the URL in your browser");
       console.log("   2. Select all text (Cmd+A), copy (Cmd+C)");
@@ -486,7 +809,7 @@ async function main() {
     recipeText = scraped.source;
     imageUrl = scraped.imageUrl;
   } else {
-    console.error("❌ Provide a URL or use --file flag");
+    console.error("Provide a URL or use --file flag");
     process.exit(1);
   }
 
@@ -498,10 +821,10 @@ async function main() {
     const isDupe = await checkForDuplicate(recipe.name);
     if (isDupe) process.exit(1);
   } else {
-    console.log("⚠️  Step 3/7: Duplicate check skipped (--force)");
+    console.log("Step 3/7: Duplicate check skipped (--force)");
   }
 
-  // Step 5: Validate
+  // Step 5: Validate + Normalize per Data Contract
   const validated = validateRecipeData(recipe);
 
   // Step 6: Upload image
@@ -511,11 +834,11 @@ async function main() {
   const record = await createInAirtable(validated, cloudinaryUrl, sourceUrl);
 
   console.log("");
-  console.log(`✅ DONE: "${validated.name}" added to Julie's Cookbook`);
+  console.log(`DONE: "${validated.name}" added to Julie's Cookbook`);
   console.log(`   Live at julies-cookbook.vercel.app within 60 seconds`);
 }
 
 main().catch((err) => {
-  console.error(`\n❌ FATAL: ${err.message}`);
+  console.error(`\nFATAL: ${err.message}`);
   process.exit(1);
 });

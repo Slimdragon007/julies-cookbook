@@ -7,6 +7,62 @@ interface Message {
   content: string;
 }
 
+function formatMessage(text: string) {
+  // Split into lines and process each
+  const lines = text.split("\n").filter((l) => l.trim() !== "");
+  const elements: React.ReactNode[] = [];
+
+  let listItems: React.ReactNode[] = [];
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="space-y-1.5 my-1.5">
+          {listItems}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  lines.forEach((line, i) => {
+    const bulletMatch = line.match(/^[\s]*[•\-\*]\s+(.+)/);
+    if (bulletMatch) {
+      listItems.push(
+        <li key={`li-${i}`} className="flex gap-1.5">
+          <span className="text-warm shrink-0">&#8226;</span>
+          <span>{renderInline(bulletMatch[1])}</span>
+        </li>
+      );
+    } else {
+      flushList();
+      elements.push(
+        <p key={`p-${i}`} className={i > 0 ? "mt-1.5" : ""}>
+          {renderInline(line)}
+        </p>
+      );
+    }
+  });
+  flushList();
+
+  return <>{elements}</>;
+}
+
+function renderInline(text: string): React.ReactNode {
+  // Handle **bold** markdown
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    const boldMatch = part.match(/^\*\*(.+)\*\*$/);
+    if (boldMatch) {
+      return (
+        <strong key={i} className="font-semibold text-warm-dark">
+          {boldMatch[1]}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
 const QUICK_PROMPTS = [
   "What's under 300 calories?",
   "Suggest dinner tonight",
@@ -110,13 +166,13 @@ export default function ChatDrawer({
               }`}
             >
               <span
-                className={`inline-block px-3 py-2 rounded-xl ${
+                className={`inline-block px-3 py-2 rounded-xl text-left ${
                   msg.role === "user"
                     ? "bg-warm text-white"
                     : "bg-white border border-border"
                 }`}
               >
-                {msg.content}
+                {msg.role === "user" ? msg.content : formatMessage(msg.content)}
               </span>
             </div>
           ))}

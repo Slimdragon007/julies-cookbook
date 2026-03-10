@@ -27,7 +27,7 @@ const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
 // Exact Airtable select options — fetched from schema, not guessed
 const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
 const VALID_DIETARY = ["Vegetarian", "Gluten-Free", "Dairy-Free", "High Protein", "Comfort Food"];
-const VALID_UNITS = ["/case", "/sleeve", "/box", "/bag", "/oz", "/each", "/lb", "/slice", "/can", "/cup", "/block"];
+const VALID_UNITS = ["/case", "/sleeve", "/box", "/bag", "/oz", "/each", "/lb", "/slice", "/can", "/cup", "/block", "/tbsp", "/tsp"];
 const UNIT_MAP = {
   cups: "/cup", cup: "/cup",
   oz: "/oz", ounce: "/oz", ounces: "/oz",
@@ -39,6 +39,8 @@ const UNIT_MAP = {
   bag: "/bag", bags: "/bag",
   box: "/box", package: "/box",
   block: "/block",
+  tbsp: "/tbsp", tablespoon: "/tbsp", tablespoons: "/tbsp",
+  tsp: "/tsp", teaspoon: "/tsp", teaspoons: "/tsp",
 };
 const CUISINE_MAP = {
   "Middle Eastern": "Mediterranean",
@@ -191,8 +193,12 @@ REQUIRED JSON SCHEMA:
     {
       "name": "string (just the food item, no quantities)",
       "quantity": number or null,
-      "unit": one of ["cups","oz","lb","can","slice","each","clove","bag","box","block"] or null,
-      "estimatedCalories": number or null
+      "unit": one of ["cups","oz","lb","can","slice","each","clove","bag","box","block","tbsp","tsp"] or null,
+      "category": one of ["Produce","Meat","Dairy","Pantry","Spice","Other"] or "Other",
+      "estimatedCalories": number or null,
+      "estimatedProtein": number (grams) or null,
+      "estimatedCarbs": number (grams) or null,
+      "estimatedFat": number (grams) or null
     }
   ]
 }
@@ -205,6 +211,9 @@ RULES:
 - dietaryTags must only contain values from the listed options
 - ingredient name should be just the food (e.g. "olive oil" not "2 tbsp olive oil")
 - quantity should be a number (e.g. 2, 0.5) not a string
+- category should be one of: Produce, Meat, Dairy, Pantry, Spice, Other
+- estimatedCalories/Protein/Carbs/Fat should be for THE QUANTITY LISTED (e.g. 2 tbsp olive oil = 238 cal, not per-tbsp)
+- Use standard USDA-style nutritional estimates
 - If you cannot extract a recipe, return {"name": null}
 
 Source URL: ${sourceUrl}
@@ -337,46 +346,69 @@ async function uploadImage(imageUrl, recipeName) {
 // ============================================================
 // STEP 7: CREATE AIRTABLE RECORDS
 // ============================================================
+// Ingredient field IDs (stable even if field names change in Airtable)
+const ING_FIELDS = {
+  name: "fld39u3mmhVCvMG1O",
+  quantity: "fldQBvNRyFEKNB9eV",
+  unit: "fldhovLVfCHfba1nM",
+  recipesLink: "fldwub0ugkvMTHX2P",
+  category: "fldg5uYGPex1K3uJ9",
+  calories: "fldoXpPm8rZwPWxQY",
+  protein: "fldSWy4Feb88MMqxy",
+  carbs: "fldp7QNxNMpXzkBIU",
+  fat: "fldx8AY3eOHavt5r6",
+};
+
 async function createInAirtable(recipe, cloudinaryUrl, sourceUrl) {
-  const ingredientRecordIds = [];
-
-  if (recipe.ingredients?.length) {
-    console.log(`   Creating ${recipe.ingredients.length} ingredient records...`);
-    for (let i = 0; i < recipe.ingredients.length; i += 10) {
-      const batch = recipe.ingredients.slice(i, i + 10);
-      const records = await base(INGREDIENTS_TABLE).create(
-        batch.map((ing) => ({
-          fields: {
-            Name: ing.name,
-            "Recipe QTY": typeof ing.quantity === "number" ? ing.quantity : null,
-            ...(ing._mappedUnit && { Unit: ing._mappedUnit }),
-            Calories: typeof ing.estimatedCalories === "number" ? ing.estimatedCalories : null,
-          },
-        }))
-      );
-      ingredientRecordIds.push(...records.map((r) => r.id));
-    }
-  }
-
-  const fields = {
+  // First create the recipe record (so we have a record ID to link ingredients to)
+  const recipeFields = {
     "Recipe Name": recipe.name,
     Preparation: recipe.preparation,
     "Source URL": sourceUrl,
   };
 
-  // Only set fields that have valid values
-  if (typeof recipe.servings === "number") fields["Servings"] = recipe.servings;
-  if (typeof recipe.cookTime === "number") fields["Cook Time (Minutes)"] = recipe.cookTime;
-  if (typeof recipe.prepTime === "number") fields["Prep Time (Minutes)"] = recipe.prepTime;
-  if (recipe.cuisineTag && VALID_CUISINES.includes(recipe.cuisineTag)) fields["Cuisine Tag"] = recipe.cuisineTag;
-  if (recipe.dietaryTags?.length) fields["Dietary Tags"] = recipe.dietaryTags;
-  if (cloudinaryUrl) fields["Image URL"] = cloudinaryUrl;
-  if (ingredientRecordIds.length) fields["Ingredients"] = ingredientRecordIds;
+  if (typeof recipe.servings === "number") recipeFields["Servings"] = recipe.servings;
+  if (typeof recipe.cookTime === "number") recipeFields["Cook Time (Minutes)"] = recipe.cookTime;
+  if (typeof recipe.prepTime === "number") recipeFields["Prep Time (Minutes)"] = recipe.prepTime;
+  if (recipe.cuisineTag && VALID_CUISINES.includes(recipe.cuisineTag)) recipeFields["Cuisine Tag"] = recipe.cuisineTag;
+  if (recipe.dietaryTags?.length) recipeFields["Dietary Tags"] = recipe.dietaryTags;
+  if (cloudinaryUrl) recipeFields["Image URL"] = cloudinaryUrl;
 
-  const record = await base(RECIPES_TABLE).create(fields);
+  const recipeRecord = await base(RECIPES_TABLE).create(recipeFields);
+  const recipeId = recipeRecord.id;
+
+  // Now create ingredient records linked to the recipe via field ID
+  let ingredientCount = 0;
+  if (recipe.ingredients?.length) {
+    console.log(`   Creating ${recipe.ingredients.length} ingredient records...`);
+    for (let i = 0; i < recipe.ingredients.length; i += 10) {
+      const batch = recipe.ingredients.slice(i, i + 10);
+      await base(INGREDIENTS_TABLE).create(
+        batch.map((ing) => {
+          const fields = {
+            [ING_FIELDS.name]: ing.name,
+            [ING_FIELDS.recipesLink]: [recipeId],
+          };
+          if (typeof ing.quantity === "number") fields[ING_FIELDS.quantity] = ing.quantity;
+          if (ing._mappedUnit) fields[ING_FIELDS.unit] = ing._mappedUnit;
+          if (ing.category) fields[ING_FIELDS.category] = ing.category;
+          if (typeof ing.estimatedCalories === "number") fields[ING_FIELDS.calories] = ing.estimatedCalories;
+          if (typeof ing.estimatedProtein === "number") fields[ING_FIELDS.protein] = ing.estimatedProtein;
+          if (typeof ing.estimatedCarbs === "number") fields[ING_FIELDS.carbs] = ing.estimatedCarbs;
+          if (typeof ing.estimatedFat === "number") fields[ING_FIELDS.fat] = ing.estimatedFat;
+          return { fields };
+        }),
+        { typecast: true }
+      );
+      ingredientCount += batch.length;
+    }
+  }
+
+  // Total Calories and Calories Per Serving are computed fields in Airtable
+  // (auto-calculated from ingredient macros) — no update needed
 
   // VERIFY: read it back
-  const verify = await base(RECIPES_TABLE).find(record.id);
+  const verify = await base(RECIPES_TABLE).find(recipeId);
   const verifiedName = verify.get("Recipe Name");
   const verifiedImage = verify.get("Image URL");
   const verifiedServings = verify.get("Servings");
@@ -386,13 +418,13 @@ async function createInAirtable(recipe, cloudinaryUrl, sourceUrl) {
   }
 
   console.log(`✅ Step 7/7: Airtable record created and verified`);
-  console.log(`   ID: ${record.id}`);
+  console.log(`   ID: ${recipeId}`);
   console.log(`   Name: ${verifiedName}`);
   console.log(`   Image: ${verifiedImage ? "yes" : "no"}`);
   console.log(`   Servings: ${verifiedServings}`);
-  console.log(`   Ingredients: ${ingredientRecordIds.length}`);
+  console.log(`   Ingredients: ${ingredientCount} (with macros, linked via field ID)`);
 
-  return record;
+  return recipeRecord;
 }
 
 // ============================================================

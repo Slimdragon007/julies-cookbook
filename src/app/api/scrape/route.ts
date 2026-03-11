@@ -237,6 +237,7 @@ export async function POST(req: NextRequest) {
     $("script, style, nav, footer, header, aside").remove();
     const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 10000);
 
+    // Extract image URL with multiple fallbacks
     let imageUrl: string | null = null;
     if (jsonLd?.["image"]) {
       const img = jsonLd["image"];
@@ -246,6 +247,13 @@ export async function POST(req: NextRequest) {
     }
     if (!imageUrl) {
       imageUrl = $('meta[property="og:image"]').attr("content") || null;
+    }
+    if (!imageUrl) {
+      imageUrl = $('meta[name="twitter:image"]').attr("content") || null;
+    }
+    if (!imageUrl) {
+      const heroImg = $("article img, .recipe img, .post img, main img").first().attr("src");
+      if (heroImg) imageUrl = heroImg;
     }
 
     const source = jsonLd ? JSON.stringify(jsonLd, null, 2) : bodyText;
@@ -334,25 +342,31 @@ If you cannot extract a recipe, return {"name": null}.`,
       recipe.dietaryTags = recipe.dietaryTags.filter((t: string) => VALID_DIETARY.includes(t));
     }
 
-    // Step 6: Upload image to Cloudinary
+    // Step 6: Upload image to Cloudinary (with retry)
     let cloudinaryUrl: string | null = null;
     if (imageUrl && process.env.CLOUDINARY_CLOUD_NAME) {
       const publicId = recipe.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      try {
-        const { v2: cloudinary } = await import("cloudinary");
-        cloudinary.config({
-          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-          api_key: process.env.CLOUDINARY_API_KEY,
-          api_secret: process.env.CLOUDINARY_API_SECRET,
-        });
-        const result = await cloudinary.uploader.upload(imageUrl, {
-          folder: "julies-cookbook",
-          public_id: publicId,
-          overwrite: true,
-        });
-        cloudinaryUrl = result.secure_url;
-      } catch (imgErr) {
-        console.error("[scrape] Image upload failed:", imgErr);
+      const { v2: cloudinary } = await import("cloudinary");
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const result = await cloudinary.uploader.upload(imageUrl, {
+            folder: "julies-cookbook",
+            public_id: publicId,
+            overwrite: true,
+          });
+          cloudinaryUrl = result.secure_url;
+          break;
+        } catch (imgErr) {
+          console.error(`[scrape] Image upload attempt ${attempt + 1} failed:`, imgErr);
+        }
+      }
+      if (!cloudinaryUrl) {
+        console.error("[scrape] Image upload failed after 2 attempts for:", imageUrl);
       }
     }
 

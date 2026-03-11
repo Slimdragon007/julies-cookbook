@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ScrapeResult {
   recipe: {
@@ -22,13 +22,24 @@ const STEPS = [
   "Saving to cookbook...",
 ];
 
+const PW_KEY = "julies-cookbook-pw";
+
 export default function AddRecipeForm() {
   const [url, setUrl] = useState("");
   const [password, setPassword] = useState("");
+  const [savedPw, setSavedPw] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem(PW_KEY);
+    if (stored) {
+      setPassword(stored);
+      setSavedPw(true);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,8 +69,17 @@ export default function AddRecipeForm() {
       if (!res.ok) {
         setStatus("error");
         setError(data.error || "Something went wrong");
+        // If password was wrong, clear saved password
+        if (res.status === 401) {
+          localStorage.removeItem(PW_KEY);
+          setSavedPw(false);
+        }
         return;
       }
+
+      // Password worked — remember it
+      localStorage.setItem(PW_KEY, password.trim());
+      setSavedPw(true);
 
       setStatus("success");
       setResult(data);
@@ -89,19 +109,21 @@ export default function AddRecipeForm() {
 
       {status === "idle" || status === "error" ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="password" className="block font-body text-sm text-warm-dark mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
-            />
-          </div>
+          {!savedPw && (
+            <div>
+              <label htmlFor="password" className="block font-body text-sm text-warm-dark mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="url" className="block font-body text-sm text-warm-dark mb-1">

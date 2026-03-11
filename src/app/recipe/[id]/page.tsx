@@ -1,7 +1,7 @@
 import { getRecipeById, getAllRecipeIds } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import IngredientsSection from "@/components/IngredientsSection";
+import RecipeTabs from "@/components/RecipeTabs";
 
 export const revalidate = 60;
 
@@ -32,8 +32,9 @@ export default async function RecipePage({
         &larr; Back to recipes
       </Link>
 
+      {/* Hero image: 4:3 mobile, 16:9 desktop */}
       {recipe.imageUrl && (
-        <div className="rounded-xl overflow-hidden mb-8 aspect-[16/9]">
+        <div className="rounded-xl overflow-hidden mb-8 aspect-[4/3] md:aspect-[16/9]">
           <img
             src={recipe.imageUrl}
             alt={recipe.name}
@@ -46,24 +47,22 @@ export default async function RecipePage({
         {recipe.name}
       </h1>
 
-      <div className="flex flex-wrap gap-4 text-sm text-warm-light mb-6 font-body">
+      {/* Compact stats row with calorie badge */}
+      <div className="flex flex-wrap items-center gap-3 text-sm text-warm-light mb-4 font-body">
         {recipe.prepTime && <span>Prep: {recipe.prepTime} min</span>}
         {recipe.cookTime && <span>Cook: {recipe.cookTime} min</span>}
         {totalTime && <span>Total: {totalTime} min</span>}
         {recipe.servings && <span>Servings: {recipe.servings}</span>}
+        {recipe.caloriesPerServing && (
+          <span className="bg-linen rounded-full px-3 py-1 text-warm-dark font-display text-sm">
+            {Math.round(recipe.caloriesPerServing)} cal/serving
+          </span>
+        )}
       </div>
 
-      {recipe.caloriesPerServing && (
-        <div className="bg-linen rounded-lg px-5 py-4 mb-6 inline-block">
-          <span className="text-warm-dark font-display text-2xl">
-            {Math.round(recipe.caloriesPerServing)}
-          </span>
-          <span className="text-warm-light text-sm ml-2">calories per serving</span>
-        </div>
-      )}
-
-      {(recipe.cuisineTag || recipe.dietaryTags.length > 0) && (
-        <div className="flex flex-wrap gap-2 mb-8">
+      {/* Tags + Rating row */}
+      {(recipe.cuisineTag || recipe.dietaryTags.length > 0 || recipe.julieRating) && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           {recipe.cuisineTag && (
             <span className="bg-white border border-border text-warm text-xs px-3 py-1 rounded-full">
               {recipe.cuisineTag}
@@ -77,25 +76,25 @@ export default async function RecipePage({
               {tag}
             </span>
           ))}
+          {recipe.julieRating && (
+            <span className="ml-auto text-warm-light text-sm">
+              {"★".repeat(recipe.julieRating)}
+              {"☆".repeat(5 - recipe.julieRating)}
+            </span>
+          )}
         </div>
       )}
 
-      <IngredientsSection
+      {/* Tabbed content */}
+      <RecipeTabs
         ingredients={recipe.ingredients}
-        defaultServings={recipe.servings}
         preparation={recipe.preparation}
+        defaultServings={recipe.servings}
       />
 
-      {recipe.julieRating && (
-        <div className="mt-8 text-center text-warm-light text-sm">
-          Julie&apos;s Rating:{" "}
-          {"★".repeat(recipe.julieRating)}
-          {"☆".repeat(5 - recipe.julieRating)}
-        </div>
-      )}
-
+      {/* Source link */}
       {recipe.sourceUrl && (
-        <div className="mt-4 text-center">
+        <div className="mt-8 text-center">
           <a
             href={recipe.sourceUrl}
             target="_blank"

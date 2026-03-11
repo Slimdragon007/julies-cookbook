@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface ScrapeResult {
   recipe: {
@@ -22,35 +22,22 @@ const STEPS = [
   "Saving to cookbook...",
 ];
 
-const PW_KEY = "julies-cookbook-pw";
-
 export default function AddRecipeForm() {
   const [url, setUrl] = useState("");
-  const [password, setPassword] = useState("");
-  const [savedPw, setSavedPw] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const stored = localStorage.getItem(PW_KEY);
-    if (stored) {
-      setPassword(stored);
-      setSavedPw(true);
-    }
-  }, []);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim() || !password.trim()) return;
+    if (!url.trim()) return;
 
     setStatus("scraping");
     setStep(0);
     setError("");
     setResult(null);
 
-    // Simulate step progress (the API does it all at once, but this gives visual feedback)
     const interval = setInterval(() => {
       setStep((s) => Math.min(s + 1, STEPS.length - 1));
     }, 5000);
@@ -59,7 +46,7 @@ export default function AddRecipeForm() {
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), password: password.trim() }),
+        body: JSON.stringify({ url: url.trim() }),
       });
 
       clearInterval(interval);
@@ -69,17 +56,8 @@ export default function AddRecipeForm() {
       if (!res.ok) {
         setStatus("error");
         setError(data.error || "Something went wrong");
-        // If password was wrong, clear saved password
-        if (res.status === 401) {
-          localStorage.removeItem(PW_KEY);
-          setSavedPw(false);
-        }
         return;
       }
-
-      // Password worked — remember it
-      localStorage.setItem(PW_KEY, password.trim());
-      setSavedPw(true);
 
       setStatus("success");
       setResult(data);
@@ -109,22 +87,6 @@ export default function AddRecipeForm() {
 
       {status === "idle" || status === "error" ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!savedPw && (
-            <div>
-              <label htmlFor="password" className="block font-body text-sm text-warm-dark mb-1">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
-              />
-            </div>
-          )}
-
           <div>
             <label htmlFor="url" className="block font-body text-sm text-warm-dark mb-1">
               Recipe URL
@@ -148,7 +110,7 @@ export default function AddRecipeForm() {
 
           <button
             type="submit"
-            disabled={!url.trim() || !password.trim()}
+            disabled={!url.trim()}
             className="w-full font-display text-sm px-6 py-3 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-warm text-white hover:bg-warm-dark"
           >
             Add to Cookbook
@@ -156,14 +118,12 @@ export default function AddRecipeForm() {
         </form>
       ) : status === "scraping" ? (
         <div className="text-center py-12">
-          {/* Spinner */}
           <div className="w-12 h-12 border-4 border-linen border-t-warm rounded-full animate-spin mx-auto mb-6" />
 
           <p className="font-display text-lg text-warm-dark mb-4">
             {STEPS[step]}
           </p>
 
-          {/* Step indicators */}
           <div className="flex justify-center gap-2 mb-4">
             {STEPS.map((_, i) => (
               <div

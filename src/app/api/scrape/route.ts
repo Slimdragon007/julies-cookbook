@@ -195,11 +195,7 @@ const ING_FIELDS = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url, password } = await req.json();
-
-    if (password !== process.env.SCRAPE_PASSWORD) {
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
-    }
+    const { url } = await req.json();
 
     if (!url || typeof url !== "string" || !url.startsWith("http")) {
       return NextResponse.json({ error: "Valid URL required" }, { status: 400 });

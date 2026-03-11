@@ -20,6 +20,7 @@ export interface Ingredient {
   name: string;
   quantity: number | null;
   unit: string | null;
+  category: string | null;
   calories: number | null;
   protein: number | null;
   carbs: number | null;

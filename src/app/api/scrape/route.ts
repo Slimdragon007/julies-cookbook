@@ -195,70 +195,85 @@ const ING_FIELDS = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
+    const body = await req.json();
+    const { url, text: pastedText, sourceUrl: textSourceUrl } = body;
 
-    if (!url || typeof url !== "string" || !url.startsWith("http")) {
-      return NextResponse.json({ error: "Valid URL required" }, { status: 400 });
+    const isTextMode = typeof pastedText === "string" && pastedText.trim().length > 0;
+    const isUrlMode = typeof url === "string" && url.startsWith("http");
+
+    if (!isTextMode && !isUrlMode) {
+      return NextResponse.json({ error: "Provide a recipe URL or paste recipe text" }, { status: 400 });
     }
 
     const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
       .base(process.env.AIRTABLE_BASE_ID || "appzynj6dYXpWEoKi");
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // Step 1: Scrape
-    const pageRes = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-        Accept: "text/html,application/xhtml+xml",
-      },
-      redirect: "follow",
-    });
-
-    if (pageRes.status === 403) {
-      return NextResponse.json({ error: "Site blocked the scraper (403). Try the CLI with --file instead." }, { status: 422 });
-    }
-
-    const html = await pageRes.text();
-    const $ = cheerio.load(html);
-
-    let jsonLd: Record<string, unknown> | null = null;
-    $('script[type="application/ld+json"]').each((_, el) => {
-      try {
-        const data = JSON.parse($(el).html() || "");
-        const items = Array.isArray(data) ? data : data["@graph"] || [data];
-        for (const item of items) {
-          if (item["@type"] === "Recipe" || (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))) {
-            jsonLd = item;
-          }
-        }
-      } catch { /* ignore malformed JSON-LD */ }
-    });
-
-    $("script, style, nav, footer, header, aside").remove();
-    const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 10000);
-
-    // Extract image URL with multiple fallbacks
+    let source: string;
     let imageUrl: string | null = null;
-    if (jsonLd?.["image"]) {
-      const img = jsonLd["image"];
-      imageUrl = Array.isArray(img)
-        ? (typeof img[0] === "string" ? img[0] : (img[0] as Record<string, string>)?.url)
-        : (typeof img === "string" ? img : (img as Record<string, string>)?.url);
-    }
-    if (!imageUrl) {
-      imageUrl = $('meta[property="og:image"]').attr("content") || null;
-    }
-    if (!imageUrl) {
-      imageUrl = $('meta[name="twitter:image"]').attr("content") || null;
-    }
-    if (!imageUrl) {
-      const heroImg = $("article img, .recipe img, .post img, main img").first().attr("src");
-      if (heroImg) imageUrl = heroImg;
-    }
+    let finalSourceUrl: string;
 
-    const source = jsonLd ? JSON.stringify(jsonLd, null, 2) : bodyText;
-    if (!jsonLd && bodyText.length < 200) {
-      return NextResponse.json({ error: "Could not extract content from URL" }, { status: 422 });
+    if (isTextMode) {
+      // Text-paste mode: skip scraping, go straight to extraction
+      source = pastedText.trim().slice(0, 15000);
+      finalSourceUrl = textSourceUrl || "manual entry";
+    } else {
+      // URL mode: scrape the page
+      finalSourceUrl = url;
+
+      const pageRes = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+          Accept: "text/html,application/xhtml+xml",
+        },
+        redirect: "follow",
+      });
+
+      if (pageRes.status === 403) {
+        return NextResponse.json({ blocked: true, url }, { status: 422 });
+      }
+
+      const html = await pageRes.text();
+      const $ = cheerio.load(html);
+
+      let jsonLd: Record<string, unknown> | null = null;
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const data = JSON.parse($(el).html() || "");
+          const items = Array.isArray(data) ? data : data["@graph"] || [data];
+          for (const item of items) {
+            if (item["@type"] === "Recipe" || (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))) {
+              jsonLd = item;
+            }
+          }
+        } catch { /* ignore malformed JSON-LD */ }
+      });
+
+      $("script, style, nav, footer, header, aside").remove();
+      const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 10000);
+
+      // Extract image URL with multiple fallbacks
+      if (jsonLd?.["image"]) {
+        const img = jsonLd["image"];
+        imageUrl = Array.isArray(img)
+          ? (typeof img[0] === "string" ? img[0] : (img[0] as Record<string, string>)?.url)
+          : (typeof img === "string" ? img : (img as Record<string, string>)?.url);
+      }
+      if (!imageUrl) {
+        imageUrl = $('meta[property="og:image"]').attr("content") || null;
+      }
+      if (!imageUrl) {
+        imageUrl = $('meta[name="twitter:image"]').attr("content") || null;
+      }
+      if (!imageUrl) {
+        const heroImg = $("article img, .recipe img, .post img, main img").first().attr("src");
+        if (heroImg) imageUrl = heroImg;
+      }
+
+      source = jsonLd ? JSON.stringify(jsonLd, null, 2) : bodyText;
+      if (!jsonLd && bodyText.length < 200) {
+        return NextResponse.json({ error: "Could not extract content from URL" }, { status: 422 });
+      }
     }
 
     // Step 2: Extract with Claude
@@ -271,7 +286,7 @@ Each ingredient needs: name (lowercase, singular), quantity (number), unit (tsp/
 If you cannot extract a recipe, return {"name": null}.`,
       messages: [{
         role: "user",
-        content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${url}\n\nContent:\n${source}`,
+        content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${finalSourceUrl}\n\nContent:\n${source}`,
       }],
     });
 
@@ -374,7 +389,7 @@ If you cannot extract a recipe, return {"name": null}.`,
     const recipeFields: Record<string, unknown> = {
       "Recipe Name": recipe.name,
       Preparation: Array.isArray(recipe.preparation) ? recipe.preparation.join("\n") : recipe.preparation,
-      "Source URL": url,
+      "Source URL": finalSourceUrl,
     };
     if (typeof recipe.servings === "number") recipeFields["Servings"] = recipe.servings;
     if (typeof recipe.cookTime === "number") recipeFields["Cook Time (Minutes)"] = recipe.cookTime;

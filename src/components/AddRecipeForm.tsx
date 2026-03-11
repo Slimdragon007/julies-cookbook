@@ -13,23 +13,33 @@ interface ScrapeResult {
   };
 }
 
-type Status = "idle" | "scraping" | "success" | "error";
+type Status = "idle" | "scraping" | "success" | "error" | "blocked";
 
-const STEPS = [
+const URL_STEPS = [
   "Fetching recipe page...",
   "Extracting ingredients with AI...",
   "Uploading image...",
   "Saving to cookbook...",
 ];
 
+const TEXT_STEPS = [
+  "Reading your recipe...",
+  "Extracting ingredients with AI...",
+  "Saving to cookbook...",
+];
+
 export default function AddRecipeForm() {
   const [url, setUrl] = useState("");
+  const [pasteText, setPasteText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState("");
+  const [blockedUrl, setBlockedUrl] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  const steps = blockedUrl ? TEXT_STEPS : URL_STEPS;
+
+  async function handleUrlSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
 
@@ -39,7 +49,7 @@ export default function AddRecipeForm() {
     setResult(null);
 
     const interval = setInterval(() => {
-      setStep((s) => Math.min(s + 1, STEPS.length - 1));
+      setStep((s) => Math.min(s + 1, URL_STEPS.length - 1));
     }, 5000);
 
     try {
@@ -50,7 +60,50 @@ export default function AddRecipeForm() {
       });
 
       clearInterval(interval);
+      const data = await res.json();
 
+      if (data.blocked) {
+        setBlockedUrl(url.trim());
+        setStatus("blocked");
+        return;
+      }
+
+      if (!res.ok) {
+        setStatus("error");
+        setError(data.error || "Something went wrong");
+        return;
+      }
+
+      setStatus("success");
+      setResult(data);
+    } catch {
+      clearInterval(interval);
+      setStatus("error");
+      setError("Network error — check your connection");
+    }
+  }
+
+  async function handleTextSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pasteText.trim()) return;
+
+    setStatus("scraping");
+    setStep(0);
+    setError("");
+    setResult(null);
+
+    const interval = setInterval(() => {
+      setStep((s) => Math.min(s + 1, TEXT_STEPS.length - 1));
+    }, 5000);
+
+    try {
+      const res = await fetch("/api/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pasteText.trim(), sourceUrl: blockedUrl || undefined }),
+      });
+
+      clearInterval(interval);
       const data = await res.json();
 
       if (!res.ok) {
@@ -70,10 +123,12 @@ export default function AddRecipeForm() {
 
   function reset() {
     setUrl("");
+    setPasteText("");
     setStatus("idle");
     setStep(0);
     setResult(null);
     setError("");
+    setBlockedUrl("");
   }
 
   return (
@@ -86,7 +141,7 @@ export default function AddRecipeForm() {
       </div>
 
       {status === "idle" || status === "error" ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleUrlSubmit} className="space-y-4">
           <div>
             <label htmlFor="url" className="block font-body text-sm text-warm-dark mb-1">
               Recipe URL
@@ -116,16 +171,67 @@ export default function AddRecipeForm() {
             Add to Cookbook
           </button>
         </form>
+      ) : status === "blocked" ? (
+        <div>
+          <div className="bg-linen rounded-xl px-5 py-5 mb-5">
+            <p className="font-display text-lg text-warm-dark mb-2">
+              No worries! Just add it here
+            </p>
+            <p className="font-body text-sm text-warm-light">
+              That site didn&apos;t let us grab the recipe automatically.
+              Just copy the recipe from the page and paste it below — we&apos;ll take care of the rest.
+            </p>
+          </div>
+
+          <form onSubmit={handleTextSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="paste" className="block font-body text-sm text-warm-dark mb-1">
+                Recipe text
+              </label>
+              <textarea
+                id="paste"
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder={"Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"}
+                rows={8}
+                className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm resize-y min-h-[200px]"
+                required
+              />
+            </div>
+
+            {blockedUrl && (
+              <p className="font-body text-xs text-warm-light truncate">
+                Source: {blockedUrl}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={!pasteText.trim()}
+              className="w-full font-display text-sm px-6 py-3 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-warm text-white hover:bg-warm-dark"
+            >
+              Add to Cookbook
+            </button>
+
+            <button
+              type="button"
+              onClick={reset}
+              className="w-full font-display text-sm px-6 py-3 rounded-full border border-border text-warm hover:bg-linen transition-colors"
+            >
+              Try a Different URL
+            </button>
+          </form>
+        </div>
       ) : status === "scraping" ? (
         <div className="text-center py-12">
           <div className="w-12 h-12 border-4 border-linen border-t-warm rounded-full animate-spin mx-auto mb-6" />
 
           <p className="font-display text-lg text-warm-dark mb-4">
-            {STEPS[step]}
+            {steps[step]}
           </p>
 
           <div className="flex justify-center gap-2 mb-4">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <div
                 key={i}
                 className={`w-2 h-2 rounded-full transition-colors ${

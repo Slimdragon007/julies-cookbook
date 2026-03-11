@@ -351,8 +351,8 @@ If you cannot extract a recipe, return {"name": null}.`,
           overwrite: true,
         });
         cloudinaryUrl = result.secure_url;
-      } catch {
-        // Image upload failed, continue without image
+      } catch (imgErr) {
+        console.error("[scrape] Image upload failed:", imgErr);
       }
     }
 

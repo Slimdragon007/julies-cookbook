@@ -102,3 +102,90 @@ The "Recipe Names..." field in the UI has a different internal representation. U
 ## Notion
 - Project plan page: `31e16230-665c-8107-91e5-ee03d6cbd636`
 - Progress log: `31e16230-665c-8117-bf62-d04b14ed8c1e`
+
+
+## NEXT BUILD: Recipe Detail Tab Redesign (Approved March 10, 2026)
+
+### What
+Replace the single-scroll recipe detail page with a horizontal tabbed layout. Three tabs: Ingredients, Instructions, Nutrition. Only one section visible at a time. Mockup approved by Slim.
+
+### Why
+Current page forces Julie to scroll through 3+ screen lengths on mobile. Ingredients, preparation text, and nutrition table all stacked vertically. Hard to read (14px serif on mobile). Overwhelming.
+
+### Design Spec (from approved mockup)
+
+**Tab bar:**
+- Three horizontal tabs: Ingredients | Instructions | Nutrition
+- Sticky to top when scrolling past the title
+- Active tab: warm-dark text (#6B5740) + warm underline accent (#8B7355), 2.5px bottom border
+- Inactive tabs: warm-light text (#A89279), no underline
+- Font: Lora, 0.95rem, font-weight 500 (active: 600)
+
+**Typography changes (global):**
+- Ingredient names: text-sm (14px) -> text-base (16px)
+- Instruction steps: text-sm -> text-base, line-height 1.75
+- Nutrition table cells: keep text-sm but add more padding (0.65rem vertical)
+- Tab labels: text-base (0.95rem), font-medium
+
+**Layout changes:**
+- Hero image: aspect-[4/3] on mobile, aspect-[16/9] on md+ (was 16/9 everywhere)
+- Stats + calorie badge: consolidated into one flex row (was two separate blocks)
+- Tags + rating: sit between stats and tabs
+- Source link: stays at bottom, below tab content
+
+**Ingredients tab:**
+- Servings scaler (already built, moves here)
+- Ingredient list with qty/unit/name at 16px
+- Each item: flex row with 0.65rem vertical padding, border-bottom
+
+**Instructions tab:**
+- Numbered steps with circle badges (linen background, 2rem diameter)
+- Step text at 16px, line-height 1.75
+- Parse preparation text by splitting on newlines or numbered patterns
+- Each step: flex row with 1rem gap, 1.5rem bottom margin
+
+**Nutrition tab:**
+- Macro summary grid (4 columns: Calories, Protein, Carbs, Fat) in linen card
+- Per-ingredient breakdown table below
+
+### Component Refactor
+
+```
+DELETE: src/components/IngredientsSection.tsx (170 lines)
+
+CREATE:
+  src/components/RecipeTabs.tsx        <- Tab controller (client component, manages active tab state)
+  src/components/IngredientsTab.tsx    <- Ingredients list + servings scaler (client component for scaler)
+  src/components/InstructionsTab.tsx   <- Numbered preparation steps (can be server component)
+  src/components/NutritionTab.tsx      <- Macro totals + per-ingredient table (can be server component)
+```
+
+### page.tsx Changes (src/app/recipe/[id]/page.tsx)
+
+```
+BEFORE:
+  Hero -> Title -> Stats row -> Calorie badge -> Tags -> <IngredientsSection> -> Rating -> Source
+
+AFTER:
+  Hero (4:3 mobile / 16:9 desktop)
+  -> Title
+  -> Compact stats row (prep, cook, total, servings, calorie badge all in one flex row)
+  -> Tags + Rating row
+  -> <RecipeTabs ingredients={} preparation={} defaultServings={} />
+  -> Source link
+```
+
+### Tailwind Changes (tailwind.config.ts)
+No new colors or fonts needed. Existing Magnolia tokens work.
+
+### Test Checklist
+- [ ] Tabs switch correctly on tap (mobile) and click (desktop)
+- [ ] Sticky tab bar works when scrolling past title
+- [ ] Servings scaler still works in Ingredients tab
+- [ ] Instructions are numbered with circle badges
+- [ ] Nutrition table renders correctly with scaled values
+- [ ] Body text is 16px and readable on iPhone
+- [ ] Hero is 4:3 on mobile, 16:9 on desktop
+- [ ] All 16 recipes render without errors
+- [ ] Chat FAB still visible and functional
+- [ ] Vercel build passes (no TS errors, no ESLint errors)

@@ -47,6 +47,9 @@ export default function RootLayout({
               <a href="/grocery-list" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
                 Grocery List
               </a>
+              <a href="/add-recipe" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
+                Add Recipe
+              </a>
             </nav>
           </div>
         </header>

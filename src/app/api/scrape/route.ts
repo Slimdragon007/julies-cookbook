@@ -363,7 +363,7 @@ If you cannot extract a recipe, return {"name": null}.`,
     // Step 7: Create Airtable records
     const recipeFields: Record<string, unknown> = {
       "Recipe Name": recipe.name,
-      Preparation: recipe.preparation,
+      Preparation: Array.isArray(recipe.preparation) ? recipe.preparation.join("\n") : recipe.preparation,
       "Source URL": url,
     };
     if (typeof recipe.servings === "number") recipeFields["Servings"] = recipe.servings;

@@ -90,6 +90,7 @@ export default async function RecipePage({
         ingredients={recipe.ingredients}
         preparation={recipe.preparation}
         defaultServings={recipe.servings}
+        totalBatchWeightG={recipe.totalBatchWeightG}
       />
 
       {/* Source link */}

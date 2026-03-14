@@ -1,168 +1,151 @@
-import Airtable from "airtable";
+import { supabase } from "./supabase";
 import { Recipe, Ingredient } from "./types";
 
-const base = new Airtable({
-  apiKey: process.env.AIRTABLE_API_KEY,
-}).base(process.env.AIRTABLE_BASE_ID || "appzynj6dYXpWEoKi");
+interface SupabaseRecipe {
+  id: string;
+  slug: string;
+  name: string;
+  preparation: string | null;
+  servings: number | null;
+  cook_time_minutes: number | null;
+  prep_time_minutes: number | null;
+  source_url: string | null;
+  cuisine_tag: string | null;
+  dietary_tags: string[] | null;
+  julie_rating: number | null;
+  image_url: string | null;
+  manual_calorie_override: number | null;
+  total_batch_weight_g: number | null;
+}
 
-const RECIPES_TABLE = "tblcDuujfu1rokjSU";
-const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
+interface SupabaseIngredient {
+  id: string;
+  recipe_id: string;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  category: string | null;
+  calories: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+}
 
-// Ingredient field IDs (stable even if field names change in Airtable)
-const ING_FIELDS = {
-  name: "fld39u3mmhVCvMG1O",
-  quantity: "fldQBvNRyFEKNB9eV",
-  unit: "fldhovLVfCHfba1nM",
-  category: "fldg5uYGPex1K3uJ9",
-  calories: "fldoXpPm8rZwPWxQY",
-  protein: "fldSWy4Feb88MMqxy",
-  carbs: "fldp7QNxNMpXzkBIU",
-  fat: "fldx8AY3eOHavt5r6",
-} as const;
-
-function parseIngredient(fields: Record<string, unknown>, id: string): Ingredient {
+function mapIngredient(row: SupabaseIngredient): Ingredient {
   return {
-    id,
-    name: (fields[ING_FIELDS.name] as string) || "",
-    quantity: (fields[ING_FIELDS.quantity] as number) ?? null,
-    unit: (fields[ING_FIELDS.unit] as string) ?? null,
-    category: (fields[ING_FIELDS.category] as string) ?? null,
-    calories: (fields[ING_FIELDS.calories] as number) ?? null,
-    protein: (fields[ING_FIELDS.protein] as number) ?? null,
-    carbs: (fields[ING_FIELDS.carbs] as number) ?? null,
-    fat: (fields[ING_FIELDS.fat] as number) ?? null,
+    id: row.id,
+    name: row.name,
+    quantity: row.quantity,
+    unit: row.unit,
+    category: row.category,
+    calories: row.calories,
+    protein: row.protein_g,
+    carbs: row.carbs_g,
+    fat: row.fat_g,
   };
 }
 
-/**
- * Extract the recipe record IDs that an ingredient is linked to.
- * The Ingredients table has a linked record field pointing to Recipes
- * (shown as "Recipe Names..." in Airtable). We auto-detect this field
- * by scanning for arrays of record IDs.
- */
-function extractRecipeIds(fields: Record<string, unknown>): string[] {
-  for (const [key, value] of Object.entries(fields)) {
-    // Skip known ingredient fields
-    if ((Object.values(ING_FIELDS) as string[]).includes(key)) continue;
+function mapRecipe(row: SupabaseRecipe, ingredients: Ingredient[] = []): Recipe {
+  const totals = ingredients.reduce(
+    (acc, ing) => ({
+      cal: acc.cal + (ing.calories ?? 0),
+      protein: acc.protein + (ing.protein ?? 0),
+      carbs: acc.carbs + (ing.carbs ?? 0),
+      fat: acc.fat + (ing.fat ?? 0),
+    }),
+    { cal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
 
-    if (
-      Array.isArray(value) &&
-      value.length > 0 &&
-      typeof value[0] === "string" &&
-      (value[0] as string).startsWith("rec")
-    ) {
-      return value as string[];
-    }
-  }
-  return [];
-}
+  const servings = row.servings || 1;
+  const totalCalories = row.manual_calorie_override ?? totals.cal;
+  const caloriesPerServing = Math.round(totalCalories / servings);
 
-/**
- * Fetch all ingredients and group them by recipe record ID.
- * The link goes Ingredients → Recipes (not Recipes → Ingredients).
- */
-async function fetchAllIngredientsByRecipe(): Promise<Map<string, Ingredient[]>> {
-  const records = await base(INGREDIENTS_TABLE)
-    .select({ returnFieldsByFieldId: true })
-    .all();
-
-  const byRecipe = new Map<string, Ingredient[]>();
-
-  for (const record of records) {
-    const ingredient = parseIngredient(record.fields, record.id);
-    const recipeIds = extractRecipeIds(record.fields);
-
-    for (const recipeId of recipeIds) {
-      const list = byRecipe.get(recipeId) || [];
-      list.push(ingredient);
-      byRecipe.set(recipeId, list);
-    }
-  }
-
-  return byRecipe;
-}
-
-/**
- * Fetch ingredients for a single recipe by querying the Ingredients table.
- */
-async function fetchIngredientsForRecipe(recipeId: string): Promise<Ingredient[]> {
-  // Fetch all ingredients that link to this recipe
-  // We use returnFieldsByFieldId and then filter client-side
-  const records = await base(INGREDIENTS_TABLE)
-    .select({ returnFieldsByFieldId: true })
-    .all();
-
-  const ingredients: Ingredient[] = [];
-  for (const record of records) {
-    const recipeIds = extractRecipeIds(record.fields);
-    if (recipeIds.includes(recipeId)) {
-      ingredients.push(parseIngredient(record.fields, record.id));
-    }
-  }
-
-  return ingredients;
-}
-
-function parseRecipe(
-  record: Airtable.Record<Airtable.FieldSet>,
-  ingredients: Ingredient[] = []
-): Recipe {
   return {
-    id: record.id,
-    name: (record.get("Recipe Name") as string) || "",
-    imageUrl: (record.get("Image URL") as string) || null,
-    preparation: (record.get("Preparation") as string) || "",
-    servings: (record.get("Servings") as number) || null,
-    cookTime: (record.get("Cook Time (Minutes)") as number) || null,
-    prepTime: (record.get("Prep Time (Minutes)") as number) || null,
-    sourceUrl: (record.get("Source URL") as string) || null,
-    cuisineTag: (record.get("Cuisine Tag") as string) || null,
-    dietaryTags: (record.get("Dietary Tags") as string[]) || [],
-    julieRating: (record.get("Julie Rating") as number) || null,
-    caloriesPerServing: (record.get("Calories Per Serving") as number) || null,
-    totalCalories: (record.get("Total Calories") as number) || null,
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    imageUrl: row.image_url,
+    preparation: row.preparation || "",
+    servings: row.servings,
+    cookTime: row.cook_time_minutes,
+    prepTime: row.prep_time_minutes,
+    sourceUrl: row.source_url,
+    cuisineTag: row.cuisine_tag,
+    dietaryTags: row.dietary_tags || [],
+    julieRating: row.julie_rating,
+    caloriesPerServing,
+    totalCalories,
+    manualCalorieOverride: row.manual_calorie_override,
+    totalBatchWeightG: row.total_batch_weight_g,
     ingredients,
   };
 }
 
 export async function getAllRecipes(includeIngredients = false): Promise<Recipe[]> {
-  const records = await base(RECIPES_TABLE).select().all();
+  const { data: recipes, error } = await supabase
+    .from("recipes")
+    .select("*")
+    .order("name");
+
+  if (error) throw new Error(`Failed to fetch recipes: ${error.message}`);
+  if (!recipes) return [];
 
   if (!includeIngredients) {
-    return records.map((record) => parseRecipe(record));
+    return recipes.map((r: SupabaseRecipe) => mapRecipe(r));
   }
 
-  // Fetch all ingredients in one batch and group by recipe
-  const ingredientsByRecipe = await fetchAllIngredientsByRecipe();
+  const { data: allIngredients, error: ingError } = await supabase
+    .from("ingredients")
+    .select("*");
 
-  return records.map((record) => {
-    const ingredients = ingredientsByRecipe.get(record.id) || [];
-    return parseRecipe(record, ingredients);
+  if (ingError) throw new Error(`Failed to fetch ingredients: ${ingError.message}`);
+
+  const ingredientsByRecipe = new Map<string, Ingredient[]>();
+  for (const row of allIngredients || []) {
+    const ing = mapIngredient(row as SupabaseIngredient);
+    const list = ingredientsByRecipe.get(row.recipe_id) || [];
+    list.push(ing);
+    ingredientsByRecipe.set(row.recipe_id, list);
+  }
+
+  return recipes.map((r: SupabaseRecipe) => {
+    const ingredients = ingredientsByRecipe.get(r.id) || [];
+    return mapRecipe(r, ingredients);
   });
 }
 
-export async function getRecipeById(id: string): Promise<Recipe | null> {
-  try {
-    const record = await base(RECIPES_TABLE).find(id);
+export async function getRecipeById(idOrSlug: string): Promise<Recipe | null> {
+  // Try by slug first, then by UUID
+  let { data: recipe, error } = await supabase.from("recipes").select("*").eq("slug", idOrSlug).single();
 
-    let ingredients: Ingredient[] = [];
-    try {
-      ingredients = await fetchIngredientsForRecipe(id);
-    } catch (err) {
-      console.error(`[data] Failed to fetch ingredients for recipe ${id}:`, err);
-    }
-
-    return parseRecipe(record, ingredients);
-  } catch {
-    return null;
+  if (error || !recipe) {
+    // Fallback: try by UUID (for backwards compat)
+    const result = await supabase.from("recipes").select("*").eq("id", idOrSlug).single();
+    recipe = result.data;
+    error = result.error;
   }
+
+  if (error || !recipe) return null;
+
+  const { data: ingredients } = await supabase
+    .from("ingredients")
+    .select("*")
+    .eq("recipe_id", recipe.id);
+
+  const mappedIngredients = (ingredients || []).map((row: SupabaseIngredient) =>
+    mapIngredient(row)
+  );
+
+  return mapRecipe(recipe as SupabaseRecipe, mappedIngredients);
 }
 
 export async function getAllRecipeIds(): Promise<string[]> {
-  const records = await base(RECIPES_TABLE)
-    .select({ fields: ["Recipe Name"] })
-    .all();
-  return records.map((r) => r.id);
+  const { data, error } = await supabase
+    .from("recipes")
+    .select("slug");
+
+  if (error) throw new Error(`Failed to fetch recipe slugs: ${error.message}`);
+  return (data || []).map((r: { slug: string }) => r.slug);
 }
 
 export async function getRecipeContext(): Promise<string> {

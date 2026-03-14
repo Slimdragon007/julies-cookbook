@@ -1,39 +1,43 @@
-import Airtable from "airtable";
+import { createClient } from "@supabase/supabase-js";
 
-const base = new Airtable({
-  apiKey: process.env.AIRTABLE_API_KEY,
-}).base(process.env.AIRTABLE_BASE_ID || "appzynj6dYXpWEoKi");
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-// --- Audit 1: Cloudinary Images ---
-console.log("AUDIT 1: CLOUDINARY IMAGES");
-console.log("==========================");
+// --- Audit 1: Supabase Recipes + Cloudinary Images ---
+console.log("AUDIT 1: SUPABASE RECIPES + CLOUDINARY IMAGES");
+console.log("==============================================");
 
-const records = await base("tblcDuujfu1rokjSU")
-  .select({ fields: ["Recipe Name", "Image URL"] })
-  .all();
+const { data: recipes, error: recipeError } = await supabase
+  .from("recipes")
+  .select("id, slug, name, image_url, servings, source_url");
+
+if (recipeError) {
+  console.error(`FAIL: Could not fetch recipes: ${recipeError.message}`);
+  process.exit(1);
+}
 
 let imgPass = 0;
 let imgFail = 0;
 
-for (const r of records) {
-  const name = r.get("Recipe Name");
-  const url = r.get("Image URL");
-  if (!url) {
-    console.log(`  ❌ ${name} — no URL`);
+for (const r of recipes) {
+  if (!r.image_url) {
+    console.log(`  FAIL ${r.name} — no URL`);
     imgFail++;
     continue;
   }
   try {
-    const res = await fetch(url, { method: "HEAD" });
+    const res = await fetch(r.image_url, { method: "HEAD" });
     if (res.ok) {
-      console.log(`  ✅ ${name} — ${res.status}`);
+      console.log(`  OK ${r.name} — ${res.status}`);
       imgPass++;
     } else {
-      console.log(`  ❌ ${name} — HTTP ${res.status}`);
+      console.log(`  FAIL ${r.name} — HTTP ${res.status}`);
       imgFail++;
     }
   } catch (e) {
-    console.log(`  ❌ ${name} — ${e.message}`);
+    console.log(`  FAIL ${r.name} — ${e.message}`);
     imgFail++;
   }
 }
@@ -50,10 +54,12 @@ const siteHtml = await siteRes.text();
 const recipeCount = (siteHtml.match(/\/recipe\//g) || []).length;
 console.log(`  Recipe links found in HTML: ${recipeCount}`);
 
-// Check a recipe detail page
-const firstRecordId = records[0].id;
-const detailRes = await fetch(`https://julies-cookbook.vercel.app/recipe/${firstRecordId}`);
-console.log(`  Detail page (${records[0].get("Recipe Name")}): ${detailRes.status} ${detailRes.statusText}`);
+// Check a recipe detail page using slug
+if (recipes.length > 0) {
+  const firstSlug = recipes[0].slug;
+  const detailRes = await fetch(`https://julies-cookbook.vercel.app/recipe/${firstSlug}`);
+  console.log(`  Detail page (${recipes[0].name}): ${detailRes.status} ${detailRes.statusText}`);
+}
 
 console.log("");
 
@@ -74,9 +80,9 @@ const chatData = await chatRes.json();
 console.log(`  Status: ${chatRes.status}`);
 if (chatData.response) {
   console.log(`  Response: "${chatData.response.slice(0, 150)}..."`);
-  console.log(`  ✅ Chat API working`);
+  console.log(`  OK Chat API working`);
 } else {
-  console.log(`  ❌ Chat API error: ${JSON.stringify(chatData)}`);
+  console.log(`  FAIL Chat API error: ${JSON.stringify(chatData)}`);
 }
 
 console.log("");
@@ -85,15 +91,47 @@ console.log("");
 console.log("AUDIT 4: INGREDIENTS TABLE");
 console.log("==========================");
 
-const ingredients = await base("tblbly81hGxUaEgM2")
-  .select({ fields: ["Name", "Calories"] })
-  .all();
+const { data: ingredients, error: ingError } = await supabase
+  .from("ingredients")
+  .select("id, recipe_id, name, calories");
 
-const withCal = ingredients.filter((r) => r.get("Calories"));
+if (ingError) {
+  console.error(`FAIL: Could not fetch ingredients: ${ingError.message}`);
+  process.exit(1);
+}
+
+const recipeIds = new Set(recipes.map((r) => r.id));
+const withCal = ingredients.filter((r) => r.calories && r.calories > 0);
+const orphans = ingredients.filter((r) => !recipeIds.has(r.recipe_id));
 console.log(`  Total ingredients: ${ingredients.length}`);
 console.log(`  With calories: ${withCal.length}`);
-const orphans = ingredients.filter((r) => !r.get("Name") || r.get("Name").trim() === "");
-console.log(`  Orphan/empty records: ${orphans.length}`);
+console.log(`  Orphan records: ${orphans.length}`);
+
+// Group by recipe for per-recipe counts
+const byRecipe = new Map();
+for (const ing of ingredients) {
+  const list = byRecipe.get(ing.recipe_id) || [];
+  list.push(ing);
+  byRecipe.set(ing.recipe_id, list);
+}
+
+const recipesWithoutIngredients = recipes.filter((r) => !byRecipe.has(r.id));
+if (recipesWithoutIngredients.length > 0) {
+  console.log(`  Recipes without ingredients: ${recipesWithoutIngredients.length}`);
+  for (const r of recipesWithoutIngredients) {
+    console.log(`    - ${r.name}`);
+  }
+}
+
+// --- Audit 5: Food Log ---
+console.log("\nAUDIT 5: FOOD LOG");
+console.log("=================");
+
+const { count: logCount } = await supabase
+  .from("food_log")
+  .select("id", { count: "exact", head: true });
+
+console.log(`  Food log entries: ${logCount || 0}`);
 
 console.log("");
 
@@ -101,11 +139,9 @@ console.log("");
 console.log("==================");
 console.log("FULL AUDIT SUMMARY");
 console.log("==================");
-console.log(`  Recipes:      ${records.length} (all with images: ${imgFail === 0 ? "✅" : "❌"})`);
-console.log(`  Images:       ${imgPass}/${records.length} accessible on CDN`);
-console.log(`  Live site:    ${siteRes.status === 200 ? "✅" : "❌"} (${siteRes.status})`);
-console.log(`  Detail pages: ${detailRes.status === 200 ? "✅" : "❌"} (${detailRes.status})`);
-console.log(`  Chat API:     ${chatData.response ? "✅" : "❌"}`);
+console.log(`  Recipes:      ${recipes.length} (all with images: ${imgFail === 0 ? "YES" : "NO"})`);
+console.log(`  Images:       ${imgPass}/${recipes.length} accessible on CDN`);
+console.log(`  Live site:    ${siteRes.status === 200 ? "OK" : "FAIL"} (${siteRes.status})`);
 console.log(`  Ingredients:  ${ingredients.length} records, ${orphans.length} orphans`);
-console.log(`  Duplicates:   none`);
-console.log(`  Git:          main branch, synced with origin`);
+console.log(`  Food log:     ${logCount || 0} entries`);
+console.log(`  Data source:  Supabase`);

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import Airtable, { FieldSet } from "airtable";
+import { supabase } from "@/lib/supabase";
 import * as cheerio from "cheerio";
 import Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 60;
-
-const RECIPES_TABLE = "tblcDuujfu1rokjSU";
-const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
 
 const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
 const VALID_DIETARY = ["Vegetarian", "Gluten-Free", "Dairy-Free", "High Protein", "Comfort Food"];
@@ -181,17 +178,12 @@ interface NormalizedIngredient {
   fat: number;
 }
 
-const ING_FIELDS = {
-  name: "fld39u3mmhVCvMG1O",
-  quantity: "fldQBvNRyFEKNB9eV",
-  unit: "fldhovLVfCHfba1nM",
-  recipesLink: "fldwub0ugkvMTHX2P",
-  category: "fldg5uYGPex1K3uJ9",
-  calories: "fldoXpPm8rZwPWxQY",
-  protein: "fldSWy4Feb88MMqxy",
-  carbs: "fldp7QNxNMpXzkBIU",
-  fat: "fldx8AY3eOHavt5r6",
-};
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -205,8 +197,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Provide a recipe URL or paste recipe text" }, { status: 400 });
     }
 
-    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
-      .base(process.env.AIRTABLE_BASE_ID || "appzynj6dYXpWEoKi");
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     let source: string;
@@ -305,11 +295,23 @@ If you cannot extract a recipe, return {"name": null}.`,
       return NextResponse.json({ error: "Could not identify a recipe from that URL" }, { status: 422 });
     }
 
-    // Step 3: Duplicate check
-    const dupeRecords = await base(RECIPES_TABLE)
-      .select({ fields: ["Recipe Name"], filterByFormula: `{Recipe Name} = '${recipe.name.replace(/'/g, "\\'")}'` })
-      .all();
-    if (dupeRecords.length > 0) {
+    // Step 3: Duplicate check (by source URL and name)
+    if (finalSourceUrl !== "manual entry") {
+      const { data: urlDupes } = await supabase
+        .from("recipes")
+        .select("id, name")
+        .eq("source_url", finalSourceUrl)
+        .limit(1);
+      if (urlDupes && urlDupes.length > 0) {
+        return NextResponse.json({ error: `"${urlDupes[0].name}" already exists in the cookbook (same URL)` }, { status: 409 });
+      }
+    }
+    const { data: nameDupes } = await supabase
+      .from("recipes")
+      .select("id")
+      .eq("name", recipe.name)
+      .limit(1);
+    if (nameDupes && nameDupes.length > 0) {
       return NextResponse.json({ error: `"${recipe.name}" already exists in the cookbook` }, { status: 409 });
     }
 
@@ -385,47 +387,59 @@ If you cannot extract a recipe, return {"name": null}.`,
       }
     }
 
-    // Step 7: Create Airtable records
-    const recipeFields: Record<string, unknown> = {
-      "Recipe Name": recipe.name,
-      Preparation: Array.isArray(recipe.preparation) ? recipe.preparation.join("\n") : recipe.preparation,
-      "Source URL": finalSourceUrl,
-    };
-    if (typeof recipe.servings === "number") recipeFields["Servings"] = recipe.servings;
-    if (typeof recipe.cookTime === "number") recipeFields["Cook Time (Minutes)"] = recipe.cookTime;
-    if (typeof recipe.prepTime === "number") recipeFields["Prep Time (Minutes)"] = recipe.prepTime;
-    if (recipe.cuisineTag) recipeFields["Cuisine Tag"] = recipe.cuisineTag;
-    if (recipe.dietaryTags?.length) recipeFields["Dietary Tags"] = recipe.dietaryTags;
-    if (cloudinaryUrl) recipeFields["Image URL"] = cloudinaryUrl;
+    // Step 7: Create Supabase records
+    const slug = slugify(recipe.name);
+    const { data: recipeRecord, error: recipeError } = await supabase
+      .from("recipes")
+      .insert({
+        slug,
+        name: recipe.name,
+        preparation: Array.isArray(recipe.preparation) ? recipe.preparation.join("\n") : recipe.preparation,
+        source_url: finalSourceUrl,
+        servings: typeof recipe.servings === "number" ? recipe.servings : null,
+        cook_time_minutes: typeof recipe.cookTime === "number" ? recipe.cookTime : null,
+        prep_time_minutes: typeof recipe.prepTime === "number" ? recipe.prepTime : null,
+        cuisine_tag: recipe.cuisineTag || null,
+        dietary_tags: recipe.dietaryTags?.length ? recipe.dietaryTags : [],
+        image_url: cloudinaryUrl || null,
+      })
+      .select("id, slug")
+      .single();
 
-    const recipeRecord = await base(RECIPES_TABLE).create(recipeFields as Partial<FieldSet>);
+    if (recipeError) {
+      return NextResponse.json({ error: `Failed to save recipe: ${recipeError.message}` }, { status: 500 });
+    }
+
     const recipeId = recipeRecord.id;
 
-    // Create ingredients in batches of 10
-    for (let i = 0; i < ingredients.length; i += 10) {
-      const batch = ingredients.slice(i, i + 10);
-      await base(INGREDIENTS_TABLE).create(
-        batch.map((ing) => ({
-          fields: {
-            [ING_FIELDS.name]: ing.name,
-            [ING_FIELDS.quantity]: ing.quantity,
-            [ING_FIELDS.unit]: ing.unit,
-            [ING_FIELDS.recipesLink]: [recipeId],
-            [ING_FIELDS.category]: ing.category,
-            [ING_FIELDS.calories]: ing.cal,
-            [ING_FIELDS.protein]: ing.pro,
-            [ING_FIELDS.carbs]: ing.carb,
-            [ING_FIELDS.fat]: ing.fat,
-          },
-        })),
-        { typecast: true }
-      );
+    // Create ingredient records
+    if (ingredients.length > 0) {
+      const { error: ingError } = await supabase
+        .from("ingredients")
+        .insert(
+          ingredients.map((ing) => ({
+            recipe_id: recipeId,
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            category: ing.category,
+            calories: ing.cal,
+            protein_g: ing.pro,
+            carbs_g: ing.carb,
+            fat_g: ing.fat,
+          }))
+        );
+
+      if (ingError) {
+        console.error("[scrape] Ingredient save error:", ingError);
+      }
     }
 
     return NextResponse.json({
       success: true,
       recipe: {
         id: recipeId,
+        slug: recipeRecord.slug,
         name: recipe.name,
         servings: recipe.servings,
         ingredientCount: ingredients.length,

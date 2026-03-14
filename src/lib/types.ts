@@ -1,5 +1,6 @@
 export interface Recipe {
   id: string;
+  slug: string;
   name: string;
   imageUrl: string | null;
   preparation: string;
@@ -12,6 +13,8 @@ export interface Recipe {
   julieRating: number | null;
   caloriesPerServing: number | null;
   totalCalories: number | null;
+  manualCalorieOverride: number | null;
+  totalBatchWeightG: number | null;
   ingredients: Ingredient[];
 }
 

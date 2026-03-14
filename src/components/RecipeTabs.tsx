@@ -18,9 +18,10 @@ interface Props {
   ingredients: Ingredient[];
   preparation: string;
   defaultServings: number | null;
+  totalBatchWeightG: number | null;
 }
 
-export default function RecipeTabs({ ingredients, preparation, defaultServings }: Props) {
+export default function RecipeTabs({ ingredients, preparation, defaultServings, totalBatchWeightG }: Props) {
   const [activeTab, setActiveTab] = useState<TabName>("ingredients");
   const baseServings = defaultServings || 1;
   const [servings, setServings] = useState(baseServings);
@@ -43,7 +44,7 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings }
             >
               {label}
               {activeTab === key && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-warm" />
+                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-gold" />
               )}
             </button>
           ))}
@@ -67,6 +68,7 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings }
           ingredients={ingredients}
           scale={scale}
           servings={servings}
+          totalBatchWeightG={totalBatchWeightG}
         />
       )}
     </div>

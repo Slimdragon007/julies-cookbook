@@ -15,6 +15,7 @@ const config: Config = {
         "warm-light": "#A89279",
         "warm-dark": "#6B5740",
         border: "#E5DDD3",
+        gold: "#C4952E",
       },
       fontFamily: {
         display: ["Playfair Display", "serif"],

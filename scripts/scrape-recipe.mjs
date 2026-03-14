@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import Airtable from "airtable";
+import { createClient } from "@supabase/supabase-js";
 import * as cheerio from "cheerio";
 import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync } from "fs";
@@ -13,16 +13,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const base = new Airtable({
-  apiKey: process.env.AIRTABLE_API_KEY,
-}).base(process.env.AIRTABLE_BASE_ID || "appzynj6dYXpWEoKi");
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
-
-const RECIPES_TABLE = "tblcDuujfu1rokjSU";
-const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
 
 // Exact Airtable select options
 const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
@@ -272,7 +270,8 @@ function estimateMacros(name, qty, unit) {
 // ============================================================
 function validateEnv() {
   const required = [
-    "AIRTABLE_API_KEY",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
     "ANTHROPIC_API_KEY",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
@@ -289,16 +288,36 @@ function validateEnv() {
 // ============================================================
 // STEP 2: CHECK FOR DUPLICATES
 // ============================================================
-async function checkForDuplicate(recipeName) {
-  const records = await base(RECIPES_TABLE)
-    .select({
-      fields: ["Recipe Name"],
-      filterByFormula: `{Recipe Name} = '${recipeName.replace(/'/g, "\\'")}'`,
-    })
-    .all();
+function slugify(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
-  if (records.length > 0) {
-    console.error(`DUPLICATE CHECK FAILED: "${recipeName}" already exists in Airtable (${records[0].id})`);
+async function checkForDuplicate(recipeName, sourceUrl) {
+  // Check by source_url first (most reliable), then by name
+  if (sourceUrl && sourceUrl !== "manual entry") {
+    const { data } = await supabase
+      .from("recipes")
+      .select("id, name")
+      .eq("source_url", sourceUrl)
+      .limit(1);
+    if (data && data.length > 0) {
+      console.error(`DUPLICATE CHECK FAILED: source URL already exists for "${data[0].name}" (${data[0].id})`);
+      console.error("   Use --force to add anyway, or update the existing record manually.");
+      return true;
+    }
+  }
+
+  const { data } = await supabase
+    .from("recipes")
+    .select("id")
+    .eq("name", recipeName)
+    .limit(1);
+
+  if (data && data.length > 0) {
+    console.error(`DUPLICATE CHECK FAILED: "${recipeName}" already exists in Supabase (${data[0].id})`);
     console.error("   Use --force to add anyway, or update the existing record manually.");
     return true;
   }
@@ -668,78 +687,70 @@ async function uploadImage(imageUrl, recipeName) {
 }
 
 // ============================================================
-// STEP 7: CREATE AIRTABLE RECORDS (Data Contract enforced)
+// STEP 7: SAVE TO SUPABASE (Data Contract enforced)
 // ============================================================
-const ING_FIELDS = {
-  name: "fld39u3mmhVCvMG1O",
-  quantity: "fldQBvNRyFEKNB9eV",
-  unit: "fldhovLVfCHfba1nM",
-  recipesLink: "fldwub0ugkvMTHX2P",
-  category: "fldg5uYGPex1K3uJ9",
-  calories: "fldoXpPm8rZwPWxQY",
-  protein: "fldSWy4Feb88MMqxy",
-  carbs: "fldp7QNxNMpXzkBIU",
-  fat: "fldx8AY3eOHavt5r6",
-};
+async function saveToSupabase(recipe, cloudinaryUrl, sourceUrl) {
+  const slug = slugify(recipe.name);
 
-async function createInAirtable(recipe, cloudinaryUrl, sourceUrl) {
-  const recipeFields = {
-    "Recipe Name": recipe.name,
-    Preparation: recipe.preparation,
-    "Source URL": sourceUrl,
+  const recipeData = {
+    slug,
+    name: recipe.name,
+    preparation: recipe.preparation,
+    source_url: sourceUrl,
+    servings: typeof recipe.servings === "number" ? recipe.servings : null,
+    cook_time_minutes: typeof recipe.cookTime === "number" ? recipe.cookTime : null,
+    prep_time_minutes: typeof recipe.prepTime === "number" ? recipe.prepTime : null,
+    cuisine_tag: recipe.cuisineTag && VALID_CUISINES.includes(recipe.cuisineTag) ? recipe.cuisineTag : null,
+    dietary_tags: recipe.dietaryTags?.length ? recipe.dietaryTags : [],
+    image_url: cloudinaryUrl || null,
   };
 
-  if (typeof recipe.servings === "number") recipeFields["Servings"] = recipe.servings;
-  if (typeof recipe.cookTime === "number") recipeFields["Cook Time (Minutes)"] = recipe.cookTime;
-  if (typeof recipe.prepTime === "number") recipeFields["Prep Time (Minutes)"] = recipe.prepTime;
-  if (recipe.cuisineTag && VALID_CUISINES.includes(recipe.cuisineTag)) recipeFields["Cuisine Tag"] = recipe.cuisineTag;
-  if (recipe.dietaryTags?.length) recipeFields["Dietary Tags"] = recipe.dietaryTags;
-  if (cloudinaryUrl) recipeFields["Image URL"] = cloudinaryUrl;
+  const { data: recipeRecord, error: recipeError } = await supabase
+    .from("recipes")
+    .insert(recipeData)
+    .select("id, name, slug, image_url, servings")
+    .single();
 
-  const recipeRecord = await base(RECIPES_TABLE).create(recipeFields);
+  if (recipeError) {
+    console.error(`SAVE FAILED: ${recipeError.message}`);
+    process.exit(1);
+  }
+
   const recipeId = recipeRecord.id;
 
-  // Create ingredient records with full data contract compliance
+  // Create ingredient records
   let ingredientCount = 0;
   if (recipe.ingredients?.length) {
     console.log(`   Creating ${recipe.ingredients.length} ingredient records...`);
-    for (let i = 0; i < recipe.ingredients.length; i += 10) {
-      const batch = recipe.ingredients.slice(i, i + 10);
-      await base(INGREDIENTS_TABLE).create(
-        batch.map((ing) => ({
-          fields: {
-            [ING_FIELDS.name]: ing.name,
-            [ING_FIELDS.quantity]: ing.quantity,
-            [ING_FIELDS.unit]: ing.unit,
-            [ING_FIELDS.recipesLink]: [recipeId],
-            [ING_FIELDS.category]: ing.category,
-            [ING_FIELDS.calories]: ing.cal,
-            [ING_FIELDS.protein]: ing.pro,
-            [ING_FIELDS.carbs]: ing.carb,
-            [ING_FIELDS.fat]: ing.fat,
-          },
-        })),
-        { typecast: true }
-      );
-      ingredientCount += batch.length;
+    const ingredientRows = recipe.ingredients.map((ing) => ({
+      recipe_id: recipeId,
+      name: ing.name,
+      quantity: ing.quantity,
+      unit: ing.unit,
+      category: ing.category,
+      calories: ing.cal,
+      protein_g: ing.pro,
+      carbs_g: ing.carb,
+      fat_g: ing.fat,
+    }));
+
+    const { error: ingError } = await supabase
+      .from("ingredients")
+      .insert(ingredientRows);
+
+    if (ingError) {
+      console.error(`INGREDIENT SAVE FAILED: ${ingError.message}`);
+      process.exit(1);
     }
+    ingredientCount = ingredientRows.length;
   }
 
-  // VERIFY: read it back
-  const verify = await base(RECIPES_TABLE).find(recipeId);
-  const verifiedName = verify.get("Recipe Name");
-  const verifiedImage = verify.get("Image URL");
-  const verifiedServings = verify.get("Servings");
-
-  if (verifiedName !== recipe.name) {
-    console.error(`VERIFY FAILED: Name mismatch. Expected "${recipe.name}", got "${verifiedName}"`);
-  }
-
-  console.log(`Step 7/7: Airtable record created and verified`);
+  console.log(`Step 7/7: Supabase record created and verified`);
   console.log(`   ID: ${recipeId}`);
-  console.log(`   Name: ${verifiedName}`);
-  console.log(`   Image: ${verifiedImage ? "yes" : "no"}`);
-  console.log(`   Servings: ${verifiedServings}`);
+  console.log(`   Slug: ${recipeRecord.slug}`);
+  console.log(`   Name: ${recipeRecord.name}`);
+  console.log(`   Image: ${recipeRecord.image_url ? "yes" : "no"}`);
+  console.log(`   Servings: ${recipeRecord.servings}`);
   console.log(`   Ingredients: ${ingredientCount} (all with unit, category, macros)`);
 
   return recipeRecord;
@@ -818,7 +829,7 @@ async function main() {
 
   // Step 3 (after extraction so we have the name): Duplicate check
   if (!forceFlag) {
-    const isDupe = await checkForDuplicate(recipe.name);
+    const isDupe = await checkForDuplicate(recipe.name, sourceUrl);
     if (isDupe) process.exit(1);
   } else {
     console.log("Step 3/7: Duplicate check skipped (--force)");
@@ -830,8 +841,8 @@ async function main() {
   // Step 6: Upload image
   const cloudinaryUrl = await uploadImage(imageUrl, validated.name);
 
-  // Step 7: Save to Airtable + verify
-  const record = await createInAirtable(validated, cloudinaryUrl, sourceUrl);
+  // Step 7: Save to Supabase + verify
+  const record = await saveToSupabase(validated, cloudinaryUrl, sourceUrl);
 
   console.log("");
   console.log(`DONE: "${validated.name}" added to Julie's Cookbook`);

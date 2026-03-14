@@ -6,7 +6,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
     (recipe.prepTime || 0) + (recipe.cookTime || 0) || null;
 
   return (
-    <Link href={`/recipe/${recipe.id}`}>
+    <Link href={`/recipe/${recipe.slug}`}>
       <div className="bg-white rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer h-full flex flex-col">
         <div className="aspect-[4/3] bg-linen relative overflow-hidden">
           {recipe.imageUrl ? (

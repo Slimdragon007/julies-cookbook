@@ -15,7 +15,7 @@ export default async function HomePage() {
       </div>
       {recipes.length === 0 && (
         <p className="text-center text-warm-light mt-12 font-body">
-          No recipes yet. Add some in Airtable!
+          No recipes yet. Add some recipes!
         </p>
       )}
     </div>

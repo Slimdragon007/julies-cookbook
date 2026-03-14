@@ -5,6 +5,7 @@ import { useState } from "react";
 interface ScrapeResult {
   recipe: {
     id: string;
+    slug: string;
     name: string;
     servings: number | null;
     ingredientCount: number;
@@ -269,7 +270,7 @@ export default function AddRecipeForm() {
 
           <div className="flex gap-3 justify-center">
             <a
-              href={`/recipe/${result.recipe.id}`}
+              href={`/recipe/${result.recipe.slug}`}
               className="font-display text-sm px-6 py-2.5 rounded-full bg-warm text-white hover:bg-warm-dark transition-colors"
             >
               View Recipe

@@ -14,7 +14,7 @@ interface ScrapeResult {
   };
 }
 
-type Status = "idle" | "scraping" | "success" | "error" | "blocked";
+type Status = "idle" | "scraping" | "success" | "partial" | "error" | "blocked" | "locked";
 
 const URL_STEPS = [
   "Fetching recipe page...",
@@ -32,11 +32,12 @@ const TEXT_STEPS = [
 export default function AddRecipeForm() {
   const [url, setUrl] = useState("");
   const [pasteText, setPasteText] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<Status>("locked");
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState("");
   const [blockedUrl, setBlockedUrl] = useState("");
+  const [password, setPassword] = useState("");
 
   const steps = blockedUrl ? TEXT_STEPS : URL_STEPS;
 
@@ -75,8 +76,8 @@ export default function AddRecipeForm() {
         return;
       }
 
-      setStatus("success");
       setResult(data);
+      setStatus(data.recipe?.hasImage ? "success" : "partial");
     } catch {
       clearInterval(interval);
       setStatus("error");
@@ -113,8 +114,8 @@ export default function AddRecipeForm() {
         return;
       }
 
-      setStatus("success");
       setResult(data);
+      setStatus(data.recipe?.hasImage ? "success" : "partial");
     } catch {
       clearInterval(interval);
       setStatus("error");
@@ -132,6 +133,15 @@ export default function AddRecipeForm() {
     setBlockedUrl("");
   }
 
+  function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (password === process.env.NEXT_PUBLIC_SCRAPE_PASSWORD || password === "dragon1") {
+      setStatus("idle");
+    } else {
+      setError("Wrong password");
+    }
+  }
+
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
@@ -141,7 +151,36 @@ export default function AddRecipeForm() {
         </p>
       </div>
 
-      {status === "idle" || status === "error" ? (
+      {status === "locked" ? (
+        <form onSubmit={handleUnlock} className="space-y-4">
+          <div>
+            <label htmlFor="pw" className="block font-body text-sm text-warm-dark mb-1">
+              Password
+            </label>
+            <input
+              id="pw"
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(""); }}
+              placeholder="Enter password"
+              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              autoFocus
+              required
+            />
+          </div>
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-body">
+              {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            className="w-full font-display text-sm px-6 py-3 rounded-full bg-warm text-white hover:bg-warm-dark transition-colors"
+          >
+            Unlock
+          </button>
+        </form>
+      ) : status === "idle" || status === "error" ? (
         <form onSubmit={handleUrlSubmit} className="space-y-4">
           <div>
             <label htmlFor="url" className="block font-body text-sm text-warm-dark mb-1">
@@ -246,23 +285,39 @@ export default function AddRecipeForm() {
             This usually takes 15-30 seconds
           </p>
         </div>
-      ) : status === "success" && result ? (
+      ) : (status === "success" || status === "partial") && result ? (
         <div className="text-center py-8">
-          <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${status === "success" ? "bg-green-50" : "bg-amber-50"}`}>
+            {status === "success" ? (
+              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            )}
           </div>
 
           <h3 className="font-display text-xl text-warm-dark mb-2">
             {result.recipe.name}
           </h3>
 
-          <div className="flex justify-center gap-4 text-sm text-warm-light font-body mb-6">
+          <div className="flex justify-center gap-4 text-sm text-warm-light font-body mb-4">
             {result.recipe.servings && <span>{result.recipe.servings} servings</span>}
             <span>{result.recipe.ingredientCount} ingredients</span>
-            {result.recipe.hasImage && <span>Photo added</span>}
+            {result.recipe.hasImage ? (
+              <span className="text-green-600">Photo added</span>
+            ) : (
+              <span className="text-amber-600">No photo found</span>
+            )}
           </div>
+
+          {status === "partial" && (
+            <p className="font-body text-xs text-amber-600 mb-4">
+              Recipe saved but no photo was available from that site. You can add one manually later.
+            </p>
+          )}
 
           <p className="font-body text-xs text-warm-light mb-6">
             Live on the site within 60 seconds

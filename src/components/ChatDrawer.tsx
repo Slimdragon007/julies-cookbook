@@ -2,9 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 
+interface Citation {
+  url: string;
+  title: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
+  citations?: Citation[];
 }
 
 function formatMessage(text: string) {
@@ -48,8 +54,8 @@ function formatMessage(text: string) {
 }
 
 function renderInline(text: string): React.ReactNode {
-  // Handle **bold** markdown
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  // Split on **bold** and URLs
+  const parts = text.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s)]+)/g);
   return parts.map((part, i) => {
     const boldMatch = part.match(/^\*\*(.+)\*\*$/);
     if (boldMatch) {
@@ -57,6 +63,21 @@ function renderInline(text: string): React.ReactNode {
         <strong key={i} className="font-semibold text-warm-dark">
           {boldMatch[1]}
         </strong>
+      );
+    }
+    if (part.match(/^https?:\/\//)) {
+      // Show a cleaner link text
+      const display = part.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gold underline hover:text-warm-dark"
+        >
+          {display}
+        </a>
       );
     }
     return part;
@@ -67,7 +88,7 @@ const QUICK_PROMPTS = [
   "What's high protein and under 400 cal?",
   "What can I make in 30 minutes?",
   "Suggest something dairy-free",
-  "Compare two recipes for me",
+  "Find me a new recipe online",
 ];
 
 export default function ChatDrawer({
@@ -80,6 +101,7 @@ export default function ChatDrawer({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("Thinking...");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -94,13 +116,18 @@ export default function ChatDrawer({
     setInput("");
     setLoading(true);
 
+    // Smart loading text based on message content
+    const searchWords = ["find", "search", "look up", "new recipe", "online", "discover", "browse the web"];
+    const isSearchQuery = searchWords.some((w) => text.toLowerCase().includes(w));
+    setLoadingText(isSearchQuery ? "Searching the web..." : "Thinking...");
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
-          history: messages,
+          history: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -108,7 +135,7 @@ export default function ChatDrawer({
       if (data.response) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.response },
+          { role: "assistant", content: data.response, citations: data.citations },
         ]);
       }
     } catch {
@@ -174,12 +201,28 @@ export default function ChatDrawer({
               >
                 {msg.role === "user" ? msg.content : formatMessage(msg.content)}
               </span>
+              {msg.citations && msg.citations.length > 0 && (
+                <div className="mt-1 space-y-0.5">
+                  <p className="text-[10px] text-warm-light uppercase tracking-wide">Sources</p>
+                  {msg.citations.map((cite, ci) => (
+                    <a
+                      key={ci}
+                      href={cite.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-[11px] text-gold hover:text-warm-dark truncate"
+                    >
+                      {cite.title}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {loading && (
             <div className="text-sm text-warm-light font-body mr-8">
-              <span className="inline-block px-3 py-2 rounded-xl bg-white border border-border">
-                Thinking...
+              <span className="inline-block px-3 py-2 rounded-xl bg-white border border-border animate-pulse">
+                {loadingText}
               </span>
             </div>
           )}

@@ -64,17 +64,34 @@ ${recipeContext}`;
       ],
     });
 
-    // Extract text from response, handling web search tool use blocks
+    // Extract text and citations from response
     const textParts: string[] = [];
+    const citations: { url: string; title: string }[] = [];
+    let usedWebSearch = false;
+    const seenUrls = new Set<string>();
+
     for (const block of response.content) {
       if (block.type === "text") {
         textParts.push(block.text);
+        // Extract citations from text block annotations
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyBlock = block as any;
+        if (anyBlock.citations) {
+          for (const cite of anyBlock.citations) {
+            if (cite.url && !seenUrls.has(cite.url)) {
+              seenUrls.add(cite.url);
+              citations.push({ url: cite.url, title: cite.title || cite.url });
+            }
+          }
+        }
+      } else if (block.type === "server_tool_use" || block.type === "web_search_tool_result") {
+        usedWebSearch = true;
       }
     }
 
     const text = textParts.join("\n\n");
 
-    return NextResponse.json({ response: text });
+    return NextResponse.json({ response: text, usedWebSearch, citations });
   } catch (error) {
     console.error("Chat error:", error);
     return NextResponse.json(

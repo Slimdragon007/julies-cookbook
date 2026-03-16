@@ -208,10 +208,11 @@ export async function POST(req: NextRequest) {
       source = pastedText.trim().slice(0, 15000);
       finalSourceUrl = textSourceUrl || "manual entry";
     } else {
-      // URL mode: scrape the page
+      // URL mode: scrape the page (with ScrapingBee fallback for Cloudflare)
       finalSourceUrl = url;
 
-      const pageRes = await fetch(url, {
+      let html: string;
+      const directRes = await fetch(url, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
           Accept: "text/html,application/xhtml+xml",
@@ -219,11 +220,29 @@ export async function POST(req: NextRequest) {
         redirect: "follow",
       });
 
-      if (pageRes.status === 403) {
-        return NextResponse.json({ blocked: true, url }, { status: 422 });
-      }
+      if (directRes.status === 403) {
+        // Direct fetch blocked — try ScrapingBee
+        const sbKey = process.env.SCRAPINGBEE_API_KEY;
+        if (!sbKey) {
+          return NextResponse.json({ blocked: true, url }, { status: 422 });
+        }
 
-      const html = await pageRes.text();
+        const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
+          api_key: sbKey,
+          url: url,
+          render_js: "true",
+          premium_proxy: "true",
+        })}`;
+
+        const sbRes = await fetch(sbUrl);
+        if (!sbRes.ok) {
+          return NextResponse.json({ blocked: true, url }, { status: 422 });
+        }
+
+        html = await sbRes.text();
+      } else {
+        html = await directRes.text();
+      }
       const $ = cheerio.load(html);
 
       let jsonLd: Record<string, unknown> | null = null;

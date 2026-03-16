@@ -282,6 +282,9 @@ function validateEnv() {
     console.error("PREFLIGHT FAILED: Missing env vars:", missing.join(", "));
     process.exit(1);
   }
+  if (!process.env.SCRAPINGBEE_API_KEY) {
+    console.log("   Note: SCRAPINGBEE_API_KEY not set. Cloudflare-blocked sites will need manual fallback.");
+  }
   console.log("Step 1/7: Env vars validated");
 }
 
@@ -326,9 +329,10 @@ async function checkForDuplicate(recipeName, sourceUrl) {
 }
 
 // ============================================================
-// STEP 3: SCRAPE PAGE
+// STEP 3: SCRAPE PAGE (with ScrapingBee fallback for Cloudflare)
 // ============================================================
-async function scrapePage(url) {
+async function fetchWithFallback(url) {
+  // Try direct fetch first
   console.log(`   Fetching: ${url}`);
   const res = await fetch(url, {
     headers: {
@@ -340,11 +344,43 @@ async function scrapePage(url) {
     redirect: "follow",
   });
 
-  if (res.status === 403) {
+  if (res.status !== 403) {
+    return { html: await res.text(), method: "direct" };
+  }
+
+  // Direct fetch blocked — try ScrapingBee
+  const apiKey = process.env.SCRAPINGBEE_API_KEY;
+  if (!apiKey) {
+    return { html: null, method: "blocked" };
+  }
+
+  console.log("   Direct fetch blocked (403). Retrying with ScrapingBee...");
+  const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
+    api_key: apiKey,
+    url: url,
+    render_js: "true",
+    premium_proxy: "true",
+  })}`;
+
+  const sbRes = await fetch(sbUrl);
+  if (!sbRes.ok) {
+    console.error(`   ScrapingBee returned ${sbRes.status}: ${await sbRes.text()}`);
+    return { html: null, method: "blocked" };
+  }
+
+  return { html: await sbRes.text(), method: "scrapingbee" };
+}
+
+async function scrapePage(url) {
+  const { html, method } = await fetchWithFallback(url);
+
+  if (method === "blocked") {
     return { blocked: true, url };
   }
 
-  const html = await res.text();
+  if (!html) {
+    return { blocked: true, url };
+  }
   const $ = cheerio.load(html);
 
   // Find JSON-LD structured data
@@ -389,7 +425,7 @@ async function scrapePage(url) {
     return { blocked: true, url };
   }
 
-  console.log(`Step 2/7: Page scraped (${jsonLd ? "JSON-LD found" : "using page text"}${imageUrl ? ", image found" : ", no image"})`);
+  console.log(`Step 2/7: Page scraped via ${method} (${jsonLd ? "JSON-LD found" : "using page text"}${imageUrl ? ", image found" : ", no image"})`);
   return {
     blocked: false,
     jsonLd,
@@ -809,7 +845,14 @@ async function main() {
     if (scraped.blocked) {
       console.log("");
       console.log("Site blocked the scraper (403/Cloudflare).");
-      console.log("   Workaround:");
+      console.log("");
+      if (!process.env.SCRAPINGBEE_API_KEY) {
+        console.log("   AUTO-FIX: Add SCRAPINGBEE_API_KEY to .env.local");
+        console.log("   Get a free key at https://www.scrapingbee.com (1,000 calls/month free)");
+        console.log("   Then re-run this command — it will auto-bypass Cloudflare.");
+        console.log("");
+      }
+      console.log("   Manual workaround:");
       console.log("   1. Open the URL in your browser");
       console.log("   2. Select all text (Cmd+A), copy (Cmd+C)");
       console.log("   3. Paste into a file: pbpaste > ~/Desktop/recipe.txt");

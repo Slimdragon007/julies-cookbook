@@ -58,6 +58,11 @@ export default function RootLayout({
           </div>
         </header>
         <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+        <footer className="border-t border-border bg-cream py-4 text-center">
+          <p className="font-body text-xs text-warm-light">
+            Have feedback? Tap the chat bubble or message Slim directly.
+          </p>
+        </footer>
         <ChatFAB />
         <Analytics />
       </body>

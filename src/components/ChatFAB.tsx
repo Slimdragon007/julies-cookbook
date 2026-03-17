@@ -15,6 +15,7 @@ export default function ChatFAB() {
   return (
     <>
       <button
+        data-chat-fab
         onClick={() => {
           setIsOpen(true);
           setPulse(false);

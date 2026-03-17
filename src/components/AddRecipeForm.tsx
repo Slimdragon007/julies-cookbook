@@ -14,7 +14,7 @@ interface ScrapeResult {
   };
 }
 
-type Status = "idle" | "scraping" | "success" | "partial" | "error" | "blocked" | "locked";
+type Status = "idle" | "scraping" | "success" | "partial" | "error" | "blocked";
 
 const URL_STEPS = [
   "Fetching recipe page...",
@@ -32,12 +32,11 @@ const TEXT_STEPS = [
 export default function AddRecipeForm() {
   const [url, setUrl] = useState("");
   const [pasteText, setPasteText] = useState("");
-  const [status, setStatus] = useState<Status>("locked");
+  const [status, setStatus] = useState<Status>("idle");
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<ScrapeResult | null>(null);
   const [error, setError] = useState("");
   const [blockedUrl, setBlockedUrl] = useState("");
-  const [password, setPassword] = useState("");
 
   const steps = blockedUrl ? TEXT_STEPS : URL_STEPS;
 
@@ -133,22 +132,6 @@ export default function AddRecipeForm() {
     setBlockedUrl("");
   }
 
-  async function handleUnlock(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    // Validate password server-side
-    const res = await fetch("/api/verify-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    if (res.ok) {
-      setStatus("idle");
-    } else {
-      setError("Wrong password");
-    }
-  }
-
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
@@ -158,36 +141,7 @@ export default function AddRecipeForm() {
         </p>
       </div>
 
-      {status === "locked" ? (
-        <form onSubmit={handleUnlock} className="space-y-4">
-          <div>
-            <label htmlFor="pw" className="block font-body text-sm text-warm-dark mb-1">
-              Password
-            </label>
-            <input
-              id="pw"
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(""); }}
-              placeholder="Enter password"
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
-              autoFocus
-              required
-            />
-          </div>
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-body">
-              {error}
-            </div>
-          )}
-          <button
-            type="submit"
-            className="w-full font-display text-sm px-6 py-3 rounded-full bg-warm text-white hover:bg-warm-dark transition-colors"
-          >
-            Unlock
-          </button>
-        </form>
-      ) : status === "idle" || status === "error" ? (
+      {status === "idle" || status === "error" ? (
         <form onSubmit={handleUrlSubmit} className="space-y-4">
           <div>
             <label htmlFor="url" className="block font-body text-sm text-warm-dark mb-1">
@@ -346,6 +300,24 @@ export default function AddRecipeForm() {
           </div>
         </div>
       ) : null}
+
+      {/* Feedback link */}
+      <div className="mt-8 pt-6 border-t border-border text-center">
+        <p className="font-body text-xs text-warm-light">
+          For any feedback, please use the{" "}
+          <button
+            type="button"
+            onClick={() => {
+              const fab = document.querySelector("[data-chat-fab]") as HTMLButtonElement | null;
+              if (fab) fab.click();
+            }}
+            className="text-gold underline hover:text-warm-dark"
+          >
+            chat assistant
+          </button>
+          {" "}or message Slim directly.
+        </p>
+      </div>
     </div>
   );
 }

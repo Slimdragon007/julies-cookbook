@@ -13,7 +13,7 @@
     "scrape": "node --env-file=.env.local scripts/scrape-recipe.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "husky"
+    "prepare": "node -e \"try{require('husky')()}catch(e){}\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

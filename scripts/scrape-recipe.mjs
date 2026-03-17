@@ -703,6 +703,12 @@ async function uploadImage(imageUrl, recipeName) {
     return null;
   }
 
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.error("Step 6/7: WARNING — Cloudinary env vars missing! Image found but CANNOT upload.");
+    console.error("   Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET to .env.local");
+    return null;
+  }
+
   const publicId = recipeName
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

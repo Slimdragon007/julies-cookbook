@@ -380,6 +380,11 @@ If you cannot extract a recipe, return {"name": null}.`,
 
     // Step 6: Upload image to Cloudinary (with retry)
     let cloudinaryUrl: string | null = null;
+    let imageWarning: string | null = null;
+    if (imageUrl && !process.env.CLOUDINARY_CLOUD_NAME) {
+      console.error("[scrape] CLOUDINARY_CLOUD_NAME not set — image upload SKIPPED. Add Cloudinary env vars to Vercel.");
+      imageWarning = "Image found but Cloudinary env vars are missing — image not uploaded";
+    }
     if (imageUrl && process.env.CLOUDINARY_CLOUD_NAME) {
       const publicId = recipe.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       const { v2: cloudinary } = await import("cloudinary");
@@ -456,6 +461,7 @@ If you cannot extract a recipe, return {"name": null}.`,
 
     return NextResponse.json({
       success: true,
+      warning: imageWarning || undefined,
       recipe: {
         id: recipeId,
         slug: recipeRecord.slug,

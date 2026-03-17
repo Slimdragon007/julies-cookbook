@@ -180,10 +180,102 @@ export async function GET(req: NextRequest) {
   // Suppress unused variable warning
   void recipesWithIngs;
 
+  // Usage tracking (optional, triggered by ?usage=true)
+  const includeUsage = req.nextUrl.searchParams.get("usage") === "true";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let usage: Record<string, any> | undefined;
+
+  if (includeUsage) {
+    usage = {};
+
+    // ScrapingBee usage
+    try {
+      const sbRes = await fetch(
+        `https://app.scrapingbee.com/api/v1/usage?api_key=${process.env.SCRAPINGBEE_API_KEY}`
+      );
+      if (sbRes.ok) {
+        const sbData = await sbRes.json();
+        usage.scrapingbee = {
+          credits_used: sbData.max_api_credit - sbData.api_credit,
+          credits_remaining: sbData.api_credit,
+          credits_total: sbData.max_api_credit,
+        };
+      } else {
+        usage.scrapingbee = { error: `HTTP ${sbRes.status}` };
+      }
+    } catch (e) {
+      usage.scrapingbee = { error: e instanceof Error ? e.message : "fetch error" };
+    }
+
+    // Supabase database size + counts
+    try {
+      const { count: totalRecipes } = await supabase
+        .from("recipes")
+        .select("*", { count: "exact", head: true });
+      const { count: totalIngredients } = await supabase
+        .from("ingredients")
+        .select("*", { count: "exact", head: true });
+      const { count: totalFoodLog } = await supabase
+        .from("food_log")
+        .select("*", { count: "exact", head: true });
+      const { data: dbSize } = await supabase.rpc("pg_database_size_pretty");
+      usage.supabase = {
+        recipes: totalRecipes ?? 0,
+        ingredients: totalIngredients ?? 0,
+        food_log_entries: totalFoodLog ?? 0,
+        db_size: dbSize ?? "unknown",
+      };
+    } catch {
+      // pg_database_size_pretty may not exist, fall back to counts only
+      usage.supabase = {
+        recipes: recipeCount ?? 0,
+        ingredients: ingCount ?? 0,
+        note: "DB size requires custom RPC function",
+      };
+    }
+
+    // Cloudinary usage
+    try {
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/usage`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`
+            ).toString("base64")}`,
+          },
+        }
+      );
+      if (cloudRes.ok) {
+        const cloudData = await cloudRes.json();
+        usage.cloudinary = {
+          storage_used_mb: Math.round((cloudData.storage?.usage ?? 0) / 1024 / 1024),
+          storage_limit_mb: Math.round((cloudData.storage?.limit ?? 0) / 1024 / 1024),
+          bandwidth_used_mb: Math.round((cloudData.bandwidth?.usage ?? 0) / 1024 / 1024),
+          bandwidth_limit_mb: Math.round((cloudData.bandwidth?.limit ?? 0) / 1024 / 1024),
+          transformations_used: cloudData.transformations?.usage ?? 0,
+          transformations_limit: cloudData.transformations?.limit ?? 0,
+          objects: cloudData.objects?.usage ?? 0,
+        };
+      } else {
+        usage.cloudinary = { error: `HTTP ${cloudRes.status}` };
+      }
+    } catch (e) {
+      usage.cloudinary = { error: e instanceof Error ? e.message : "fetch error" };
+    }
+
+    // Anthropic — no public usage API, but we can note the key is set
+    usage.anthropic = {
+      api_key_set: !!process.env.ANTHROPIC_API_KEY,
+      note: "Check balance at console.anthropic.com/settings/billing",
+    };
+  }
+
   return NextResponse.json({
     status: overallStatus,
     timestamp: new Date().toISOString(),
     duration_ms: Date.now() - start,
     checks,
+    ...(usage ? { usage } : {}),
   });
 }

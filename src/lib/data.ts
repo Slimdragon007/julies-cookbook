@@ -148,9 +148,19 @@ export async function getAllRecipeIds(): Promise<string[]> {
   return (data || []).map((r: { slug: string }) => r.slug);
 }
 
+// Cache recipe context for 5 minutes to avoid requerying on every chat message
+let cachedContext: string | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 export async function getRecipeContext(): Promise<string> {
+  const now = Date.now();
+  if (cachedContext && now - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedContext;
+  }
+
   const recipes = await getAllRecipes(true);
-  return recipes
+  const context = recipes
     .map((r) => {
       const totals = r.ingredients.reduce(
         (acc, ing) => ({
@@ -191,4 +201,8 @@ export async function getRecipeContext(): Promise<string> {
       return line;
     })
     .join("\n\n");
+
+  cachedContext = context;
+  cacheTimestamp = Date.now();
+  return context;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Recipe } from "@/lib/types";
+import { calculatePortionMacros } from "@/lib/macros";
 
 interface LogEntry {
   id: string;
@@ -43,35 +44,19 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
     const recipe = recipes.find((r) => r.id === recipeId);
     if (!recipe) return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
 
-    const totals = recipe.ingredients.reduce(
-      (acc, ing) => ({
-        cal: acc.cal + (ing.calories ?? 0),
-        p: acc.p + (ing.protein ?? 0),
-        c: acc.c + (ing.carbs ?? 0),
-        f: acc.f + (ing.fat ?? 0),
-      }),
-      { cal: 0, p: 0, c: 0, f: 0 }
+    const grams = parseFloat(portionG) || 0;
+    const { macros } = calculatePortionMacros(
+      recipe.ingredients,
+      grams,
+      recipe.totalBatchWeightG,
+      recipe.servings ?? 1
     );
 
-    const grams = parseFloat(portionG) || 0;
-
-    if (recipe.totalBatchWeightG && recipe.totalBatchWeightG > 0) {
-      const fraction = grams / recipe.totalBatchWeightG;
-      return {
-        calories: Math.round(totals.cal * fraction),
-        protein_g: Math.round(totals.p * fraction),
-        carbs_g: Math.round(totals.c * fraction),
-        fat_g: Math.round(totals.f * fraction),
-      };
-    }
-
-    // Fallback: per-serving estimate
-    const servings = recipe.servings || 1;
     return {
-      calories: Math.round(totals.cal / servings),
-      protein_g: Math.round(totals.p / servings),
-      carbs_g: Math.round(totals.c / servings),
-      fat_g: Math.round(totals.f / servings),
+      calories: macros.calories,
+      protein_g: macros.protein,
+      carbs_g: macros.carbs,
+      fat_g: macros.fat,
     };
   }
 

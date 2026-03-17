@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Ingredient } from "@/lib/types";
+import { sumIngredientMacros, portionMacros as calcPortionMacros, perServingMacros } from "@/lib/macros";
 
 interface Props {
   ingredients: Ingredient[];
@@ -20,15 +21,7 @@ const MACRO_FIELDS = [
 export default function NutritionTab({ ingredients, scale, servings, totalBatchWeightG }: Props) {
   const [portionG, setPortionG] = useState<string>("");
 
-  const totals = ingredients.reduce(
-    (acc, ing) => ({
-      calories: acc.calories + (ing.calories || 0),
-      protein: acc.protein + (ing.protein || 0),
-      carbs: acc.carbs + (ing.carbs || 0),
-      fat: acc.fat + (ing.fat || 0),
-    }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  );
+  const totals = sumIngredientMacros(ingredients);
 
   function fmt(val: number | null, unit = "") {
     if (val === null) return "\u2014";
@@ -42,23 +35,11 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
   // Portion calculator
   const portionGrams = parseFloat(portionG) || 0;
   const hasBatchWeight = totalBatchWeightG != null && totalBatchWeightG > 0;
-  const portionFraction = hasBatchWeight ? portionGrams / totalBatchWeightG! : 0;
   const portionMacros = hasBatchWeight
-    ? {
-        calories: Math.round(totals.calories * portionFraction),
-        protein: Math.round(totals.protein * portionFraction),
-        carbs: Math.round(totals.carbs * portionFraction),
-        fat: Math.round(totals.fat * portionFraction),
-      }
+    ? calcPortionMacros(totals, portionGrams, totalBatchWeightG!)
     : null;
 
-  // Per-serving macros (fallback when no batch weight)
-  const perServing = {
-    calories: Math.round(totals.calories / servings),
-    protein: Math.round(totals.protein / servings),
-    carbs: Math.round(totals.carbs / servings),
-    fat: Math.round(totals.fat / servings),
-  };
+  const perServing = perServingMacros(totals, servings);
 
   return (
     <div>

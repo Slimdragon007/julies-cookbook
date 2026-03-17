@@ -3,6 +3,7 @@ import { Playfair_Display, Lora } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import ChatFAB from "@/components/ChatFAB";
+import SignOutButton from "@/components/SignOutButton";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -41,7 +42,7 @@ export default function RootLayout({
                 </p>
               </a>
             </div>
-            <nav className="flex justify-center gap-6 mt-3">
+            <nav className="flex justify-center items-center gap-6 mt-3">
               <a href="/" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
                 Recipes
               </a>
@@ -51,6 +52,8 @@ export default function RootLayout({
               <a href="/add-recipe" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
                 Add Recipe
               </a>
+              <span className="text-border">|</span>
+              <SignOutButton />
             </nav>
           </div>
         </header>

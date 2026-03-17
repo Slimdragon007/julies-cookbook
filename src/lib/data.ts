@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase } from "./supabase/admin";
 import { Recipe, Ingredient } from "./types";
 
 interface SupabaseRecipe {

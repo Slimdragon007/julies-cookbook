@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/admin";
 import * as cheerio from "cheerio";
 import Anthropic from "@anthropic-ai/sdk";
 

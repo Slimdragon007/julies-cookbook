@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import * as cheerio from "cheerio";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -187,6 +188,13 @@ function slugify(name: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const authSupabase = await createSupabaseServer();
+    const { data: { user } } = await authSupabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { url, text: pastedText, sourceUrl: textSourceUrl } = body;
 

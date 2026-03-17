@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getRecipeContext } from "@/lib/data";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -8,6 +9,13 @@ const anthropic = new Anthropic({
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const authSupabase = await createSupabaseServer();
+    const { data: { user } } = await authSupabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { message, history } = await req.json();
 
     if (!message || typeof message !== "string") {

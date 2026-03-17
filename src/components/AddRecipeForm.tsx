@@ -133,9 +133,16 @@ export default function AddRecipeForm() {
     setBlockedUrl("");
   }
 
-  function handleUnlock(e: React.FormEvent) {
+  async function handleUnlock(e: React.FormEvent) {
     e.preventDefault();
-    if (password === process.env.NEXT_PUBLIC_SCRAPE_PASSWORD || password === "dragon1") {
+    setError("");
+    // Validate password server-side
+    const res = await fetch("/api/verify-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.ok) {
       setStatus("idle");
     } else {
       setError("Wrong password");

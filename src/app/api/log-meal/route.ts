@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
+
+async function requireAuth() {
+  const authSupabase = await createSupabaseServer();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  return user;
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { recipe_id, meal, portion_g, calories, protein_g, carbs_g, fat_g, log_date, notes } = body;
 
@@ -40,6 +52,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const user = await requireAuth();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
   const days = parseInt(searchParams.get("days") || "1", 10);

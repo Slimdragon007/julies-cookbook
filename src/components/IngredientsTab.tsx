@@ -1,6 +1,7 @@
 "use client";
 
 import { Ingredient } from "@/lib/types";
+import { formatQuantity } from "@/lib/fractions";
 
 interface Props {
   ingredients: Ingredient[];
@@ -14,9 +15,7 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
   const scale = servings / baseServings;
 
   function fmt(val: number | null) {
-    if (val === null) return "";
-    const scaled = val * scale;
-    return scaled % 1 === 0 ? String(scaled) : scaled.toFixed(1);
+    return formatQuantity(val, scale);
   }
 
   const servingsLabel = servings === 1 ? "serving" : "servings";

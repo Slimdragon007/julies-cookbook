@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Recipe } from "@/lib/types";
+import { formatQuantity } from "@/lib/fractions";
 
 interface GroceryItem {
   name: string;
@@ -79,7 +80,7 @@ function combineIngredients(recipes: Recipe[]): Array<[string, GroceryItem[]]> {
 
 function formatQty(qty: number | null, unit: string | null): string {
   if (qty === null) return "";
-  const num = qty % 1 === 0 ? String(qty) : qty.toFixed(1);
+  const num = formatQuantity(qty);
   return unit ? `${num} ${unit}` : num;
 }
 

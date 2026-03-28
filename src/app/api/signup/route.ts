@@ -3,10 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { timingSafeEqual } from "crypto";
 
 function safeCompare(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return timingSafeEqual(bufA, bufB);
+  const bufA = Buffer.from(a.padEnd(256, "\0"));
+  const bufB = Buffer.from(b.padEnd(256, "\0"));
+  return timingSafeEqual(bufA, bufB) && a.length === b.length;
 }
 
 export async function POST(req: NextRequest) {
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { data, error } = await supabase.auth.admin.createUser({
+    const { error } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -54,10 +53,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: safeMessage }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, userId: data.user.id });
+    return NextResponse.json({ success: true });
   } catch (err) {
+    console.error("Signup error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

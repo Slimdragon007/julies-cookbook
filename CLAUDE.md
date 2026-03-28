@@ -49,7 +49,7 @@ All must be set in Vercel project settings for production.
 - `src/app/api/signup/route.ts` — Server-side signup with invite code validation
 - `src/lib/data.ts` — Data layer: getAllRecipes(), getRecipeById(), getRecipeContext(), getAllRecipeIds()
 - `src/lib/types.ts` — Recipe and Ingredient TypeScript interfaces
-- `src/app/recipe/[id]/page.tsx` — Recipe detail page (slug-based routing, SSG with ISR)
+- `src/app/recipe/[id]/page.tsx` — Recipe detail page (slug-based routing, dynamic rendering)
 - `src/app/log/page.tsx` — Food log page
 - `src/app/summary/page.tsx` — Weekly nutrition summary
 - `src/app/api/chat/route.ts` — Chat API endpoint using Claude

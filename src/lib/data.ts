@@ -98,6 +98,10 @@ export async function getAllRecipes(includeIngredients = false, userId?: string)
   }
 
   const recipeIds = recipes.map((r: SupabaseRecipe) => r.id);
+  if (recipeIds.length === 0) {
+    return [];
+  }
+
   const { data: allIngredients, error: ingError } = await supabase
     .from("ingredients")
     .select("*")

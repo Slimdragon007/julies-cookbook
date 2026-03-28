@@ -1,16 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { BookHeart, PlusCircle, ShoppingBasket, UtensilsCrossed, BarChart3 } from "lucide-react";
+import { BookHeart, PlusCircle, ShoppingBasket, UtensilsCrossed, BarChart3, MessageCircle } from "lucide-react";
 import clsx from "clsx";
-import ChatFAB from "@/components/ChatFAB";
+import ChatDrawer from "@/components/ChatDrawer";
 import SignOutButton from "@/components/SignOutButton";
 
+// Add is in position 3 (center of 5)
 const navItems = [
   { href: "/", icon: BookHeart, label: "Recipes" },
-  { href: "/add-recipe", icon: PlusCircle, label: "Add" },
   { href: "/grocery-list", icon: ShoppingBasket, label: "Groceries" },
+  { href: "/add-recipe", icon: PlusCircle, label: "Add" },
   { href: "/log", icon: UtensilsCrossed, label: "Log" },
   { href: "/summary", icon: BarChart3, label: "Summary" },
 ];
@@ -27,6 +29,7 @@ export default function MainNav({
 }) {
   const pathname = usePathname();
   const hideNav = pathname.startsWith("/recipe/");
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#FDFCFB] flex flex-col relative pb-20 lg:pb-0 overflow-x-hidden selection:bg-sky-100 selection:text-sky-900">
@@ -62,7 +65,14 @@ export default function MainNav({
           })}
         </div>
 
-        <div className="px-3 xl:px-4 pb-6 mt-auto border-t border-slate-100/50 pt-6">
+        <div className="px-3 xl:px-4 pb-6 mt-auto border-t border-slate-100/50 pt-6 space-y-2">
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 hover:text-sky-500 hover:bg-sky-50 transition-all w-full group"
+          >
+            <MessageCircle className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
+            <span className="hidden xl:block text-[14px] font-semibold">Ask AI</span>
+          </button>
           <SignOutButton />
         </div>
       </nav>
@@ -77,7 +87,16 @@ export default function MainNav({
               </div>
               <span className="text-[16px] font-bold text-slate-800 tracking-tight">Cookbook</span>
             </div>
-            <SignOutButton />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setChatOpen(true)}
+                aria-label="Open chat assistant"
+                className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500 hover:bg-sky-100 active:scale-95 transition-all"
+              >
+                <MessageCircle className="w-[18px] h-[18px]" />
+              </button>
+              <SignOutButton />
+            </div>
           </div>
         </div>
       )}
@@ -129,7 +148,7 @@ export default function MainNav({
         </nav>
       )}
 
-      <ChatFAB />
+      <ChatDrawer isOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 }

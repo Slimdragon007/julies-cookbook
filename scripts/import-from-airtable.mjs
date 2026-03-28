@@ -115,7 +115,7 @@ async function main() {
 
   for (const rec of recipeRecords) {
     const f = rec.fields;
-    const name = f["Name"] || f["Recipe Name"];
+    const name = f["Recipe Name"] || f["Name"];
     if (!name) {
       console.log(`  Skipping record with no name: ${rec.id}`);
       skipped++;
@@ -148,8 +148,8 @@ async function main() {
         preparation: f["Preparation"] || f["Instructions"] || null,
         source_url: f["Source URL"] || f["URL"] || null,
         servings: f["Servings"] ?? null,
-        cook_time_minutes: f["Cook Time"] ?? f["Cook Time (min)"] ?? null,
-        prep_time_minutes: f["Prep Time"] ?? f["Prep Time (min)"] ?? null,
+        cook_time_minutes: f["Cook Time (Minutes)"] ?? f["Cook Time"] ?? null,
+        prep_time_minutes: f["Prep Time (Minutes)"] ?? f["Prep Time"] ?? null,
         cuisine_tag: f["Cuisine"] || f["Cuisine Tag"] || null,
         dietary_tags: f["Dietary Tags"] || f["Tags"] || [],
         image_url: f["Image URL"] || (f["Image"] && f["Image"][0]?.url) || null,

@@ -37,7 +37,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
             {recipe.servings && (
               <span>{recipe.servings} servings</span>
             )}
-            {recipe.caloriesPerServing && (
+            {recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0 && (
               <span className="ml-auto font-semibold text-warm">
                 {Math.round(recipe.caloriesPerServing)} cal/serving
               </span>

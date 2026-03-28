@@ -24,6 +24,9 @@ export default function MainLayout({
             <a href="/" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
               Recipes
             </a>
+            <a href="/log" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
+              Food Log
+            </a>
             <a href="/grocery-list" className="font-body text-sm text-warm hover:text-warm-dark transition-colors">
               Grocery List
             </a>

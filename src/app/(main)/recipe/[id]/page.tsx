@@ -51,7 +51,7 @@ export default async function RecipePage({
         {recipe.cookTime && <span>Cook: {recipe.cookTime} min</span>}
         {totalTime && <span>Total: {totalTime} min</span>}
         {recipe.servings && <span>Servings: {recipe.servings}</span>}
-        {recipe.caloriesPerServing && (
+        {recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0 && (
           <span className="bg-linen rounded-full px-3 py-1 text-warm-dark font-display text-sm">
             {Math.round(recipe.caloriesPerServing)} cal/serving
           </span>

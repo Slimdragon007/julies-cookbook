@@ -7,8 +7,8 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
 
   return (
     <Link href={`/recipe/${recipe.slug}`}>
-      <div className="bg-white rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer h-full flex flex-col">
-        <div className="aspect-[4/3] bg-linen relative overflow-hidden">
+      <div className="glass rounded-2xl overflow-hidden transition-all duration-300 hover:bg-white/[0.09] hover:-translate-y-1 cursor-pointer h-full flex flex-col">
+        <div className="aspect-[4/3] bg-white/[0.03] relative overflow-hidden">
           {recipe.imageUrl ? (
             <img
               src={recipe.imageUrl}
@@ -16,12 +16,12 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-warm-light text-4xl">
+            <div className="w-full h-full flex items-center justify-center text-warm-light/30 text-4xl">
               🍳
             </div>
           )}
           {recipe.cuisineTag && (
-            <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-warm text-xs font-body px-2.5 py-1 rounded-full">
+            <span className="absolute top-3 left-3 glass text-warm-light text-xs font-body px-2.5 py-1 rounded-full">
               {recipe.cuisineTag}
             </span>
           )}
@@ -38,8 +38,8 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
               <span>{recipe.servings} servings</span>
             )}
             {recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0 && (
-              <span className="ml-auto font-semibold text-warm">
-                {Math.round(recipe.caloriesPerServing)} cal/serving
+              <span className="ml-auto font-semibold text-gold bg-gold/15 px-2 py-0.5 rounded-full">
+                {Math.round(recipe.caloriesPerServing)} cal
               </span>
             )}
           </div>

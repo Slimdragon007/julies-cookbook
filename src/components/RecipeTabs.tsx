@@ -30,22 +30,19 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings, 
   return (
     <div>
       {/* Sticky tab bar */}
-      <div className="sticky top-0 z-10 bg-cream border-b border-border mb-6">
+      <div className="sticky top-16 z-10 glass rounded-xl mb-6">
         <div className="flex">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex-1 py-3 text-center font-body text-base transition-colors relative ${
+              className={`flex-1 py-3 text-center font-body text-base transition-colors relative rounded-xl ${
                 activeTab === key
-                  ? "text-warm-dark font-semibold"
+                  ? "text-gold font-semibold bg-gold/10"
                   : "text-warm-light"
               }`}
             >
               {label}
-              {activeTab === key && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-gold" />
-              )}
             </button>
           ))}
         </div>

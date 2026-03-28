@@ -52,7 +52,7 @@ export default async function RecipePage({
         {totalTime && <span>Total: {totalTime} min</span>}
         {recipe.servings && <span>Servings: {recipe.servings}</span>}
         {recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0 && (
-          <span className="bg-linen rounded-full px-3 py-1 text-warm-dark font-display text-sm">
+          <span className="bg-gold/15 text-gold rounded-full px-3 py-1 font-display text-sm">
             {Math.round(recipe.caloriesPerServing)} cal/serving
           </span>
         )}
@@ -62,14 +62,14 @@ export default async function RecipePage({
       {(recipe.cuisineTag || recipe.dietaryTags.length > 0 || recipe.julieRating) && (
         <div className="flex flex-wrap items-center gap-2 mb-6">
           {recipe.cuisineTag && (
-            <span className="bg-white border border-border text-warm text-xs px-3 py-1 rounded-full">
+            <span className="glass text-warm-light text-xs px-3 py-1 rounded-full">
               {recipe.cuisineTag}
             </span>
           )}
           {recipe.dietaryTags.map((tag) => (
             <span
               key={tag}
-              className="bg-white border border-border text-warm text-xs px-3 py-1 rounded-full"
+              className="glass text-warm-light text-xs px-3 py-1 rounded-full"
             >
               {tag}
             </span>

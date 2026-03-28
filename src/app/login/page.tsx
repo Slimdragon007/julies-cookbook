@@ -157,6 +157,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 overflow-hidden relative">
+      {/* Ambient glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 bg-gold/[0.08] rounded-full blur-[100px] pointer-events-none" />
       {/* Particle canvas */}
       {phase === "splash" && <SplashCanvas onDone={handleSplashDone} />}
 
@@ -202,7 +204,8 @@ export default function LoginPage() {
             : "opacity-0 translate-y-4"
         }`}
       >
-        <div className="text-center mb-8">
+        <div className="glass-strong rounded-2xl p-7 space-y-6">
+        <div className="text-center">
           <h1 className="font-display text-3xl text-warm-dark mb-2">
             Julie&apos;s Cookbook
           </h1>
@@ -224,7 +227,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               placeholder="julie@example.com"
               required
               autoFocus={phase === "form"}
@@ -243,14 +246,14 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               placeholder="Enter password"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-body">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-body">
               {error}
             </div>
           )}
@@ -258,18 +261,19 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading || phase !== "form"}
-            className="w-full font-display text-sm px-6 py-3 rounded-full bg-warm text-white hover:bg-warm-dark transition-colors disabled:opacity-50"
+            className="w-full font-display text-sm px-6 py-3 rounded-xl bg-gold text-cream hover:brightness-110 transition-all disabled:opacity-50"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <p className="text-center mt-6 font-body text-sm text-warm-light">
+        <p className="text-center font-body text-sm text-warm-light/50">
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-gold hover:underline">
             Sign up
           </Link>
         </p>
+        </div>
       </div>
 
       <style jsx>{`

@@ -106,14 +106,14 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
   return (
     <div>
       {/* Log form */}
-      <form onSubmit={handleSubmit} className="bg-linen rounded-lg p-5 mb-6">
+      <form onSubmit={handleSubmit} className="glass rounded-2xl p-5 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block font-body text-sm text-warm-dark mb-1">Recipe</label>
             <select
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-border bg-white text-warm-dark font-body text-base focus:outline-none focus:ring-2 focus:ring-gold"
+              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
               required
             >
               <option value="">Select a recipe...</option>
@@ -129,7 +129,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
             <select
               value={meal}
               onChange={(e) => setMeal(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-border bg-white text-warm-dark font-body text-base focus:outline-none focus:ring-2 focus:ring-gold"
+              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
             >
               {MEALS.map((m) => (
                 <option key={m} value={m}>{m}</option>
@@ -144,7 +144,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
               value={portionG}
               onChange={(e) => setPortionG(e.target.value)}
               placeholder="e.g. 350"
-              className="w-full px-3 py-2.5 rounded-lg border border-border bg-white text-warm-dark font-body text-base focus:outline-none focus:ring-2 focus:ring-gold"
+              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
               required
             />
           </div>
@@ -154,14 +154,14 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
               type="date"
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-border bg-white text-warm-dark font-body text-base focus:outline-none focus:ring-2 focus:ring-gold"
+              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
             />
           </div>
         </div>
         <button
           type="submit"
           disabled={saving || !recipeId || !portionG}
-          className="w-full sm:w-auto px-6 py-3 bg-warm text-white font-body text-base rounded-lg hover:bg-warm-dark transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto px-6 py-3 bg-gold text-cream font-body text-base rounded-xl hover:brightness-110 transition-all disabled:opacity-50"
         >
           {saving ? "Saving..." : "Log Meal"}
         </button>
@@ -172,7 +172,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
 
       {/* Today's totals */}
       {entries.length > 0 && (
-        <div className="bg-linen rounded-lg px-5 py-4 mb-5">
+        <div className="glass rounded-2xl px-5 py-4 mb-5">
           <h3 className="font-display text-sm text-warm-dark mb-3">Day Total</h3>
           <div className="grid grid-cols-4 gap-3 text-center">
             <div>
@@ -206,7 +206,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="flex items-center justify-between bg-white border border-border rounded-lg px-4 py-3"
+              className="flex items-center justify-between glass rounded-xl px-4 py-3"
             >
               <div>
                 <span className="font-body text-base text-warm-dark">

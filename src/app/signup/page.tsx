@@ -66,9 +66,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-4 relative">
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-gold/[0.06] rounded-full blur-[80px] pointer-events-none" />
+      <div className="w-full max-w-sm z-10">
+        <div className="glass-strong rounded-2xl p-7 space-y-6">
+        <div className="text-center">
           <h1 className="font-display text-3xl text-warm-dark mb-2">
             Join the Cookbook
           </h1>
@@ -90,7 +92,7 @@ export default function SignupPage() {
               type="text"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               placeholder="Enter invite code"
               required
               autoFocus
@@ -109,7 +111,7 @@ export default function SignupPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               placeholder="you@example.com"
               required
             />
@@ -127,7 +129,7 @@ export default function SignupPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               placeholder="At least 6 characters"
               required
             />
@@ -145,14 +147,14 @@ export default function SignupPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               placeholder="Confirm password"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-body">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-body">
               {error}
             </div>
           )}
@@ -160,18 +162,19 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-display text-sm px-6 py-3 rounded-full bg-warm text-white hover:bg-warm-dark transition-colors disabled:opacity-50"
+            className="w-full font-display text-sm px-6 py-3 rounded-xl bg-gold text-cream hover:brightness-110 transition-all disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
-        <p className="text-center mt-6 font-body text-sm text-warm-light">
+        <p className="text-center font-body text-sm text-warm-light/50">
           Already have an account?{" "}
           <Link href="/login" className="text-gold hover:underline">
             Sign in
           </Link>
         </p>
+        </div>
       </div>
     </div>
   );

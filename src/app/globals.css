@@ -3,6 +3,39 @@
 @tailwind utilities;
 
 body {
-  color: #3D3225;
-  background: #FAF8F4;
+  color: #f2f2f5;
+  background: #111117;
+}
+
+/* Glass utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(40px);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input:focus {
+  border-color: rgba(227, 166, 76, 0.4);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(227, 166, 76, 0.15);
+}
+
+select.glass-input {
+  color: #f2f2f5;
+}
+
+select.glass-input option {
+  background: #1a1a22;
+  color: #f2f2f5;
 }

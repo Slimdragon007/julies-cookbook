@@ -20,7 +20,7 @@ export default function ChatFAB() {
           setIsOpen(true);
           setPulse(false);
         }}
-        className={`fixed bottom-6 right-6 z-40 bg-warm hover:bg-warm-dark text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-105 ${
+        className={`fixed bottom-6 right-6 z-40 bg-gold hover:brightness-110 text-cream rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-gold/20 transition-all duration-300 hover:scale-105 ${
           pulse ? "animate-bounce" : ""
         }`}
         aria-label="Open chat assistant"

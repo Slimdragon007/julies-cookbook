@@ -69,10 +69,10 @@ export default function MainNav({
 
       {/* Mobile top bar */}
       {!hideNav && (
-        <div className="fixed top-0 left-0 right-0 lg:hidden z-40 px-6 pt-[env(safe-area-inset-top,0px)] bg-[#FDFCFB]/90 backdrop-blur-xl border-b border-white/40">
-          <div className="flex items-center justify-between max-w-lg mx-auto py-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-sky-200">
+        <div className="fixed top-0 left-0 right-0 lg:hidden z-40 bg-white/95 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+          <div className="flex items-center justify-between max-w-lg mx-auto px-5 py-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-xl flex items-center justify-center shadow-sm">
                 <BookHeart className="w-4 h-4 text-white" />
               </div>
               <span className="text-[16px] font-bold text-slate-800 tracking-tight">Cookbook</span>
@@ -89,25 +89,24 @@ export default function MainNav({
         </div>
       </main>
 
-      {/* Mobile bottom nav — all 5 items */}
+      {/* Mobile bottom nav — iOS-style tab bar */}
       {!hideNav && (
-        <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 pb-[env(safe-area-inset-bottom,8px)] bg-[#FDFCFB]/90 backdrop-blur-xl border-t border-white/40">
-          <div className="px-4 pt-2 pb-1 w-full max-w-md mx-auto flex justify-around items-center">
+        <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200/60 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 6px)" }}>
+          <div className="px-2 pt-1.5 pb-1 w-full max-w-lg mx-auto flex justify-around items-end">
             {navItems.map(({ href, icon: Icon, label }) => {
               const active = isActive(pathname, href);
 
-              // Elevated "Add" button in center
               if (href === "/add-recipe") {
                 return (
                   <Link
                     key={href}
                     href={href}
-                    className="flex flex-col items-center justify-center w-12 py-1.5 rounded-xl transition-all relative active:scale-90 text-sky-500"
+                    className="flex flex-col items-center justify-center px-3 py-1 active:scale-95 transition-transform"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-md shadow-sky-200/50">
-                      <PlusCircle className="w-5 h-5 text-white" />
+                    <div className="w-11 h-11 bg-gradient-to-br from-sky-400 to-blue-500 rounded-[14px] flex items-center justify-center shadow-lg shadow-sky-300/40 -mt-3 mb-0.5">
+                      <PlusCircle className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-[9px] font-semibold tracking-wide mt-0.5">Add</span>
+                    <span className="text-[10px] font-semibold text-sky-500">Add</span>
                   </Link>
                 );
               }
@@ -117,15 +116,12 @@ export default function MainNav({
                   key={href}
                   href={href}
                   className={clsx(
-                    "flex flex-col items-center justify-center w-12 py-1.5 rounded-xl transition-all relative",
-                    active ? "text-sky-600" : "text-slate-400 hover:text-slate-600"
+                    "flex flex-col items-center justify-center px-3 py-1 min-w-[56px] active:scale-95 transition-all",
+                    active ? "text-sky-500" : "text-slate-400"
                   )}
                 >
-                  {active && (
-                    <div className="absolute inset-0 bg-white/60 rounded-xl border border-white shadow-sm" />
-                  )}
-                  <Icon className="w-5 h-5 mb-0.5 relative z-10" />
-                  <span className="text-[9px] font-semibold tracking-wide relative z-10">{label}</span>
+                  <Icon className={clsx("w-[22px] h-[22px] mb-0.5", active && "stroke-[2.5px]")} />
+                  <span className={clsx("text-[10px]", active ? "font-bold" : "font-medium")}>{label}</span>
                 </Link>
               );
             })}

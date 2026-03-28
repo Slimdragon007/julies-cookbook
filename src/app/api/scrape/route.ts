@@ -388,19 +388,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Step 2: Extract with Claude
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      system: `You are a recipe data extraction assistant. Extract structured recipe data from web content.
+    // Step 2: Extract with Claude (30s timeout to leave room for image upload + DB save)
+    const claudeController = new AbortController();
+    const claudeTimer = setTimeout(() => claudeController.abort(), 30000);
+    let response;
+    try {
+      response = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        system: `You are a recipe data extraction assistant. Extract structured recipe data from web content.
 Return ONLY valid JSON with: name, preparation (numbered steps), servings, cookTime, prepTime, cuisineTag (one of ${JSON.stringify(VALID_CUISINES)} or null), dietaryTags (from ${JSON.stringify(VALID_DIETARY)}), ingredients array.
 Each ingredient needs: name (lowercase, singular), quantity (number), unit (tsp/tbsp/cup/oz/lb/each/can), category (${VALID_CATEGORIES.join("/")}), calories, protein_g, carbs_g, fat_g (whole numbers, USDA estimates for recipe qty).
 If you cannot extract a recipe, return {"name": null}.`,
-      messages: [{
-        role: "user",
-        content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${finalSourceUrl}\n\nContent:\n${source}`,
-      }],
-    });
+        messages: [{
+          role: "user",
+          content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${finalSourceUrl}\n\nContent:\n${source}`,
+        }],
+      }, { signal: claudeController.signal });
+    } catch (claudeErr) {
+      clearTimeout(claudeTimer);
+      if (claudeErr instanceof Error && claudeErr.name === "AbortError") {
+        return NextResponse.json({ error: "AI extraction timed out — try pasting the recipe text instead" }, { status: 504 });
+      }
+      throw claudeErr;
+    }
+    clearTimeout(claudeTimer);
 
     const text = response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);

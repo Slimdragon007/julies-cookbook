@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { getAllRecipes } from "@/lib/data";
 import RecipeCard from "@/components/RecipeCard";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Sparkles } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Recipes — Julie's Cookbook",
+};
 
 export const dynamic = "force-dynamic";
 

@@ -140,7 +140,23 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
           </div>
         </div>
 
-        {!showList ? (
+        {recipes.length === 0 ? (
+          <div className="text-center py-24 glass rounded-[3rem]">
+            <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
+              <ShoppingBasket className="w-8 h-8 text-sky-200" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">No recipes yet</h3>
+            <p className="text-slate-500 max-w-xs mx-auto mb-6">
+              Add some recipes first, then come back to build your shopping list.
+            </p>
+            <a
+              href="/add-recipe"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Add Your First Recipe
+            </a>
+          </div>
+        ) : !showList ? (
           <>
             {/* Selection controls */}
             <div className="flex items-center gap-3 mb-6">

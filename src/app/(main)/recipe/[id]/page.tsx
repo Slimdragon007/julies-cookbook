@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getRecipeById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -7,6 +8,20 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { ChevronLeft, Clock, Flame, Users, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  const recipe = await getRecipeById(id, user?.id);
+  return {
+    title: recipe ? `${recipe.name} — Julie's Cookbook` : "Recipe — Julie's Cookbook",
+  };
+}
 
 export default async function RecipePage({
   params,

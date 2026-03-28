@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, BarChart3 } from "lucide-react";
 
 interface DaySummary {
   date: string;
@@ -75,6 +75,27 @@ export default function WeeklySummary() {
   }
 
   const daysWithData = days.filter((d) => d.meals > 0);
+
+  if (daysWithData.length === 0) {
+    return (
+      <div className="text-center py-24 glass rounded-[3rem]">
+        <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
+          <BarChart3 className="w-8 h-8 text-sky-200" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">No data yet</h3>
+        <p className="text-slate-500 max-w-xs mx-auto mb-6">
+          Start logging your meals to see weekly nutrition trends and averages.
+        </p>
+        <a
+          href="/log"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          Log Your First Meal
+        </a>
+      </div>
+    );
+  }
+
   const avgCount = daysWithData.length || 1;
   const averages = {
     calories: Math.round(daysWithData.reduce((s, d) => s + d.calories, 0) / avgCount),

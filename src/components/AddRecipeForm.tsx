@@ -76,7 +76,11 @@ export default function AddRecipeForm() {
 
       if (!res.ok) {
         setStatus("error");
-        setError(data.error || "Something went wrong");
+        setError(
+          res.status === 409 ? data.error :
+          res.status === 422 ? "Couldn't find a recipe on that page. Try pasting the recipe text instead." :
+          "Something went wrong. Please try again."
+        );
         return;
       }
 
@@ -85,7 +89,7 @@ export default function AddRecipeForm() {
     } catch {
       clearInterval(interval);
       setStatus("error");
-      setError("Network error — check your connection");
+      setError("Couldn't connect. Check your internet and try again.");
     }
   }
 
@@ -114,7 +118,10 @@ export default function AddRecipeForm() {
 
       if (!res.ok) {
         setStatus("error");
-        setError(data.error || "Something went wrong");
+        setError(
+          res.status === 409 ? data.error :
+          "Couldn't extract the recipe. Try cleaning up the text and submitting again."
+        );
         return;
       }
 
@@ -123,7 +130,7 @@ export default function AddRecipeForm() {
     } catch {
       clearInterval(interval);
       setStatus("error");
-      setError("Network error — check your connection");
+      setError("Couldn't connect. Check your internet and try again.");
     }
   }
 

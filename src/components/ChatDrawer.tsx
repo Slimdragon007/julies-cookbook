@@ -138,7 +138,7 @@ export default function ChatDrawer({
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Sorry, I couldn't respond right now. Try again!" },
+        { role: "assistant", content: "Couldn't connect right now. Check your connection and try again." },
       ]);
     } finally {
       setLoading(false);

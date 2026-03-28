@@ -25,7 +25,11 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(
+        authError.message === "Invalid login credentials"
+          ? "Incorrect email or password. Please try again."
+          : "Something went wrong. Please try again."
+      );
       setLoading(false);
       return;
     }

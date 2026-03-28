@@ -90,7 +90,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       setPortionG("");
       loadEntries();
     } else {
-      setMessage(`Error: ${data.error}`);
+      setMessage("Couldn't save. Please try again.");
     }
   }
 

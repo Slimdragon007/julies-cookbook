@@ -29,7 +29,7 @@ export default function MainNav({
   const hideNav = pathname.startsWith("/recipe/");
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex flex-col relative pb-24 lg:pb-0 overflow-x-hidden selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen bg-[#FDFCFB] flex flex-col relative pb-20 lg:pb-0 overflow-x-hidden selection:bg-sky-100 selection:text-sky-900">
       {/* Desktop sidebar */}
       <nav className="hidden lg:flex flex-col fixed left-4 top-4 bottom-4 w-20 xl:w-64 glass-strong rounded-3xl z-50">
         <div className="flex items-center gap-3 px-5 py-8 xl:px-8">
@@ -69,8 +69,8 @@ export default function MainNav({
 
       {/* Mobile top bar */}
       {!hideNav && (
-        <div className="fixed top-0 left-0 right-0 lg:hidden z-40 px-6 pt-4 pb-2 bg-gradient-to-b from-[#FDFCFB] via-[#FDFCFB]/80 to-transparent backdrop-blur-sm">
-          <div className="flex items-center justify-between max-w-lg mx-auto">
+        <div className="fixed top-0 left-0 right-0 lg:hidden z-40 px-6 pt-[env(safe-area-inset-top,0px)] bg-[#FDFCFB]/90 backdrop-blur-xl border-b border-white/40">
+          <div className="flex items-center justify-between max-w-lg mx-auto py-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-sky-200">
                 <BookHeart className="w-4 h-4 text-white" />
@@ -91,8 +91,8 @@ export default function MainNav({
 
       {/* Mobile bottom nav — all 5 items */}
       {!hideNav && (
-        <nav className="fixed bottom-4 left-4 right-4 lg:hidden z-50 flex justify-center pointer-events-none">
-          <div className="glass-strong rounded-[2rem] px-3 py-2.5 w-full max-w-md pointer-events-auto flex justify-around items-center">
+        <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 pb-[env(safe-area-inset-bottom,8px)] bg-[#FDFCFB]/90 backdrop-blur-xl border-t border-white/40">
+          <div className="px-4 pt-2 pb-1 w-full max-w-md mx-auto flex justify-around items-center">
             {navItems.map(({ href, icon: Icon, label }) => {
               const active = isActive(pathname, href);
 
@@ -102,9 +102,12 @@ export default function MainNav({
                   <Link
                     key={href}
                     href={href}
-                    className="flex items-center justify-center -mt-8 rounded-full w-[52px] h-[52px] shadow-[0_8px_24px_rgba(0,166,244,0.3)] transition-all active:scale-90 bg-gradient-to-br from-sky-400 to-blue-500 hover:scale-105"
+                    className="flex flex-col items-center justify-center w-12 py-1.5 rounded-xl transition-all relative active:scale-90 text-sky-500"
                   >
-                    <PlusCircle className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-md shadow-sky-200/50">
+                      <PlusCircle className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-[9px] font-semibold tracking-wide mt-0.5">Add</span>
                   </Link>
                 );
               }

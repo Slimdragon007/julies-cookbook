@@ -6,6 +6,67 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 60;
 
+// --- Circuit breaker: track domains that consistently fail ---
+const blockedDomains = new Map<string, number>(); // domain → timestamp
+const CIRCUIT_BREAKER_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function getDomain(url: string): string {
+  try { return new URL(url).hostname; } catch { return url; }
+}
+
+function isCircuitOpen(domain: string): boolean {
+  const blockedAt = blockedDomains.get(domain);
+  if (!blockedAt) return false;
+  if (Date.now() - blockedAt > CIRCUIT_BREAKER_TTL_MS) {
+    blockedDomains.delete(domain);
+    return false;
+  }
+  return true;
+}
+
+function tripCircuit(domain: string) {
+  blockedDomains.set(domain, Date.now());
+}
+
+// --- Fetch with timeout ---
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// --- Retry with exponential backoff ---
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  { maxAttempts = 2, timeoutMs = 15000, initialDelayMs = 1000 } = {}
+): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, options, timeoutMs);
+      // Don't retry on 403 (blocked) or 404 (not found) — those won't change
+      if (res.status === 403 || res.status === 404) return res;
+      if (res.ok) return res;
+      // Retry on 5xx or other transient errors
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (lastError.name === "AbortError") {
+        lastError = new Error(`Request timed out after ${timeoutMs}ms`);
+      }
+    }
+    if (attempt < maxAttempts - 1) {
+      await new Promise(r => setTimeout(r, initialDelayMs * Math.pow(2, attempt)));
+    }
+  }
+  throw lastError || new Error("Fetch failed");
+}
+
 const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
 const VALID_DIETARY = ["Vegetarian", "Gluten-Free", "Dairy-Free", "High Protein", "Comfort Food"];
 const VALID_COOKING_UNITS = ["/tsp", "/tbsp", "/cup", "/oz", "/lb", "/each", "/can"];
@@ -216,40 +277,74 @@ export async function POST(req: NextRequest) {
       source = pastedText.trim().slice(0, 15000);
       finalSourceUrl = textSourceUrl || "manual entry";
     } else {
-      // URL mode: scrape the page (with ScrapingBee fallback for Cloudflare)
+      // URL mode: scrape the page with retry, timeout, and circuit breaker
       finalSourceUrl = url;
+      const domain = getDomain(url);
 
       let html: string;
-      const directRes = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-          Accept: "text/html,application/xhtml+xml",
-        },
-        redirect: "follow",
-      });
 
-      if (directRes.status === 403) {
-        // Direct fetch blocked — try ScrapingBee
+      // Circuit breaker: skip straight to blocked response if domain recently failed
+      if (isCircuitOpen(domain)) {
         const sbKey = process.env.SCRAPINGBEE_API_KEY;
         if (!sbKey) {
+          return NextResponse.json({ blocked: true, url, reason: "Domain recently blocked" }, { status: 422 });
+        }
+        // Try ScrapingBee even for circuit-broken domains (it uses proxies)
+        try {
+          const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
+            api_key: sbKey, url, render_js: "true", premium_proxy: "true",
+          })}`;
+          const sbRes = await fetchWithTimeout(sbUrl, {}, 30000);
+          if (!sbRes.ok) {
+            return NextResponse.json({ blocked: true, url }, { status: 422 });
+          }
+          html = await sbRes.text();
+        } catch {
           return NextResponse.json({ blocked: true, url }, { status: 422 });
         }
-
-        const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
-          api_key: sbKey,
-          url: url,
-          render_js: "true",
-          premium_proxy: "true",
-        })}`;
-
-        const sbRes = await fetch(sbUrl);
-        if (!sbRes.ok) {
-          return NextResponse.json({ blocked: true, url }, { status: 422 });
-        }
-
-        html = await sbRes.text();
       } else {
-        html = await directRes.text();
+        // Normal path: direct fetch with retry, then ScrapingBee fallback
+        let directRes: Response;
+        try {
+          directRes = await fetchWithRetry(url, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+              Accept: "text/html,application/xhtml+xml",
+            },
+            redirect: "follow",
+          }, { maxAttempts: 2, timeoutMs: 15000 });
+        } catch (fetchErr) {
+          // All retries exhausted — treat as blocked
+          tripCircuit(domain);
+          return NextResponse.json({
+            blocked: true, url,
+            reason: fetchErr instanceof Error ? fetchErr.message : "Fetch failed",
+          }, { status: 422 });
+        }
+
+        if (directRes.status === 403) {
+          // Direct fetch blocked — try ScrapingBee
+          tripCircuit(domain);
+          const sbKey = process.env.SCRAPINGBEE_API_KEY;
+          if (!sbKey) {
+            return NextResponse.json({ blocked: true, url }, { status: 422 });
+          }
+
+          try {
+            const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
+              api_key: sbKey, url, render_js: "true", premium_proxy: "true",
+            })}`;
+            const sbRes = await fetchWithTimeout(sbUrl, {}, 30000);
+            if (!sbRes.ok) {
+              return NextResponse.json({ blocked: true, url }, { status: 422 });
+            }
+            html = await sbRes.text();
+          } catch {
+            return NextResponse.json({ blocked: true, url }, { status: 422 });
+          }
+        } else {
+          html = await directRes.text();
+        }
       }
       const $ = cheerio.load(html);
 
@@ -447,7 +542,7 @@ If you cannot extract a recipe, return {"name": null}.`,
 
     const recipeId = recipeRecord.id;
 
-    // Create ingredient records
+    // Create ingredient records (atomic: roll back recipe if this fails)
     if (ingredients.length > 0) {
       const { error: ingError } = await supabase
         .from("ingredients")
@@ -466,7 +561,12 @@ If you cannot extract a recipe, return {"name": null}.`,
         );
 
       if (ingError) {
-        console.error("[scrape] Ingredient save error:", ingError);
+        console.error("[scrape] Ingredient save error — rolling back recipe:", ingError);
+        await supabase.from("recipes").delete().eq("id", recipeId);
+        return NextResponse.json(
+          { error: `Failed to save ingredients: ${ingError.message}` },
+          { status: 500 }
+        );
       }
     }
 

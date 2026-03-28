@@ -441,8 +441,15 @@ export async function POST(req: NextRequest) {
         imageUrl = $('meta[name="twitter:image"]').attr("content") || null;
       }
       if (!imageUrl) {
-        const heroImg = $("article img, .recipe img, .post img, main img").first().attr("src");
+        // Broader image search: look for any large image in the page
+        const candidates = $("article img, .recipe img, .post img, main img, .hero img, [class*=recipe] img, [class*=featured] img, .entry-content img");
+        const heroImg = candidates.first().attr("src") || candidates.first().attr("data-src") || candidates.first().attr("data-lazy-src");
         if (heroImg) imageUrl = heroImg;
+      }
+
+      // Unwrap WordPress/CDN proxy URLs (i2.wp.com, i0.wp.com, etc.)
+      if (imageUrl && /^https?:\/\/i\d\.wp\.com\//.test(imageUrl)) {
+        imageUrl = imageUrl.replace(/^https?:\/\/i\d\.wp\.com\//, "https://");
       }
 
       ctx.hadImage = !!imageUrl;
@@ -566,7 +573,7 @@ ${contextBrief}`,
       recipe.dietaryTags = recipe.dietaryTags.filter((t: string) => VALID_DIETARY.includes(t));
     }
 
-    // Step 6: Upload image to Cloudinary (with retry)
+    // Step 6: Upload image to Cloudinary (with retry + URL fallbacks)
     let cloudinaryUrl: string | null = null;
     let imageWarning: string | null = null;
     if (imageUrl && !process.env.CLOUDINARY_CLOUD_NAME) {
@@ -581,21 +588,34 @@ ${contextBrief}`,
         api_key: process.env.CLOUDINARY_API_KEY,
         api_secret: process.env.CLOUDINARY_API_SECRET,
       });
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const result = await cloudinary.uploader.upload(imageUrl, {
-            folder: "julies-cookbook",
-            public_id: publicId,
-            overwrite: true,
-          });
-          cloudinaryUrl = result.secure_url;
-          break;
-        } catch (imgErr) {
-          console.error(`[scrape] Image upload attempt ${attempt + 1} failed:`, imgErr);
+
+      // Build list of URLs to try (original + unwrapped proxy + protocol variants)
+      const urlsToTry = [imageUrl];
+      if (/^https?:\/\/i\d\.wp\.com\//.test(imageUrl)) {
+        urlsToTry.push(imageUrl.replace(/^https?:\/\/i\d\.wp\.com\//, "https://"));
+      }
+      if (imageUrl.startsWith("http://")) {
+        urlsToTry.push(imageUrl.replace("http://", "https://"));
+      }
+
+      for (const tryUrl of urlsToTry) {
+        if (cloudinaryUrl) break;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const result = await cloudinary.uploader.upload(tryUrl, {
+              folder: "julies-cookbook",
+              public_id: publicId,
+              overwrite: true,
+            });
+            cloudinaryUrl = result.secure_url;
+            break;
+          } catch (imgErr) {
+            console.error(`[scrape] Image upload attempt ${attempt + 1} failed for ${tryUrl}:`, imgErr);
+          }
         }
       }
       if (!cloudinaryUrl) {
-        console.error("[scrape] Image upload failed after 2 attempts for:", imageUrl);
+        console.error("[scrape] Image upload failed for all URL variants:", urlsToTry);
       }
     }
 

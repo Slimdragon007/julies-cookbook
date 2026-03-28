@@ -1,6 +1,7 @@
 import { getRecipeById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import RecipeTabs from "@/components/RecipeTabs";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { ChevronLeft, Clock, Flame, Users, Sparkles } from "lucide-react";
@@ -31,10 +32,13 @@ export default async function RecipePage({
         {/* Image section */}
         <div className="relative h-[50vh] lg:h-screen lg:sticky lg:top-0 w-full overflow-hidden">
           {recipe.imageUrl ? (
-            <img
+            <Image
               src={recipe.imageUrl}
               alt={recipe.name}
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-cover"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">

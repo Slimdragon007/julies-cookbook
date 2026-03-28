@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Link2, Sparkles, ChefHat, ShoppingBasket, ArrowRight,
@@ -372,8 +373,7 @@ export default function DemoPage() {
                 <div className="max-w-md mx-auto w-full">
                   <div className="glass-strong rounded-[3rem] overflow-hidden">
                     <div className="relative h-48 overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={DEMO_RECIPE.image} alt={DEMO_RECIPE.title} className="w-full h-full object-cover" />
+                      <Image src={DEMO_RECIPE.image} alt={DEMO_RECIPE.title} fill sizes="400px" className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent" />
                       <div className="absolute bottom-6 left-8 right-8">
                         <span className="px-2 py-0.5 bg-emerald-500/80 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-full">

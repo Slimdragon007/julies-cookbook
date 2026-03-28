@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Recipe } from "@/lib/types";
 import { formatQuantity } from "@/lib/fractions";
 import { ShoppingBasket, Check, ChevronRight, ChevronLeft, LayoutGrid } from "lucide-react";
@@ -188,10 +189,12 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                         {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
                       </div>
                       {recipe.imageUrl && (
-                        <img
+                        <Image
                           src={recipe.imageUrl}
                           alt={recipe.name}
-                          className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+                          width={40}
+                          height={40}
+                          className="rounded-xl object-cover flex-shrink-0"
                         />
                       )}
                       <div className="min-w-0">

@@ -6,6 +6,53 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export const maxDuration = 60;
 
+// --- Scrape context: accumulates metadata through fallback steps for AI awareness ---
+interface ScrapeContext {
+  method: "direct" | "scrapingbee" | "text-paste";
+  contentFormat: "json-ld" | "body-text" | "user-pasted";
+  fetchAttempts: number;
+  errors: string[];
+  circuitBreakerTripped: boolean;
+  contentLengthChars: number;
+  hadImage: boolean;
+  domain: string | null;
+}
+
+function createScrapeContext(): ScrapeContext {
+  return {
+    method: "direct",
+    contentFormat: "body-text",
+    fetchAttempts: 0,
+    errors: [],
+    circuitBreakerTripped: false,
+    contentLengthChars: 0,
+    hadImage: false,
+    domain: null,
+  };
+}
+
+function buildContextPrompt(ctx: ScrapeContext): string {
+  const lines: string[] = [];
+  lines.push(`Acquisition method: ${ctx.method}`);
+  lines.push(`Content format: ${ctx.contentFormat}`);
+  if (ctx.fetchAttempts > 1) lines.push(`Fetch attempts: ${ctx.fetchAttempts} (retried due to failures)`);
+  if (ctx.circuitBreakerTripped) lines.push("Circuit breaker was tripped — this domain has recently blocked direct requests");
+  if (ctx.errors.length > 0) lines.push(`Issues encountered: ${ctx.errors.join("; ")}`);
+  lines.push(`Content length: ${ctx.contentLengthChars} chars`);
+
+  if (ctx.method === "scrapingbee") {
+    lines.push("NOTE: Content was fetched via proxy (ScrapingBee) because the site blocked direct access. The HTML may include rendered JavaScript content. Look for recipe data in structured elements.");
+  }
+  if (ctx.method === "text-paste") {
+    lines.push("NOTE: This is user-pasted text, likely copied from a recipe website or a physical cookbook. It may contain ads, navigation text, or other non-recipe content mixed in. Be thorough but lenient — extract the recipe even if formatting is messy or incomplete.");
+  }
+  if (ctx.contentFormat === "body-text") {
+    lines.push("NOTE: No structured JSON-LD recipe data was found. Content is raw page text which may include ads, comments, and non-recipe content. Focus on identifying the core recipe structure (title, ingredients list, instructions).");
+  }
+
+  return lines.join("\n");
+}
+
 // --- Circuit breaker: track domains that consistently fail ---
 const blockedDomains = new Map<string, number>(); // domain → timestamp
 const CIRCUIT_BREAKER_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -271,26 +318,35 @@ export async function POST(req: NextRequest) {
     let source: string;
     let imageUrl: string | null = null;
     let finalSourceUrl: string;
+    const ctx = createScrapeContext();
 
     if (isTextMode) {
       // Text-paste mode: skip scraping, go straight to extraction
       source = pastedText.trim().slice(0, 15000);
       finalSourceUrl = textSourceUrl || "manual entry";
+      ctx.method = "text-paste";
+      ctx.contentFormat = "user-pasted";
+      ctx.contentLengthChars = source.length;
     } else {
       // URL mode: scrape the page with retry, timeout, and circuit breaker
       finalSourceUrl = url;
       const domain = getDomain(url);
+      ctx.domain = domain;
 
       let html: string;
 
-      // Circuit breaker: skip straight to blocked response if domain recently failed
+      // Circuit breaker: skip straight to ScrapingBee if domain recently failed
       if (isCircuitOpen(domain)) {
+        ctx.circuitBreakerTripped = true;
+        ctx.errors.push(`Circuit breaker open for ${domain}`);
         const sbKey = process.env.SCRAPINGBEE_API_KEY;
         if (!sbKey) {
           return NextResponse.json({ blocked: true, url, reason: "Domain recently blocked" }, { status: 422 });
         }
         // Try ScrapingBee even for circuit-broken domains (it uses proxies)
         try {
+          ctx.method = "scrapingbee";
+          ctx.fetchAttempts++;
           const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
             api_key: sbKey, url, render_js: "true", premium_proxy: "true",
           })}`;
@@ -306,6 +362,7 @@ export async function POST(req: NextRequest) {
         // Normal path: direct fetch with retry, then ScrapingBee fallback
         let directRes: Response;
         try {
+          ctx.fetchAttempts++;
           directRes = await fetchWithRetry(url, {
             headers: {
               "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
@@ -313,17 +370,18 @@ export async function POST(req: NextRequest) {
             },
             redirect: "follow",
           }, { maxAttempts: 2, timeoutMs: 15000 });
+          ctx.fetchAttempts++; // account for potential retry inside fetchWithRetry
         } catch (fetchErr) {
           // All retries exhausted — treat as blocked
+          const reason = fetchErr instanceof Error ? fetchErr.message : "Fetch failed";
+          ctx.errors.push(`Direct fetch failed: ${reason}`);
           tripCircuit(domain);
-          return NextResponse.json({
-            blocked: true, url,
-            reason: fetchErr instanceof Error ? fetchErr.message : "Fetch failed",
-          }, { status: 422 });
+          return NextResponse.json({ blocked: true, url, reason }, { status: 422 });
         }
 
         if (directRes.status === 403) {
           // Direct fetch blocked — try ScrapingBee
+          ctx.errors.push(`Direct fetch returned 403 (blocked by ${domain})`);
           tripCircuit(domain);
           const sbKey = process.env.SCRAPINGBEE_API_KEY;
           if (!sbKey) {
@@ -331,6 +389,8 @@ export async function POST(req: NextRequest) {
           }
 
           try {
+            ctx.method = "scrapingbee";
+            ctx.fetchAttempts++;
             const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
               api_key: sbKey, url, render_js: "true", premium_proxy: "true",
             })}`;
@@ -343,6 +403,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ blocked: true, url }, { status: 422 });
           }
         } else {
+          ctx.method = "direct";
           html = await directRes.text();
         }
       }
@@ -382,7 +443,11 @@ export async function POST(req: NextRequest) {
         if (heroImg) imageUrl = heroImg;
       }
 
+      ctx.hadImage = !!imageUrl;
+      ctx.contentFormat = jsonLd ? "json-ld" : "body-text";
       source = jsonLd ? JSON.stringify(jsonLd, null, 2) : bodyText;
+      ctx.contentLengthChars = source.length;
+
       if (!jsonLd && bodyText.length < 200) {
         return NextResponse.json({ error: "Could not extract content from URL" }, { status: 422 });
       }
@@ -393,13 +458,17 @@ export async function POST(req: NextRequest) {
     const claudeTimer = setTimeout(() => claudeController.abort(), 30000);
     let response;
     try {
+      const contextBrief = buildContextPrompt(ctx);
       response = await anthropic.messages.create({
         model: "claude-sonnet-4-20250514",
         max_tokens: 4096,
         system: `You are a recipe data extraction assistant. Extract structured recipe data from web content.
 Return ONLY valid JSON with: name, preparation (numbered steps), servings, cookTime, prepTime, cuisineTag (one of ${JSON.stringify(VALID_CUISINES)} or null), dietaryTags (from ${JSON.stringify(VALID_DIETARY)}), ingredients array.
 Each ingredient needs: name (lowercase, singular), quantity (number), unit (tsp/tbsp/cup/oz/lb/each/can), category (${VALID_CATEGORIES.join("/")}), calories, protein_g, carbs_g, fat_g (whole numbers, USDA estimates for recipe qty).
-If you cannot extract a recipe, return {"name": null}.`,
+If you cannot extract a recipe, return {"name": null}.
+
+ACQUISITION CONTEXT (how this content was obtained):
+${contextBrief}`,
         messages: [{
           role: "user",
           content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${finalSourceUrl}\n\nContent:\n${source}`,

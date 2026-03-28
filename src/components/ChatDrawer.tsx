@@ -100,6 +100,7 @@ export default function ChatDrawer({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Thinking...");
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -112,6 +113,7 @@ export default function ChatDrawer({
     const userMessage: Message = { role: "user", content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setLastFailedMessage(null);
     setLoading(true);
 
     const searchWords = ["find", "search", "look up", "new recipe", "online", "discover", "browse the web"];
@@ -136,6 +138,7 @@ export default function ChatDrawer({
         ]);
       }
     } catch {
+      setLastFailedMessage(text);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Couldn't connect right now. Check your connection and try again." },
@@ -149,7 +152,14 @@ export default function ChatDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/10 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/10 backdrop-blur-sm"
+        onClick={onClose}
+        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        role="button"
+        tabIndex={0}
+        aria-label="Close chat"
+      />
       <div className="relative bg-white/80 backdrop-blur-2xl border border-white/60 rounded-t-[2rem] w-full max-w-lg shadow-[0_-12px_48px_rgba(0,0,0,0.08)] flex flex-col" style={{ maxHeight: "70vh" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100/50">
@@ -161,9 +171,10 @@ export default function ChatDrawer({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+            aria-label="Close chat"
+            className="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors active:scale-95"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -228,6 +239,16 @@ export default function ChatDrawer({
               </span>
             </div>
           )}
+          {lastFailedMessage && !loading && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => sendMessage(lastFailedMessage)}
+                className="text-xs font-bold text-sky-600 bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 active:scale-95 transition-all"
+              >
+                Retry last message
+              </button>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -243,8 +264,9 @@ export default function ChatDrawer({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about recipes..."
-            className="flex-1 glass-input rounded-2xl px-5 py-3 text-sm text-slate-800 font-medium placeholder:text-slate-300"
+            placeholder={loading ? "Waiting for response..." : "Ask about recipes..."}
+            disabled={loading}
+            className="flex-1 glass-input rounded-2xl px-5 py-3 text-sm text-slate-800 font-medium placeholder:text-slate-300 disabled:opacity-50"
           />
           <button
             type="submit"

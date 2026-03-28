@@ -79,7 +79,7 @@ export default async function RecipePage({
                 {recipe.cuisineTag}
               </span>
             )}
-            <h1 className="text-4xl font-bold text-white leading-tight drop-shadow-lg">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight drop-shadow-lg line-clamp-2 break-words">
               {recipe.name}
             </h1>
           </div>
@@ -99,7 +99,7 @@ export default async function RecipePage({
                 {recipe.cuisineTag}
               </span>
             )}
-            <h1 className="text-4xl xl:text-5xl font-bold text-slate-800 leading-tight">
+            <h1 className="text-4xl xl:text-5xl font-bold text-slate-800 leading-tight break-words">
               {recipe.name}
             </h1>
           </div>

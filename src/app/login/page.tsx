@@ -115,7 +115,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-60 shadow-[0_12px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_16px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_16px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? (
                 <Loader2 className="w-6 h-6 animate-spin" />

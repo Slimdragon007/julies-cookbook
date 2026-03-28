@@ -35,7 +35,7 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
         <div className="flex items-center gap-3 glass rounded-full px-4 py-2">
           <button
             onClick={() => onServingsChange(Math.max(1, servings - 1))}
-            className="w-7 h-7 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-sky-50 transition-colors shadow-sm"
+            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-sky-50 active:scale-90 transition-all shadow-sm"
             aria-label="Decrease servings"
           >
             −
@@ -45,7 +45,7 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
           </span>
           <button
             onClick={() => onServingsChange(servings + 1)}
-            className="w-7 h-7 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-sky-50 transition-colors shadow-sm"
+            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-sky-50 active:scale-90 transition-all shadow-sm"
             aria-label="Increase servings"
           >
             +

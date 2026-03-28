@@ -307,7 +307,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                           )}
                         >
                           <div className={clsx(
-                            "w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all",
+                            "w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all",
                             isChecked
                               ? "bg-emerald-500 border-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
                               : "border-sky-100 bg-white group-hover:border-sky-300"

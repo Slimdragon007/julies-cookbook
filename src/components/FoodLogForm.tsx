@@ -205,11 +205,11 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
               key={entry.id}
               className="flex items-center justify-between glass p-5 rounded-[1.75rem]"
             >
-              <div>
-                <span className="text-[15px] font-bold text-slate-800">
+              <div className="min-w-0 flex-1">
+                <span className="text-[15px] font-bold text-slate-800 truncate block">
                   {entry.recipes?.name || "Unknown"}
                 </span>
-                <span className="text-xs text-slate-400 font-bold ml-2 bg-slate-50 px-2 py-0.5 rounded-full">{entry.meal}</span>
+                <span className="text-xs text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full">{entry.meal}</span>
               </div>
               <div className="text-right">
                 <span className="text-sm font-bold text-slate-800">{entry.portion_g}g</span>

@@ -7,7 +7,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
 
   return (
     <Link href={`/recipe/${recipe.slug}`}>
-      <div className="glass rounded-2xl overflow-hidden transition-all duration-300 hover:bg-white/[0.09] hover:-translate-y-1 cursor-pointer h-full flex flex-col">
+      <div className="glass rounded-2xl overflow-hidden transition-all duration-300 hover:bg-white/[0.12] hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.4)] cursor-pointer h-full flex flex-col">
         <div className="aspect-[4/3] bg-white/[0.03] relative overflow-hidden">
           {recipe.imageUrl ? (
             <img

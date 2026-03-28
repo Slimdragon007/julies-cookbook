@@ -67,7 +67,8 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 relative">
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-72 h-72 bg-gold/[0.06] rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-[15%] left-[30%] w-96 h-96 bg-gold/[0.15] rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[20%] right-[25%] w-72 h-72 bg-purple-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
       <div className="w-full max-w-sm z-10">
         <div className="glass-strong rounded-2xl p-7 space-y-6">
         <div className="text-center">

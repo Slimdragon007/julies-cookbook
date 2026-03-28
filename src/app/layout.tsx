@@ -28,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${playfair.variable} ${lora.variable} font-body antialiased`}>
+        <div className="ambient-bg" />
         {children}
         <Analytics />
       </body>

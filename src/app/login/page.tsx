@@ -157,8 +157,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 overflow-hidden relative">
-      {/* Ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 bg-gold/[0.08] rounded-full blur-[100px] pointer-events-none" />
+      {/* Ambient glows */}
+      <div className="absolute top-[15%] left-[30%] w-96 h-96 bg-gold/[0.15] rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[20%] right-[25%] w-72 h-72 bg-purple-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
       {/* Particle canvas */}
       {phase === "splash" && <SplashCanvas onDone={handleSplashDone} />}
 

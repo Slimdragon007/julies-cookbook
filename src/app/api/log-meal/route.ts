@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase
       .from("food_log")
       .insert({
+        user_id: user.id,
         recipe_id,
         meal,
         portion_g,
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("food_log")
     .select("*, recipes(name)")
+    .eq("user_id", user.id)
     .gte("log_date", startStr)
     .lte("log_date", date)
     .order("log_date", { ascending: false })

@@ -1,10 +1,13 @@
 import { getAllRecipes } from "@/lib/data";
 import RecipeCard from "@/components/RecipeCard";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const recipes = await getAllRecipes();
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  const recipes = await getAllRecipes(false, user?.id);
 
   return (
     <div>

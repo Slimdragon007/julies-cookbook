@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import Link from "next/link";
 
 function SplashCanvas({ onDone }: { onDone: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -262,6 +263,13 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <p className="text-center mt-6 font-body text-sm text-warm-light">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-gold hover:underline">
+            Sign up
+          </Link>
+        </p>
       </div>
 
       <style jsx>{`

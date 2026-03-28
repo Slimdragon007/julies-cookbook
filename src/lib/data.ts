@@ -81,10 +81,13 @@ function mapRecipe(row: SupabaseRecipe, ingredients: Ingredient[] = []): Recipe 
   };
 }
 
-export async function getAllRecipes(includeIngredients = false): Promise<Recipe[]> {
+export async function getAllRecipes(includeIngredients = false, userId?: string): Promise<Recipe[]> {
+  if (!userId) return [];
+
   const { data: recipes, error } = await supabase
     .from("recipes")
     .select("*")
+    .eq("user_id", userId)
     .order("name");
 
   if (error) throw new Error(`Failed to fetch recipes: ${error.message}`);
@@ -94,9 +97,11 @@ export async function getAllRecipes(includeIngredients = false): Promise<Recipe[
     return recipes.map((r: SupabaseRecipe) => mapRecipe(r));
   }
 
+  const recipeIds = recipes.map((r: SupabaseRecipe) => r.id);
   const { data: allIngredients, error: ingError } = await supabase
     .from("ingredients")
-    .select("*");
+    .select("*")
+    .in("recipe_id", recipeIds);
 
   if (ingError) throw new Error(`Failed to fetch ingredients: ${ingError.message}`);
 
@@ -114,13 +119,17 @@ export async function getAllRecipes(includeIngredients = false): Promise<Recipe[
   });
 }
 
-export async function getRecipeById(idOrSlug: string): Promise<Recipe | null> {
+export async function getRecipeById(idOrSlug: string, userId?: string): Promise<Recipe | null> {
+  if (!userId) return null;
+
   // Try by slug first, then by UUID
-  let { data: recipe, error } = await supabase.from("recipes").select("*").eq("slug", idOrSlug).single();
+  let { data: recipe, error } = await supabase
+    .from("recipes").select("*").eq("slug", idOrSlug).eq("user_id", userId).single();
 
   if (error || !recipe) {
     // Fallback: try by UUID (for backwards compat)
-    const result = await supabase.from("recipes").select("*").eq("id", idOrSlug).single();
+    const result = await supabase
+      .from("recipes").select("*").eq("id", idOrSlug).eq("user_id", userId).single();
     recipe = result.data;
     error = result.error;
   }
@@ -139,27 +148,37 @@ export async function getRecipeById(idOrSlug: string): Promise<Recipe | null> {
   return mapRecipe(recipe as SupabaseRecipe, mappedIngredients);
 }
 
-export async function getAllRecipeIds(): Promise<string[]> {
+export async function getAllRecipeIds(userId?: string): Promise<string[]> {
+  if (!userId) return [];
+
   const { data, error } = await supabase
     .from("recipes")
-    .select("slug");
+    .select("slug")
+    .eq("user_id", userId);
 
   if (error) throw new Error(`Failed to fetch recipe slugs: ${error.message}`);
   return (data || []).map((r: { slug: string }) => r.slug);
 }
 
-// Cache recipe context for 5 minutes to avoid requerying on every chat message
-let cachedContext: string | null = null;
-let cacheTimestamp = 0;
+// Cache recipe context per user for 5 minutes
+const contextCache = new Map<string, { context: string; timestamp: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-export async function getRecipeContext(): Promise<string> {
+export async function getRecipeContext(userId: string): Promise<string> {
   const now = Date.now();
-  if (cachedContext && now - cacheTimestamp < CACHE_TTL_MS) {
-    return cachedContext;
+  const cached = contextCache.get(userId);
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    return cached.context;
   }
 
-  const recipes = await getAllRecipes(true);
+  // Evict stale entries to prevent unbounded growth
+  if (contextCache.size > 50) {
+    contextCache.forEach((val, key) => {
+      if (now - val.timestamp >= CACHE_TTL_MS) contextCache.delete(key);
+    });
+  }
+
+  const recipes = await getAllRecipes(true, userId);
   const context = recipes
     .map((r) => {
       const totals = r.ingredients.reduce(
@@ -202,7 +221,6 @@ export async function getRecipeContext(): Promise<string> {
     })
     .join("\n\n");
 
-  cachedContext = context;
-  cacheTimestamp = Date.now();
+  contextCache.set(userId, { context, timestamp: Date.now() });
   return context;
 }

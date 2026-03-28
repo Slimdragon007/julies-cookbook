@@ -1,14 +1,17 @@
 import { getAllRecipes } from "@/lib/data";
 import FoodLogForm from "@/components/FoodLogForm";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Food Log — Julie's Cookbook",
+  title: "Food Log",
 };
 
 export default async function FoodLogPage() {
-  const recipes = await getAllRecipes(true);
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  const recipes = await getAllRecipes(true, user?.id);
 
   return (
     <div className="max-w-2xl mx-auto">

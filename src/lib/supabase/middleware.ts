@@ -31,16 +31,18 @@ export async function updateSession(request: NextRequest) {
 
   // Allow access to login page, auth callback, and audit endpoint (has own auth)
   const isLoginPage = request.nextUrl.pathname === "/login";
+  const isSignupPage = request.nextUrl.pathname === "/signup";
   const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/");
   const isAuditApi = request.nextUrl.pathname === "/api/audit";
+  const isSignupApi = request.nextUrl.pathname === "/api/signup";
 
-  if (!user && !isLoginPage && !isAuthCallback && !isAuditApi) {
+  if (!user && !isLoginPage && !isSignupPage && !isAuthCallback && !isAuditApi && !isSignupApi) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isLoginPage) {
+  if (user && (isLoginPage || isSignupPage)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

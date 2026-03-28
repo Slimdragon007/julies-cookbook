@@ -1,14 +1,10 @@
-import { getRecipeById, getAllRecipeIds } from "@/lib/data";
+import { getRecipeById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import RecipeTabs from "@/components/RecipeTabs";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  const ids = await getAllRecipeIds();
-  return ids.map((id) => ({ id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function RecipePage({
   params,
@@ -16,7 +12,9 @@ export default async function RecipePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const recipe = await getRecipeById(id);
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  const recipe = await getRecipeById(id, user?.id);
 
   if (!recipe) notFound();
 

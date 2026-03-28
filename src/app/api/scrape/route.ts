@@ -322,24 +322,26 @@ If you cannot extract a recipe, return {"name": null}.`,
       return NextResponse.json({ error: "Could not identify a recipe from that URL" }, { status: 422 });
     }
 
-    // Step 3: Duplicate check (by source URL and name)
+    // Step 3: Duplicate check (scoped to this user)
     if (finalSourceUrl !== "manual entry") {
       const { data: urlDupes } = await supabase
         .from("recipes")
         .select("id, name")
+        .eq("user_id", user.id)
         .eq("source_url", finalSourceUrl)
         .limit(1);
       if (urlDupes && urlDupes.length > 0) {
-        return NextResponse.json({ error: `"${urlDupes[0].name}" already exists in the cookbook (same URL)` }, { status: 409 });
+        return NextResponse.json({ error: `"${urlDupes[0].name}" already exists in your cookbook (same URL)` }, { status: 409 });
       }
     }
     const { data: nameDupes } = await supabase
       .from("recipes")
       .select("id")
+      .eq("user_id", user.id)
       .eq("name", recipe.name)
       .limit(1);
     if (nameDupes && nameDupes.length > 0) {
-      return NextResponse.json({ error: `"${recipe.name}" already exists in the cookbook` }, { status: 409 });
+      return NextResponse.json({ error: `"${recipe.name}" already exists in your cookbook` }, { status: 409 });
     }
 
     // Step 4: Normalize ingredients
@@ -424,6 +426,7 @@ If you cannot extract a recipe, return {"name": null}.`,
     const { data: recipeRecord, error: recipeError } = await supabase
       .from("recipes")
       .insert({
+        user_id: user.id,
         slug,
         name: recipe.name,
         preparation: Array.isArray(recipe.preparation) ? recipe.preparation.join("\n") : recipe.preparation,

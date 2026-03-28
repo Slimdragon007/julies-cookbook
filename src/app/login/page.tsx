@@ -126,12 +126,28 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-10 flex flex-col items-center gap-4">
+        <div className="mt-10 flex flex-col items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="h-px w-8 bg-slate-200" />
             <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">New to Cookbook?</span>
             <div className="h-px w-8 bg-slate-200" />
           </div>
+
+          <Link
+            href="/demo"
+            className="group flex items-center gap-4 px-6 py-3 rounded-2xl glass hover:bg-white/60 transition-all"
+          >
+            <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform">
+              <svg className="w-3.5 h-3.5 ml-0.5 fill-current" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="text-[13px] font-bold text-slate-800 leading-none mb-0.5">See How It Works</p>
+              <p className="text-[11px] font-medium text-slate-400 leading-none">Interactive demo — no account needed</p>
+            </div>
+          </Link>
+
           <Link
             href="/signup"
             className="text-[13px] font-bold text-sky-600 hover:underline transition-all"

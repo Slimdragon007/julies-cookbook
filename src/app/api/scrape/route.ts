@@ -573,6 +573,27 @@ ${contextBrief}`,
       recipe.dietaryTags = recipe.dietaryTags.filter((t: string) => VALID_DIETARY.includes(t));
     }
 
+    // Step 5b: If no image found from scraping, try Pexels API
+    if (!imageUrl && process.env.PEXELS_API_KEY) {
+      try {
+        const searchQuery = recipe.name.replace(/[^a-zA-Z\s]/g, "").trim();
+        const pexelsRes = await fetchWithTimeout(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery + " food")}&per_page=1&orientation=landscape`,
+          { headers: { Authorization: process.env.PEXELS_API_KEY } },
+          10000
+        );
+        if (pexelsRes.ok) {
+          const pexelsData = await pexelsRes.json();
+          if (pexelsData.photos?.length > 0) {
+            imageUrl = pexelsData.photos[0].src.large;
+            ctx.errors.push("Image sourced from Pexels (no image found on recipe page)");
+          }
+        }
+      } catch {
+        console.error("[scrape] Pexels API search failed for:", recipe.name);
+      }
+    }
+
     // Step 6: Upload image to Cloudinary (with retry + URL fallbacks)
     let cloudinaryUrl: string | null = null;
     let imageWarning: string | null = null;
@@ -606,6 +627,10 @@ ${contextBrief}`,
               folder: "julies-cookbook",
               public_id: publicId,
               overwrite: true,
+              transformation: [
+                { width: 800, height: 600, crop: "fill", gravity: "auto" },
+                { quality: "auto", fetch_format: "auto" },
+              ],
             });
             cloudinaryUrl = result.secure_url;
             break;

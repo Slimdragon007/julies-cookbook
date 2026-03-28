@@ -54,6 +54,7 @@ export default async function RecipePage({
               priority
               sizes="(max-width: 1024px) 100vw, 55vw"
               className="object-cover"
+              style={{ viewTransitionName: `recipe-img-${recipe.slug}` }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">

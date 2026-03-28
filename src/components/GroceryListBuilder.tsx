@@ -174,18 +174,18 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                 <button
                   key={recipe.id}
                   onClick={() => toggle(recipe.id)}
-                  className={`text-left rounded-xl border overflow-hidden transition-all duration-200 ${
+                  className={`text-left rounded-xl overflow-hidden transition-all duration-200 ${
                     isSelected
-                      ? "border-warm ring-2 ring-warm/20 bg-white"
-                      : "border-border bg-white hover:border-warm-light"
+                      ? "ring-2 ring-gold/30 bg-gold/10 border border-gold/20"
+                      : "glass hover:bg-white/[0.09]"
                   }`}
                 >
                   <div className="flex items-center gap-3 p-3">
                     <div
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                         isSelected
-                          ? "bg-warm border-warm text-white"
-                          : "border-border"
+                          ? "bg-gold border-gold text-cream"
+                          : "border-warm-light/30"
                       }`}
                     >
                       {isSelected && (
@@ -220,7 +220,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
             <button
               onClick={() => setShowList(true)}
               disabled={selected.size === 0}
-              className="font-display text-sm px-8 py-3 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-warm text-white hover:bg-warm-dark"
+              className="font-display text-sm px-8 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gold text-cream hover:brightness-110"
             >
               Generate Shopping List ({selected.size} {selected.size === 1 ? "recipe" : "recipes"})
             </button>
@@ -245,7 +245,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
           </div>
 
           {/* Selected recipes summary */}
-          <div className="bg-linen rounded-lg px-4 py-3 mb-6">
+          <div className="glass rounded-xl px-4 py-3 mb-6">
             <p className="font-body text-xs text-warm-light mb-1">Shopping for:</p>
             <p className="font-display text-sm text-warm-dark">
               {selectedRecipes.map((r) => r.name).join(", ")}
@@ -266,13 +266,13 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                     <li key={key}>
                       <button
                         onClick={() => toggleChecked(key)}
-                        className="w-full flex items-center gap-3 py-2 px-1 text-left hover:bg-linen/50 rounded transition-colors"
+                        className="w-full flex items-center gap-3 py-2 px-1 text-left hover:bg-white/[0.04] rounded transition-colors"
                       >
                         <div
                           className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
                             isChecked
-                              ? "bg-warm border-warm text-white"
-                              : "border-warm-light"
+                              ? "bg-gold border-gold text-cream"
+                              : "border-warm-light/30"
                           }`}
                         >
                           {isChecked && (

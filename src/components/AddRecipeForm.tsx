@@ -153,13 +153,13 @@ export default function AddRecipeForm() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://www.seriouseats.com/best-chicken..."
-              className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm"
+              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 font-body">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-body">
               {error}
             </div>
           )}
@@ -167,14 +167,14 @@ export default function AddRecipeForm() {
           <button
             type="submit"
             disabled={!url.trim()}
-            className="w-full font-display text-sm px-6 py-3 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-warm text-white hover:bg-warm-dark"
+            className="w-full font-display text-sm px-6 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gold text-cream hover:brightness-110"
           >
             Add to Cookbook
           </button>
         </form>
       ) : status === "blocked" ? (
         <div>
-          <div className="bg-linen rounded-xl px-5 py-5 mb-5">
+          <div className="glass rounded-xl px-5 py-5 mb-5">
             <p className="font-display text-lg text-warm-dark mb-2">
               No worries! Just add it here
             </p>
@@ -195,7 +195,7 @@ export default function AddRecipeForm() {
                 onChange={(e) => setPasteText(e.target.value)}
                 placeholder={"Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"}
                 rows={8}
-                className="w-full px-4 py-3 rounded-lg border border-border bg-white font-body text-base text-warm-dark placeholder:text-warm-light/50 focus:outline-none focus:ring-2 focus:ring-warm/30 focus:border-warm resize-y min-h-[200px]"
+                className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none resize-y min-h-[200px]"
                 required
               />
             </div>
@@ -209,7 +209,7 @@ export default function AddRecipeForm() {
             <button
               type="submit"
               disabled={!pasteText.trim()}
-              className="w-full font-display text-sm px-6 py-3 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-warm text-white hover:bg-warm-dark"
+              className="w-full font-display text-sm px-6 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gold text-cream hover:brightness-110"
             >
               Add to Cookbook
             </button>
@@ -217,7 +217,7 @@ export default function AddRecipeForm() {
             <button
               type="button"
               onClick={reset}
-              className="w-full font-display text-sm px-6 py-3 rounded-full border border-border text-warm hover:bg-linen transition-colors"
+              className="w-full font-display text-sm px-6 py-3 rounded-xl glass text-warm-light hover:bg-white/[0.09] transition-colors"
             >
               Try a Different URL
             </button>
@@ -225,7 +225,7 @@ export default function AddRecipeForm() {
         </div>
       ) : status === "scraping" ? (
         <div className="text-center py-12">
-          <div className="w-12 h-12 border-4 border-linen border-t-warm rounded-full animate-spin mx-auto mb-6" />
+          <div className="w-12 h-12 border-4 border-white/10 border-t-gold rounded-full animate-spin mx-auto mb-6" />
 
           <p className="font-display text-lg text-warm-dark mb-4">
             {steps[step]}
@@ -248,7 +248,7 @@ export default function AddRecipeForm() {
         </div>
       ) : (status === "success" || status === "partial") && result ? (
         <div className="text-center py-8">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${status === "success" ? "bg-green-50" : "bg-amber-50"}`}>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${status === "success" ? "bg-green-500/10" : "bg-amber-500/10"}`}>
             {status === "success" ? (
               <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -287,13 +287,13 @@ export default function AddRecipeForm() {
           <div className="flex gap-3 justify-center">
             <a
               href={`/recipe/${result.recipe.slug}`}
-              className="font-display text-sm px-6 py-2.5 rounded-full bg-warm text-white hover:bg-warm-dark transition-colors"
+              className="font-display text-sm px-6 py-2.5 rounded-xl bg-gold text-cream hover:brightness-110 transition-all"
             >
               View Recipe
             </a>
             <button
               onClick={reset}
-              className="font-display text-sm px-6 py-2.5 rounded-full border border-border text-warm hover:bg-linen transition-colors"
+              className="font-display text-sm px-6 py-2.5 rounded-xl glass text-warm-light hover:bg-white/[0.09] transition-colors"
             >
               Add Another
             </button>

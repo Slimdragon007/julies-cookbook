@@ -190,7 +190,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                       {recipe.imageUrl && (
                         <img
                           src={recipe.imageUrl}
-                          alt=""
+                          alt={recipe.name}
                           className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
                         />
                       )}

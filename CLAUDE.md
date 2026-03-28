@@ -35,7 +35,7 @@ Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), recip
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-side only)
 - `ANTHROPIC_API_KEY` — For Claude chat API
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — Image uploads
-- `SCRAPE_PASSWORD` — For /add-recipe page
+- `SCRAPINGBEE_API_KEY` — Optional: Cloudflare bypass for recipe scraper (free tier: 1000 calls/month)
 - `INVITE_CODE` — Server-side invite code for signup (no fallback — fails closed if missing)
 
 All must be set in Vercel project settings for production.

@@ -54,6 +54,9 @@ function buildContextPrompt(ctx: ScrapeContext): string {
 }
 
 // --- Circuit breaker: track domains that consistently fail ---
+// NOTE: In-memory Map resets on serverless cold starts. Effective within a
+// warm instance (Fluid Compute reuses instances), but won't persist across
+// cold starts. For durable persistence, migrate to Edge Config or Supabase.
 const blockedDomains = new Map<string, number>(); // domain → timestamp
 const CIRCUIT_BREAKER_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -370,7 +373,6 @@ export async function POST(req: NextRequest) {
             },
             redirect: "follow",
           }, { maxAttempts: 2, timeoutMs: 15000 });
-          ctx.fetchAttempts++; // account for potential retry inside fetchWithRetry
         } catch (fetchErr) {
           // All retries exhausted — treat as blocked
           const reason = fetchErr instanceof Error ? fetchErr.message : "Fetch failed";

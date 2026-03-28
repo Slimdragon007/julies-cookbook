@@ -3,8 +3,6 @@ import FoodLogForm from "@/components/FoodLogForm";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { UtensilsCrossed } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 export const metadata = {
   title: "Food Log — Julie's Cookbook",
 };

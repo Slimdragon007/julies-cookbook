@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getAllRecipes } from "@/lib/data";
-import RecipeCard from "@/components/RecipeCard";
+import RecipeGrid from "@/components/RecipeGrid";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Sparkles } from "lucide-react";
 
@@ -9,17 +9,14 @@ export const metadata: Metadata = {
   title: "Recipes — Julie's Cookbook",
 };
 
-export const dynamic = "force-dynamic";
-
-// Header renders instantly (only needs user email, fast query)
 async function WelcomeHeader() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
-  const firstName = user?.email?.split("@")[0] || "Chef";
-  const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  const displayName = user?.user_metadata?.display_name
+    || (user?.email?.split("@")[0] || "Chef").replace(/^\w/, (c: string) => c.toUpperCase());
 
   return (
-    <header className="mb-10 px-2">
+    <header className="mb-8 px-2">
       <div className="flex items-center gap-3 mb-2">
         <h1
           className="text-3xl font-bold tracking-tight"
@@ -41,49 +38,19 @@ async function WelcomeHeader() {
   );
 }
 
-// Recipe grid streams in after header
-async function RecipeGrid() {
+async function RecipeSection() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   const recipes = await getAllRecipes(false, user?.id);
-
-  return (
-    <section>
-      <div className="flex items-center justify-between mb-6 px-2">
-        <h2 className="text-xl font-bold text-slate-800">Your Recipes</h2>
-        <span className="text-amber-700 font-bold text-sm">
-          {recipes.length} {recipes.length === 1 ? "recipe" : "recipes"}
-        </span>
-      </div>
-
-      {recipes.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {recipes.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-24 glass rounded-[3rem]">
-          <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
-            <Sparkles className="w-8 h-8 text-amber-200" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-2">No recipes yet</h3>
-          <p className="text-slate-500 max-w-xs mx-auto">
-            Add your first recipe to get started!
-          </p>
-        </div>
-      )}
-    </section>
-  );
+  return <RecipeGrid recipes={recipes} />;
 }
 
-// Skeleton for recipe grid while streaming
 function RecipeGridSkeleton() {
   return (
     <section>
+      <div className="h-14 bg-slate-100/30 rounded-2xl mb-8 animate-pulse" />
       <div className="flex items-center justify-between mb-6 px-2">
         <div className="h-6 w-32 bg-slate-200/50 rounded-xl animate-pulse" />
-        <div className="h-5 w-20 bg-slate-100/50 rounded-xl animate-pulse" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -93,7 +60,6 @@ function RecipeGridSkeleton() {
               <div className="h-6 w-3/4 bg-slate-200/50 rounded-xl mb-4" />
               <div className="flex gap-6">
                 <div className="h-4 w-24 bg-slate-100/50 rounded-lg" />
-                <div className="h-4 w-16 bg-slate-100/50 rounded-lg" />
               </div>
             </div>
           </div>
@@ -110,7 +76,7 @@ export default function HomePage() {
         <WelcomeHeader />
       </Suspense>
       <Suspense fallback={<RecipeGridSkeleton />}>
-        <RecipeGrid />
+        <RecipeSection />
       </Suspense>
     </div>
   );

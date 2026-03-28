@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { BookHeart, PlusCircle, ShoppingBasket, UtensilsCrossed, BarChart3, MessageCircle } from "lucide-react";
+import { BookHeart, PlusCircle, ShoppingBasket, UtensilsCrossed, BarChart3, MessageCircle, User } from "lucide-react";
 import clsx from "clsx";
 import ChatDrawer from "@/components/ChatDrawer";
-import SignOutButton from "@/components/SignOutButton";
 
 // Add is in position 3 (center of 5)
 const navItems = [
@@ -73,7 +72,18 @@ export default function MainNav({
             <MessageCircle className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
             <span className="hidden xl:block text-[14px] font-semibold">Ask AI</span>
           </button>
-          <SignOutButton />
+          <Link
+            href="/profile"
+            className={clsx(
+              "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all w-full group",
+              isActive(pathname, "/profile")
+                ? "text-amber-800 bg-white/60 border border-white shadow-sm"
+                : "text-slate-500 hover:text-slate-800 hover:bg-white/30"
+            )}
+          >
+            <User className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
+            <span className="hidden xl:block text-[14px] font-semibold">Profile</span>
+          </Link>
         </div>
       </nav>
 
@@ -95,7 +105,13 @@ export default function MainNav({
               >
                 <MessageCircle className="w-[18px] h-[18px]" />
               </button>
-              <SignOutButton />
+              <Link
+                href="/profile"
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white active:scale-95 transition-all"
+                aria-label="Profile"
+              >
+                <User className="w-[16px] h-[16px]" />
+              </Link>
             </div>
           </div>
         </div>

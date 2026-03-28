@@ -4,10 +4,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import RecipeTabs from "@/components/RecipeTabs";
+import RecipeActions from "@/components/RecipeActions";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { ChevronLeft, Clock, Flame, Users, Sparkles } from "lucide-react";
-
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -138,6 +137,16 @@ export default async function RecipePage({
               )}
             </div>
           )}
+
+          {/* Edit/Delete actions */}
+          <RecipeActions recipe={{
+            id: recipe.id,
+            name: recipe.name,
+            servings: recipe.servings,
+            prepTime: recipe.prepTime,
+            cookTime: recipe.cookTime,
+            cuisineTag: recipe.cuisineTag,
+          }} />
 
           {/* Tabbed content */}
           <RecipeTabs

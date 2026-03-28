@@ -13,6 +13,10 @@ const nextConfig = {
         hostname: "images.unsplash.com",
       },
     ],
+    // Optimize image sizes for mobile-first
+    deviceSizes: [390, 640, 750, 828, 1080, 1200],
+    imageSizes: [40, 96, 128, 256, 384],
+    formats: ["image/webp", "image/avif"],
   },
 };
 

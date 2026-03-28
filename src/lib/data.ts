@@ -84,69 +84,57 @@ function mapRecipe(row: SupabaseRecipe, ingredients: Ingredient[] = []): Recipe 
 export async function getAllRecipes(includeIngredients = false, userId?: string): Promise<Recipe[]> {
   if (!userId) return [];
 
+  if (!includeIngredients) {
+    const { data: recipes, error } = await supabase
+      .from("recipes")
+      .select("*")
+      .eq("user_id", userId)
+      .order("name");
+
+    if (error) throw new Error(`Failed to fetch recipes: ${error.message}`);
+    return (recipes || []).map((r: SupabaseRecipe) => mapRecipe(r));
+  }
+
+  // Single join query — recipes + ingredients in one round-trip
   const { data: recipes, error } = await supabase
     .from("recipes")
-    .select("*")
+    .select("*, ingredients(*)")
     .eq("user_id", userId)
     .order("name");
 
   if (error) throw new Error(`Failed to fetch recipes: ${error.message}`);
   if (!recipes) return [];
 
-  if (!includeIngredients) {
-    return recipes.map((r: SupabaseRecipe) => mapRecipe(r));
-  }
-
-  const recipeIds = recipes.map((r: SupabaseRecipe) => r.id);
-  if (recipeIds.length === 0) {
-    return [];
-  }
-
-  const { data: allIngredients, error: ingError } = await supabase
-    .from("ingredients")
-    .select("*")
-    .in("recipe_id", recipeIds);
-
-  if (ingError) throw new Error(`Failed to fetch ingredients: ${ingError.message}`);
-
-  const ingredientsByRecipe = new Map<string, Ingredient[]>();
-  for (const row of allIngredients || []) {
-    const ing = mapIngredient(row as SupabaseIngredient);
-    const list = ingredientsByRecipe.get(row.recipe_id) || [];
-    list.push(ing);
-    ingredientsByRecipe.set(row.recipe_id, list);
-  }
-
-  return recipes.map((r: SupabaseRecipe) => {
-    const ingredients = ingredientsByRecipe.get(r.id) || [];
-    return mapRecipe(r, ingredients);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (recipes as any[]).map((r) => {
+    const ings = (r.ingredients || []).map((row: SupabaseIngredient) => mapIngredient(row));
+    return mapRecipe(r as SupabaseRecipe, ings);
   });
 }
 
 export async function getRecipeById(idOrSlug: string, userId?: string): Promise<Recipe | null> {
   if (!userId) return null;
 
-  // Try by slug first, then by UUID
-  let { data: recipe, error } = await supabase
-    .from("recipes").select("*").eq("slug", idOrSlug).eq("user_id", userId).single();
+  // Single query: fetch recipe + ingredients together via join
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let recipe: any = null;
 
-  if (error || !recipe) {
+  const { data: bySlug } = await supabase
+    .from("recipes").select("*, ingredients(*)").eq("slug", idOrSlug).eq("user_id", userId).single();
+
+  if (bySlug) {
+    recipe = bySlug;
+  } else {
     // Fallback: try by UUID (for backwards compat)
-    const result = await supabase
-      .from("recipes").select("*").eq("id", idOrSlug).eq("user_id", userId).single();
-    recipe = result.data;
-    error = result.error;
+    const { data: byId } = await supabase
+      .from("recipes").select("*, ingredients(*)").eq("id", idOrSlug).eq("user_id", userId).single();
+    recipe = byId;
   }
 
-  if (error || !recipe) return null;
+  if (!recipe) return null;
 
-  const { data: ingredients } = await supabase
-    .from("ingredients")
-    .select("*")
-    .eq("recipe_id", recipe.id);
-
-  const mappedIngredients = (ingredients || []).map((row: SupabaseIngredient) =>
-    mapIngredient(row)
+  const mappedIngredients = (recipe.ingredients || []).map(
+    (row: SupabaseIngredient) => mapIngredient(row)
   );
 
   return mapRecipe(recipe as SupabaseRecipe, mappedIngredients);

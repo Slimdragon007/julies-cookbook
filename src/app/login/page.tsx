@@ -1,139 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
-
-function SplashCanvas({ onDone }: { onDone: () => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    // Warm particles
-    const particles: {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      alpha: number;
-      color: string;
-    }[] = [];
-
-    const colors = ["#C4952E", "#8B7355", "#D4A853", "#B8956A", "#E5C87A"];
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-
-    // Spawn particles from edges
-    for (let i = 0; i < 80; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = Math.max(canvas.width, canvas.height) * 0.6;
-      particles.push({
-        x: cx + Math.cos(angle) * dist,
-        y: cy + Math.sin(angle) * dist,
-        vx: 0,
-        vy: 0,
-        size: Math.random() * 4 + 2,
-        alpha: Math.random() * 0.6 + 0.4,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
-    }
-
-    let frame = 0;
-    const totalFrames = 90; // ~1.5s at 60fps
-
-    function animate() {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const progress = Math.min(frame / totalFrames, 1);
-      const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-
-      particles.forEach((p) => {
-        // Pull toward center
-        const dx = cx - p.x;
-        const dy = cy - p.y;
-        p.vx += dx * 0.02;
-        p.vy += dy * 0.02;
-        p.vx *= 0.92;
-        p.vy *= 0.92;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Fade based on progress
-        const drawAlpha = p.alpha * (progress < 0.7 ? 1 : 1 - (progress - 0.7) / 0.3);
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (1 + ease * 0.5), 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = drawAlpha;
-        ctx.fill();
-      });
-
-      // Warm glow at center grows with convergence
-      const glowSize = ease * 120;
-      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowSize);
-      gradient.addColorStop(0, "rgba(196, 149, 46, 0.3)");
-      gradient.addColorStop(0.5, "rgba(139, 115, 85, 0.1)");
-      gradient.addColorStop(1, "rgba(139, 115, 85, 0)");
-      ctx.globalAlpha = ease;
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(cx, cy, glowSize, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      frame++;
-      if (frame <= totalFrames + 30) {
-        requestAnimationFrame(animate);
-      }
-    }
-
-    animate();
-
-    // Trigger done after animation
-    const timer = setTimeout(onDone, 2800);
-    return () => clearTimeout(timer);
-  }, [onDone]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 z-0"
-      style={{ pointerEvents: "none" }}
-    />
-  );
-}
+import { BookHeart, ArrowRight, Mail, Lock, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [phase, setPhase] = useState<"splash" | "reveal" | "form">("splash");
   const router = useRouter();
   const supabase = createSupabaseBrowser();
-
-  // Check if splash was already seen this session
-  useEffect(() => {
-    if (sessionStorage.getItem("splash_seen")) {
-      setPhase("form");
-    }
-  }, []);
-
-  function handleSplashDone() {
-    setPhase("reveal");
-    sessionStorage.setItem("splash_seen", "1");
-    setTimeout(() => setPhase("form"), 800);
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -156,139 +35,111 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4 overflow-hidden relative">
-      {/* Ambient glows */}
-      <div className="absolute top-[15%] left-[30%] w-96 h-96 bg-gold/[0.15] rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[20%] right-[25%] w-72 h-72 bg-purple-500/[0.08] rounded-full blur-[100px] pointer-events-none" />
-      {/* Particle canvas */}
-      {phase === "splash" && <SplashCanvas onDone={handleSplashDone} />}
-
-      {/* Splash text overlay */}
-      {(phase === "splash" || phase === "reveal") && (
-        <div
-          className={`absolute inset-0 z-10 flex flex-col items-center justify-center transition-all duration-700 ${
-            phase === "reveal" ? "opacity-0 scale-95" : "opacity-100"
-          }`}
-        >
-          <h1
-            className="font-display text-5xl md:text-7xl text-warm-dark tracking-tight opacity-0"
-            style={{
-              animation: "fadeUp 0.8s ease-out 0.4s forwards",
-            }}
-          >
-            Julie&apos;s
-          </h1>
-          <h1
-            className="font-display text-5xl md:text-7xl text-gold tracking-tight opacity-0"
-            style={{
-              animation: "fadeUp 0.8s ease-out 0.8s forwards",
-            }}
-          >
-            Cookbook
-          </h1>
-          <p
-            className="font-body text-sm text-warm-light mt-4 opacity-0"
-            style={{
-              animation: "fadeUp 0.6s ease-out 1.4s forwards",
-            }}
-          >
-            Simple recipes, made with love
-          </p>
-        </div>
-      )}
-
-      {/* Login form */}
-      <div
-        className={`w-full max-w-sm z-20 transition-all duration-700 ${
-          phase === "form"
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-4"
-        }`}
-      >
-        <div className="glass-strong rounded-2xl p-7 space-y-6">
-        <div className="text-center">
-          <h1 className="font-display text-3xl text-warm-dark mb-2">
-            Julie&apos;s Cookbook
-          </h1>
-          <p className="font-body text-sm text-warm-light">
-            Sign in to continue
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block font-body text-sm text-warm-dark mb-1"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
-              placeholder="julie@example.com"
-              required
-              autoFocus={phase === "form"}
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block font-body text-sm text-warm-dark mb-1"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
-              placeholder="Enter password"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-body">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || phase !== "form"}
-            className="w-full font-display text-sm px-6 py-3 rounded-xl bg-gold text-cream hover:brightness-110 transition-all disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-
-        <p className="text-center font-body text-sm text-warm-light/50">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-gold hover:underline">
-            Sign up
-          </Link>
-        </p>
-        </div>
+    <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center px-4 relative overflow-hidden selection:bg-sky-100 selection:text-sky-900">
+      {/* Ambient blobs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-sky-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-blue-100/20 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(rgba(0, 166, 244, 0.2) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(0, 166, 244, 0.2) 1.5px, transparent 1.5px)',
+          backgroundSize: '80px 80px'
+        }} />
       </div>
 
-      <style jsx>{`
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+      <div className="w-full max-w-md mx-auto flex flex-col items-center relative z-10">
+        {/* Logo */}
+        <div className="relative mb-12">
+          <div className="w-24 h-24 bg-gradient-to-br from-sky-400 to-blue-500 rounded-[2.5rem] flex items-center justify-center shadow-[0_12px_32px_rgba(0,166,244,0.25)] border-4 border-white relative z-10">
+            <BookHeart className="text-white w-10 h-10" />
+          </div>
+          <div className="absolute inset-[-12px] bg-sky-100/50 rounded-[3rem] blur-xl" />
+        </div>
+
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-black text-slate-800 mb-3 tracking-tight">Julie&apos;s Cookbook</h1>
+          <p className="text-slate-500 font-medium max-w-xs mx-auto leading-relaxed">
+            A meditative space to organize your recipes and simplify your kitchen workflow.
+          </p>
+        </div>
+
+        {/* Login Card */}
+        <div className="w-full glass-strong p-8 sm:p-10 rounded-[3rem] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-200/10 rounded-full blur-[40px] pointer-events-none" />
+
+          <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1" htmlFor="email">
+                <Mail className="w-3 h-3" />
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="julie@example.com"
+                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center pr-1">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1" htmlFor="password">
+                  <Lock className="w-3 h-3" />
+                  Password
+                </label>
+              </div>
+              <input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-60 shadow-[0_12px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_16px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {loading ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  Sign In
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-10 flex flex-col items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-px w-8 bg-slate-200" />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">New to Cookbook?</span>
+            <div className="h-px w-8 bg-slate-200" />
+          </div>
+          <Link
+            href="/signup"
+            className="text-[13px] font-bold text-sky-600 hover:underline transition-all"
+          >
+            Create an account
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Lora } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
-const playfair = Playfair_Display({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const lora = Lora({
-  subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -27,8 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfair.variable} ${lora.variable} font-body antialiased`}>
-        <div className="ambient-bg" />
+      <body className={`${inter.variable} font-body antialiased text-slate-800 bg-[#FDFCFB]`}>
+        <div className="ambient-bg">
+          <div className="grid-overlay" />
+        </div>
         {children}
         <Analytics />
       </body>

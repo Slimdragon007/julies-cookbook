@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Recipe } from "@/lib/types";
 import { formatQuantity } from "@/lib/fractions";
+import { ShoppingBasket, Check, ChevronRight, ChevronLeft, LayoutGrid } from "lucide-react";
+import clsx from "clsx";
 
 interface GroceryItem {
   name: string;
@@ -11,17 +13,9 @@ interface GroceryItem {
   category: string;
 }
 
-// Category display order
 const CATEGORY_ORDER = [
-  "Produce",
-  "Protein",
-  "Dairy",
-  "Grains & Pasta",
-  "Canned & Jarred",
-  "Spices & Seasonings",
-  "Oils & Condiments",
-  "Baking",
-  "Other",
+  "Produce", "Protein", "Dairy", "Grains & Pasta",
+  "Canned & Jarred", "Spices & Seasonings", "Oils & Condiments", "Baking", "Other",
 ];
 
 function combineIngredients(recipes: Recipe[]): Array<[string, GroceryItem[]]> {
@@ -29,7 +23,6 @@ function combineIngredients(recipes: Recipe[]): Array<[string, GroceryItem[]]> {
 
   for (const recipe of recipes) {
     for (const ing of recipe.ingredients) {
-      // Key by lowercase name + unit for deduplication
       const key = `${ing.name.toLowerCase()}|${(ing.unit || "").toLowerCase()}`;
       const existing = merged.get(key);
 
@@ -50,7 +43,6 @@ function combineIngredients(recipes: Recipe[]): Array<[string, GroceryItem[]]> {
     }
   }
 
-  // Group by category
   const byCategory = new Map<string, GroceryItem[]>();
   Array.from(merged.values()).forEach((item) => {
     const cat = item.category || "Other";
@@ -59,18 +51,17 @@ function combineIngredients(recipes: Recipe[]): Array<[string, GroceryItem[]]> {
     byCategory.set(cat, list);
   });
 
-  // Sort categories by predefined order, then any remaining
   const result: Array<[string, GroceryItem[]]> = [];
   for (const cat of CATEGORY_ORDER) {
     const items = byCategory.get(cat);
     if (items) {
-      items.sort((a: GroceryItem, b: GroceryItem) => a.name.localeCompare(b.name));
+      items.sort((a, b) => a.name.localeCompare(b.name));
       result.push([cat, items]);
     }
   }
   Array.from(byCategory.entries()).forEach(([cat, items]) => {
     if (!result.some(([c]) => c === cat)) {
-      items.sort((a: GroceryItem, b: GroceryItem) => a.name.localeCompare(b.name));
+      items.sort((a, b) => a.name.localeCompare(b.name));
       result.push([cat, items]);
     }
   });
@@ -120,192 +111,217 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
   const selectedRecipes = recipes.filter((r) => selected.has(r.id));
   const groceryList = showList ? combineIngredients(selectedRecipes) : null;
 
-  // Count total items for summary
   let totalItems = 0;
   if (groceryList) {
     for (const [, items] of groceryList) totalItems += items.length;
   }
+  const progress = totalItems === 0 ? 0 : Math.round((checked.size / totalItems) * 100);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="font-display text-2xl text-warm-dark">Grocery List</h2>
-          <p className="font-body text-sm text-warm-light mt-1">
-            Select recipes to generate a combined shopping list
-          </p>
+    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-sky-100 selection:text-sky-900">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <div className="mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-12 h-12 glass rounded-2xl flex items-center justify-center shadow-sm">
+                  <ShoppingBasket className="w-6 h-6 text-sky-500" />
+                </div>
+                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Shopping List</h1>
+              </div>
+              <p className="text-slate-500 font-medium pl-1 text-[15px]">
+                {showList
+                  ? `${totalItems - checked.size} items left to pick up`
+                  : "Select recipes to generate a combined shopping list"}
+              </p>
+            </div>
+          </div>
         </div>
-        <a
-          href="/"
-          className="font-body text-sm text-warm hover:text-warm-dark transition-colors"
-        >
-          &larr; Back to recipes
-        </a>
-      </div>
 
-      {!showList ? (
-        <>
-          {/* Selection controls */}
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={selectAll}
-              className="font-body text-xs text-warm hover:text-warm-dark transition-colors"
-            >
-              Select all
-            </button>
-            <span className="text-border">|</span>
-            <button
-              onClick={clearAll}
-              className="font-body text-xs text-warm hover:text-warm-dark transition-colors"
-            >
-              Clear
-            </button>
-            <span className="ml-auto font-body text-sm text-warm-light">
-              {selected.size} selected
-            </span>
-          </div>
+        {!showList ? (
+          <>
+            {/* Selection controls */}
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                onClick={selectAll}
+                className="text-sky-600 text-xs font-bold hover:underline transition-colors"
+              >
+                Select all
+              </button>
+              <div className="w-1 h-1 rounded-full bg-slate-200" />
+              <button
+                onClick={clearAll}
+                className="text-slate-400 text-xs font-bold hover:text-slate-600 transition-colors"
+              >
+                Clear
+              </button>
+              <span className="ml-auto text-sm text-slate-500 font-semibold">
+                {selected.size} selected
+              </span>
+            </div>
 
-          {/* Recipe grid with checkboxes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recipes.map((recipe) => {
-              const isSelected = selected.has(recipe.id);
-              return (
-                <button
-                  key={recipe.id}
-                  onClick={() => toggle(recipe.id)}
-                  className={`text-left rounded-xl overflow-hidden transition-all duration-200 ${
-                    isSelected
-                      ? "ring-2 ring-gold/30 bg-gold/10 border border-gold/20"
-                      : "glass hover:bg-white/[0.09]"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 p-3">
-                    <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        isSelected
-                          ? "bg-gold border-gold text-cream"
-                          : "border-warm-light/30"
-                      }`}
-                    >
-                      {isSelected && (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    {recipe.imageUrl && (
-                      <img
-                        src={recipe.imageUrl}
-                        alt=""
-                        className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                      />
+            {/* Recipe grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recipes.map((recipe) => {
+                const isSelected = selected.has(recipe.id);
+                return (
+                  <button
+                    key={recipe.id}
+                    onClick={() => toggle(recipe.id)}
+                    className={clsx(
+                      "text-left rounded-[1.75rem] overflow-hidden transition-all duration-200 border p-4",
+                      isSelected
+                        ? "bg-sky-50/50 border-sky-200 shadow-[0_4px_12px_rgba(0,166,244,0.1)]"
+                        : "glass hover:bg-white/60"
                     )}
-                    <div className="min-w-0">
-                      <span className="font-display text-sm text-warm-dark block truncate">
-                        {recipe.name}
-                      </span>
-                      <span className="font-body text-xs text-warm-light">
-                        {recipe.ingredients.length} ingredients
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Generate button */}
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setShowList(true)}
-              disabled={selected.size === 0}
-              className="font-display text-sm px-8 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gold text-cream hover:brightness-110"
-            >
-              Generate Shopping List ({selected.size} {selected.size === 1 ? "recipe" : "recipes"})
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Shopping list view */}
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => {
-                setShowList(false);
-                setChecked(new Set());
-              }}
-              className="font-body text-sm text-warm hover:text-warm-dark transition-colors"
-            >
-              &larr; Change recipes
-            </button>
-            <span className="ml-auto font-body text-sm text-warm-light">
-              {checked.size}/{totalItems} items checked
-            </span>
-          </div>
-
-          {/* Selected recipes summary */}
-          <div className="glass rounded-xl px-4 py-3 mb-6">
-            <p className="font-body text-xs text-warm-light mb-1">Shopping for:</p>
-            <p className="font-display text-sm text-warm-dark">
-              {selectedRecipes.map((r) => r.name).join(", ")}
-            </p>
-          </div>
-
-          {/* Grouped items */}
-          {groceryList && groceryList.map(([category, items]) => (
-            <section key={category} className="mb-6">
-              <h3 className="font-display text-base text-warm-dark mb-2 pb-1 border-b border-border">
-                {category}
-              </h3>
-              <ul className="space-y-0">
-                {items.map((item) => {
-                  const key = `${item.name}|${item.unit}`;
-                  const isChecked = checked.has(key);
-                  return (
-                    <li key={key}>
-                      <button
-                        onClick={() => toggleChecked(key)}
-                        className="w-full flex items-center gap-3 py-2 px-1 text-left hover:bg-white/[0.04] rounded transition-colors"
-                      >
-                        <div
-                          className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-                            isChecked
-                              ? "bg-gold border-gold text-cream"
-                              : "border-warm-light/30"
-                          }`}
-                        >
-                          {isChecked && (
-                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <span
-                          className={`font-body text-sm flex-1 transition-colors ${
-                            isChecked ? "line-through text-warm-light" : "text-warm-dark"
-                          }`}
-                        >
-                          {item.name}
-                        </span>
-                        {item.quantity !== null && (
-                          <span
-                            className={`font-body text-xs flex-shrink-0 transition-colors ${
-                              isChecked ? "text-warm-light/50" : "text-warm-light"
-                            }`}
-                          >
-                            {formatQty(item.quantity, item.unit)}
-                          </span>
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={clsx(
+                          "w-7 h-7 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                          isSelected
+                            ? "bg-sky-500 border-sky-500 shadow-[0_4px_12px_rgba(0,166,244,0.3)]"
+                            : "border-sky-100 bg-white"
                         )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
-        </>
-      )}
+                      >
+                        {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
+                      </div>
+                      {recipe.imageUrl && (
+                        <img
+                          src={recipe.imageUrl}
+                          alt=""
+                          className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <span className="text-sm font-bold text-slate-800 block truncate">
+                          {recipe.name}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium">
+                          {recipe.ingredients.length} ingredients
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Generate button */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => setShowList(true)}
+                disabled={selected.size === 0}
+                className="px-10 py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold transition-all disabled:opacity-40 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Generate Shopping List ({selected.size} {selected.size === 1 ? "recipe" : "recipes"})
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Progress bar */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 mb-10 items-stretch">
+              <div className="glass p-6 rounded-[2rem] relative overflow-hidden group">
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-sky-200/20 rounded-full blur-[60px] pointer-events-none" />
+                <div className="flex items-center justify-between mb-4 relative z-10">
+                  <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <LayoutGrid className="w-4 h-4 text-sky-400" />
+                    Progress
+                  </span>
+                  <span className="text-lg font-black text-sky-600">{progress}%</span>
+                </div>
+                <div className="relative h-4 bg-white/60 backdrop-blur-sm rounded-full overflow-hidden border border-white/40 shadow-inner z-10">
+                  <div
+                    className="h-full bg-gradient-to-r from-sky-400 to-blue-500 rounded-full relative transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[progress-shine_2s_linear_infinite]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Back button */}
+            <button
+              onClick={() => { setShowList(false); setChecked(new Set()); }}
+              className="flex items-center gap-2 text-sky-600 font-bold text-sm mb-6 hover:gap-3 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Change recipes
+            </button>
+
+            {/* Selected recipes summary */}
+            <div className="glass rounded-2xl px-5 py-3 mb-8">
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Shopping for:</p>
+              <p className="text-sm text-slate-800 font-bold">
+                {selectedRecipes.map((r) => r.name).join(", ")}
+              </p>
+            </div>
+
+            {/* Grouped items */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              {groceryList && groceryList.map(([category, items]) => (
+                <div key={category} className="flex flex-col">
+                  <div className="flex items-center gap-3 mb-4 px-2">
+                    <div className="w-2 h-2 rounded-full bg-sky-400" />
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                      {category}
+                    </h3>
+                    <div className="h-px bg-slate-100 flex-1 ml-2" />
+                  </div>
+
+                  <div className="space-y-3">
+                    {items.map((item) => {
+                      const key = `${item.name}|${item.unit}`;
+                      const isChecked = checked.has(key);
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => toggleChecked(key)}
+                          className={clsx(
+                            "w-full flex items-center gap-4 p-5 rounded-[1.75rem] transition-all text-left border group relative overflow-hidden",
+                            isChecked
+                              ? "bg-white/20 border-white/40 opacity-70"
+                              : "glass hover:bg-white/60 hover:border-sky-200"
+                          )}
+                        >
+                          <div className={clsx(
+                            "w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all",
+                            isChecked
+                              ? "bg-emerald-500 border-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
+                              : "border-sky-100 bg-white group-hover:border-sky-300"
+                          )}>
+                            {isChecked && <Check className="w-5 h-5 text-white stroke-[4]" />}
+                          </div>
+                          <span className={clsx(
+                            "text-[15px] font-bold transition-all flex-1",
+                            isChecked ? "text-slate-400 line-through" : "text-slate-700"
+                          )}>
+                            {item.name}
+                          </span>
+                          {item.quantity !== null && (
+                            <span className={clsx(
+                              "text-xs flex-shrink-0 font-semibold transition-colors",
+                              isChecked ? "text-slate-300" : "text-slate-400"
+                            )}>
+                              {formatQty(item.quantity, item.unit)}
+                            </span>
+                          )}
+                          {!isChecked && (
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

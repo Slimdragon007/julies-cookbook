@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Recipe } from "@/lib/types";
 import { calculatePortionMacros } from "@/lib/macros";
+import { Loader2 } from "lucide-react";
 
 interface LogEntry {
   id: string;
@@ -106,117 +107,113 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
   return (
     <div>
       {/* Log form */}
-      <form onSubmit={handleSubmit} className="glass rounded-2xl p-5 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block font-body text-sm text-warm-dark mb-1">Recipe</label>
+      <form onSubmit={handleSubmit} className="glass-strong rounded-[2rem] p-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Recipe</label>
             <select
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
+              className="w-full h-14 px-5 rounded-2xl glass-input text-slate-800 text-[15px] font-bold"
               required
             >
               <option value="">Select a recipe...</option>
               {recipes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
+                <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="block font-body text-sm text-warm-dark mb-1">Meal</label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Meal</label>
             <select
               value={meal}
               onChange={(e) => setMeal(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
+              className="w-full h-14 px-5 rounded-2xl glass-input text-slate-800 text-[15px] font-bold"
             >
               {MEALS.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="block font-body text-sm text-warm-dark mb-1">Portion (grams)</label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Portion (grams)</label>
             <input
               type="number"
               inputMode="numeric"
               value={portionG}
               onChange={(e) => setPortionG(e.target.value)}
               placeholder="e.g. 350"
-              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
+              className="w-full h-14 px-5 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300"
               required
             />
           </div>
-          <div>
-            <label className="block font-body text-sm text-warm-dark mb-1">Date</label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Date</label>
             <input
               type="date"
               value={logDate}
               onChange={(e) => setLogDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl glass-input text-warm-dark font-body text-base focus:outline-none"
+              className="w-full h-14 px-5 rounded-2xl glass-input text-slate-800 text-[15px] font-bold"
             />
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={saving || !recipeId || !portionG}
-          className="w-full sm:w-auto px-6 py-3 bg-gold text-cream font-body text-base rounded-xl hover:brightness-110 transition-all disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Log Meal"}
-        </button>
-        {message && (
-          <span className="ml-3 font-body text-sm text-warm-dark">{message}</span>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={saving || !recipeId || !portionG}
+            className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {saving ? "Saving..." : "Log Meal"}
+          </button>
+          {message && (
+            <span className="text-sm text-sky-600 font-bold">{message}</span>
+          )}
+        </div>
       </form>
 
-      {/* Today's totals */}
+      {/* Day totals */}
       {entries.length > 0 && (
-        <div className="glass rounded-2xl px-5 py-4 mb-5">
-          <h3 className="font-display text-sm text-warm-dark mb-3">Day Total</h3>
-          <div className="grid grid-cols-4 gap-3 text-center">
-            <div>
-              <div className="font-display text-lg text-warm-dark">{todayTotal.cal}</div>
-              <div className="text-xs text-warm-light">Calories</div>
-            </div>
-            <div>
-              <div className="font-display text-lg text-warm-dark">{todayTotal.p}g</div>
-              <div className="text-xs text-warm-light">Protein</div>
-            </div>
-            <div>
-              <div className="font-display text-lg text-warm-dark">{todayTotal.c}g</div>
-              <div className="text-xs text-warm-light">Carbs</div>
-            </div>
-            <div>
-              <div className="font-display text-lg text-warm-dark">{todayTotal.f}g</div>
-              <div className="text-xs text-warm-light">Fat</div>
-            </div>
+        <div className="glass rounded-[2rem] px-6 py-5 mb-8">
+          <h3 className="text-sm font-bold text-slate-800 mb-4">Day Total</h3>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Calories", value: todayTotal.cal, color: "text-sky-600", bg: "bg-sky-50" },
+              { label: "Protein", value: `${todayTotal.p}g`, color: "text-emerald-600", bg: "bg-emerald-50" },
+              { label: "Carbs", value: `${todayTotal.c}g`, color: "text-orange-600", bg: "bg-orange-50" },
+              { label: "Fat", value: `${todayTotal.f}g`, color: "text-purple-600", bg: "bg-purple-50" },
+            ].map(({ label, value, color, bg }) => (
+              <div key={label} className={`${bg} rounded-2xl p-3 text-center`}>
+                <div className={`text-lg font-bold ${color}`}>{value}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">{label}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Log entries */}
-      <h3 className="font-display text-lg text-warm-dark mb-3">
+      {/* Entries */}
+      <h3 className="text-lg font-bold text-slate-800 mb-4">
         {logDate === new Date().toISOString().split("T")[0] ? "Today" : logDate}
       </h3>
       {entries.length === 0 ? (
-        <p className="font-body text-sm text-warm-light">No meals logged yet.</p>
+        <p className="text-sm text-slate-400 font-medium">No meals logged yet.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="flex items-center justify-between glass rounded-xl px-4 py-3"
+              className="flex items-center justify-between glass p-5 rounded-[1.75rem]"
             >
               <div>
-                <span className="font-body text-base text-warm-dark">
+                <span className="text-[15px] font-bold text-slate-800">
                   {entry.recipes?.name || "Unknown"}
                 </span>
-                <span className="text-warm-light text-xs ml-2">{entry.meal}</span>
+                <span className="text-xs text-slate-400 font-bold ml-2 bg-slate-50 px-2 py-0.5 rounded-full">{entry.meal}</span>
               </div>
               <div className="text-right">
-                <span className="font-display text-sm text-warm-dark">{entry.portion_g}g</span>
-                <span className="text-warm-light text-xs ml-2">{entry.calories} cal</span>
+                <span className="text-sm font-bold text-slate-800">{entry.portion_g}g</span>
+                <span className="text-xs text-sky-600 font-bold ml-2">{entry.calories} cal</span>
               </div>
             </div>
           ))}

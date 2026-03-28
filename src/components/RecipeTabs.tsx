@@ -5,6 +5,7 @@ import { Ingredient } from "@/lib/types";
 import IngredientsTab from "./IngredientsTab";
 import InstructionsTab from "./InstructionsTab";
 import NutritionTab from "./NutritionTab";
+import clsx from "clsx";
 
 type TabName = "ingredients" | "instructions" | "nutrition";
 
@@ -29,18 +30,19 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings, 
 
   return (
     <div>
-      {/* Sticky tab bar */}
-      <div className="sticky top-16 z-10 glass rounded-xl mb-6">
+      {/* Tab bar */}
+      <div className="sticky top-0 z-10 glass rounded-2xl mb-8 p-1.5">
         <div className="flex">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex-1 py-3 text-center font-body text-base transition-colors relative rounded-xl ${
+              className={clsx(
+                "flex-1 py-3 text-center text-sm font-bold transition-all rounded-xl",
                 activeTab === key
-                  ? "text-gold font-semibold bg-gold/10"
-                  : "text-warm-light"
-              }`}
+                  ? "text-sky-600 bg-white border border-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-600"
+              )}
             >
               {label}
             </button>
@@ -48,7 +50,6 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings, 
         </div>
       </div>
 
-      {/* Tab content */}
       {activeTab === "ingredients" && (
         <IngredientsTab
           ingredients={ingredients}

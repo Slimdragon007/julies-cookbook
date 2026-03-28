@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import RecipeTabs from "@/components/RecipeTabs";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { ChevronLeft, Clock, Flame, Users, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -18,92 +19,129 @@ export default async function RecipePage({
 
   if (!recipe) notFound();
 
-  const totalTime =
-    (recipe.prepTime || 0) + (recipe.cookTime || 0) || null;
-
   return (
-    <div className="max-w-3xl mx-auto">
-      <Link
-        href="/"
-        className="text-warm hover:text-warm-dark text-sm font-body inline-flex items-center gap-1 mb-6"
-      >
-        &larr; Back to recipes
-      </Link>
-
-      {/* Hero image: 4:3 mobile, 16:9 desktop */}
-      {recipe.imageUrl && (
-        <div className="rounded-xl overflow-hidden mb-8 aspect-[4/3] md:aspect-[16/9]">
-          <img
-            src={recipe.imageUrl}
-            alt={recipe.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-
-      <h1 className="font-display text-3xl md:text-4xl text-warm-dark mb-4">
-        {recipe.name}
-      </h1>
-
-      {/* Compact stats row with calorie badge */}
-      <div className="flex flex-wrap items-center gap-3 text-sm text-warm-light mb-4 font-body">
-        {recipe.prepTime && <span>Prep: {recipe.prepTime} min</span>}
-        {recipe.cookTime && <span>Cook: {recipe.cookTime} min</span>}
-        {totalTime && <span>Total: {totalTime} min</span>}
-        {recipe.servings && <span>Servings: {recipe.servings}</span>}
-        {recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0 && (
-          <span className="bg-gold/15 text-gold rounded-full px-3 py-1 font-display text-sm">
-            {Math.round(recipe.caloriesPerServing)} cal/serving
-          </span>
-        )}
+    <div className="min-h-screen relative selection:bg-sky-100 selection:text-sky-900">
+      {/* Background blobs */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-50/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-sky-50/30 rounded-full blur-[100px]" />
       </div>
 
-      {/* Tags + Rating row */}
-      {(recipe.cuisineTag || recipe.dietaryTags.length > 0 || recipe.julieRating) && (
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          {recipe.cuisineTag && (
-            <span className="glass text-warm-light text-xs px-3 py-1 rounded-full">
-              {recipe.cuisineTag}
-            </span>
+      <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:min-h-screen relative z-10">
+        {/* Image section */}
+        <div className="relative h-[50vh] lg:h-screen lg:sticky lg:top-0 w-full overflow-hidden">
+          {recipe.imageUrl ? (
+            <img
+              src={recipe.imageUrl}
+              alt={recipe.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
+              <Sparkles className="w-16 h-16 text-sky-300" />
+            </div>
           )}
-          {recipe.dietaryTags.map((tag) => (
-            <span
-              key={tag}
-              className="glass text-warm-light text-xs px-3 py-1 rounded-full"
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-slate-900/30" />
+
+          {/* Top bar */}
+          <div className="absolute top-0 left-0 w-full p-6 pt-12 lg:pt-8 flex justify-between items-center z-20">
+            <Link
+              href="/"
+              className="w-11 h-11 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white border border-white/30 shadow-lg hover:bg-white/40 transition-all"
             >
-              {tag}
-            </span>
-          ))}
-          {recipe.julieRating && (
-            <span className="ml-auto text-warm-light text-sm">
-              {"★".repeat(recipe.julieRating)}
-              {"☆".repeat(5 - recipe.julieRating)}
-            </span>
+              <ChevronLeft className="w-6 h-6" />
+            </Link>
+          </div>
+
+          {/* Title overlay (mobile) */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 pb-12 lg:hidden">
+            {recipe.cuisineTag && (
+              <span className="inline-block px-3 py-1 bg-sky-500/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-sky-400/50">
+                {recipe.cuisineTag}
+              </span>
+            )}
+            <h1 className="text-4xl font-bold text-white leading-tight drop-shadow-lg">
+              {recipe.name}
+            </h1>
+          </div>
+        </div>
+
+        {/* Content section */}
+        <div className="relative -mt-8 lg:mt-0 bg-white/60 lg:bg-white/30 backdrop-blur-3xl rounded-t-[3rem] lg:rounded-none px-6 sm:px-10 pt-12 lg:pt-12 lg:pl-16 lg:pr-12 pb-32 lg:pb-12 lg:overflow-y-auto lg:max-h-screen border-t lg:border-t-0 lg:border-l border-white/60 shadow-[0_-8px_40px_rgba(0,0,0,0.05)]">
+          {/* Mobile drag indicator */}
+          <div className="lg:hidden flex justify-center mb-8">
+            <div className="w-12 h-1.5 bg-slate-200/50 rounded-full" />
+          </div>
+
+          {/* Title (desktop) */}
+          <div className="hidden lg:block mb-8">
+            {recipe.cuisineTag && (
+              <span className="inline-block px-3 py-1 bg-sky-100 text-sky-700 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-sky-200">
+                {recipe.cuisineTag}
+              </span>
+            )}
+            <h1 className="text-4xl xl:text-5xl font-bold text-slate-800 leading-tight">
+              {recipe.name}
+            </h1>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-10">
+            {[
+              { icon: Clock, label: "Prep Time", value: recipe.prepTime ? `${recipe.prepTime} min` : "N/A", color: "text-sky-500", bg: "bg-sky-50" },
+              { icon: Flame, label: "Cook Time", value: recipe.cookTime ? `${recipe.cookTime} min` : "N/A", color: "text-orange-500", bg: "bg-orange-50" },
+              { icon: Users, label: "Servings", value: recipe.servings ? `${recipe.servings}` : "N/A", color: "text-emerald-500", bg: "bg-emerald-50" },
+            ].map(({ icon: Icon, label, value, color, bg }) => (
+              <div key={label} className="glass p-4 rounded-3xl flex flex-col items-center text-center transition-transform hover:scale-[1.02]">
+                <div className={`w-10 h-10 ${bg} rounded-2xl flex items-center justify-center mb-2 shadow-sm`}>
+                  <Icon className={`w-5 h-5 ${color}`} />
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1 leading-none">{label}</p>
+                <p className="text-sm font-bold text-slate-700 leading-none">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Tags + Rating */}
+          {(recipe.dietaryTags.length > 0 || recipe.julieRating) && (
+            <div className="flex flex-wrap items-center gap-2 mb-8">
+              {recipe.dietaryTags.map((tag) => (
+                <span key={tag} className="bg-sky-50 text-sky-700 text-xs font-bold px-3 py-1.5 rounded-full border border-sky-100">
+                  {tag}
+                </span>
+              ))}
+              {recipe.julieRating && (
+                <span className="ml-auto text-sky-500 text-sm font-bold">
+                  {"★".repeat(recipe.julieRating)}
+                  <span className="text-slate-200">{"★".repeat(5 - recipe.julieRating)}</span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Tabbed content */}
+          <RecipeTabs
+            ingredients={recipe.ingredients}
+            preparation={recipe.preparation}
+            defaultServings={recipe.servings}
+            totalBatchWeightG={recipe.totalBatchWeightG}
+          />
+
+          {/* Source link */}
+          {recipe.sourceUrl && (
+            <div className="mt-10 text-center">
+              <a
+                href={recipe.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-600 hover:text-sky-700 text-xs font-bold underline"
+              >
+                Original recipe source
+              </a>
+            </div>
           )}
         </div>
-      )}
-
-      {/* Tabbed content */}
-      <RecipeTabs
-        ingredients={recipe.ingredients}
-        preparation={recipe.preparation}
-        defaultServings={recipe.servings}
-        totalBatchWeightG={recipe.totalBatchWeightG}
-      />
-
-      {/* Source link */}
-      {recipe.sourceUrl && (
-        <div className="mt-8 text-center">
-          <a
-            href={recipe.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-warm hover:text-warm-dark text-xs font-body underline"
-          >
-            Original recipe source
-          </a>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -6,8 +6,8 @@ Multi-user recipe cookbook web app. Each user has their own recipes, ingredients
 ## Tech Stack
 - **Framework:** Next.js 14 App Router (dynamic rendering, `force-dynamic`)
 - **Database:** Supabase (PostgreSQL) — replaced Airtable as of March 2026
-- **Styling:** Tailwind CSS with custom Magnolia theme (cream `#FAF8F4`, linen `#F0EAE0`, warm `#8B7355`, gold `#C4952E`)
-- **Fonts:** Playfair Display (display) + Lora (body) via `next/font/google`
+- **Styling:** Tailwind CSS with Liquid Glass theme (cream `#FDFCFB`, sky-blue `#0ea5e9`, slate text, glassmorphic cards with backdrop-blur)
+- **Fonts:** Inter (display + body) via `next/font/google`
 - **Chat AI:** Claude Sonnet 4 (`claude-sonnet-4-20250514`)
 - **Images:** Cloudinary-hosted
 - **Hosting:** Vercel (auto-deploy from `main` branch)
@@ -90,13 +90,14 @@ Pages use `force-dynamic` (no ISR) because data is per-user. Changes appear imme
 ### 4. Map iterator downlevelIteration
 `for...of` on `Map.entries()` fails TypeScript compilation. Use `map.forEach()` instead.
 
-## Current State (as of March 27, 2026)
+## Current State (as of March 28, 2026)
 - Multi-user with per-user recipes, ingredients, and food logs
 - Invite-only registration (INVITE_CODE env var, server-side validation)
 - Auth: Supabase email/password, middleware-enforced
 - Supabase project: cqfszhxuvvsgusvjdyqx (us-east-1)
-- Recipes need re-import from Airtable (tables exist but are empty)
-- Tab redesign complete: Ingredients | Instructions | Nutrition with gold (#C4952E) active underline
+- UI restyled to "Liquid Glass" theme: light bg (#FDFCFB), sky-blue accents, Inter font, glassmorphic cards with backdrop-blur
+- Desktop sidebar nav + mobile bottom nav (5 items) with elevated Add button
+- Tabs: Ingredients | Instructions | Nutrition with sky-blue pill-style tab switcher
 - Portion calculator in Nutrition tab
 - Food log page (/log) with meal logging and daily totals
 - Weekly summary page (/summary) with 7-day averages

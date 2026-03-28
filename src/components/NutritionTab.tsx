@@ -12,10 +12,10 @@ interface Props {
 }
 
 const MACRO_FIELDS = [
-  { key: "calories", label: "Calories" },
-  { key: "protein", label: "Protein (g)" },
-  { key: "carbs", label: "Carbs (g)" },
-  { key: "fat", label: "Fat (g)" },
+  { key: "calories", label: "Calories", color: "text-sky-600", bg: "bg-sky-50" },
+  { key: "protein", label: "Protein (g)", color: "text-emerald-600", bg: "bg-emerald-50" },
+  { key: "carbs", label: "Carbs (g)", color: "text-orange-600", bg: "bg-orange-50" },
+  { key: "fat", label: "Fat (g)", color: "text-purple-600", bg: "bg-purple-50" },
 ] as const;
 
 export default function NutritionTab({ ingredients, scale, servings, totalBatchWeightG }: Props) {
@@ -32,7 +32,6 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
 
   const servingsLabel = servings === 1 ? "serving" : "servings";
 
-  // Portion calculator
   const portionGrams = parseFloat(portionG) || 0;
   const hasBatchWeight = totalBatchWeightG != null && totalBatchWeightG > 0;
   const portionMacros = hasBatchWeight
@@ -43,39 +42,39 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
 
   return (
     <div>
-      <h2 className="font-display text-xl text-warm-dark mb-5">
+      <h2 className="text-2xl font-bold text-slate-800 mb-6">
         Nutritional Facts
       </h2>
 
-      {/* Totals summary */}
-      <div className="bg-linen rounded-lg px-5 py-4 mb-5">
-        <h3 className="font-display text-sm text-warm-dark mb-3">
+      {/* Totals */}
+      <div className="glass rounded-[2rem] px-6 py-5 mb-6">
+        <h3 className="text-sm font-bold text-slate-800 mb-4">
           Total
           {scale !== 1 && (
-            <span className="text-warm-light font-body text-xs ml-2">
+            <span className="text-slate-400 text-xs ml-2 font-medium">
               (scaled to {servings} {servingsLabel})
             </span>
           )}
         </h3>
-        <div className="grid grid-cols-4 gap-3 text-center">
-          {MACRO_FIELDS.map(({ key, label }) => (
-            <div key={key}>
-              <div className="font-display text-lg text-warm-dark">
+        <div className="grid grid-cols-4 gap-3">
+          {MACRO_FIELDS.map(({ key, label, color, bg }) => (
+            <div key={key} className={`${bg} rounded-2xl p-3 text-center`}>
+              <div className={`text-lg font-bold ${color}`}>
                 {fmt(totals[key])}
               </div>
-              <div className="text-xs text-warm-light">{label}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">{label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Portion Calculator */}
-      <div className="bg-linen rounded-lg px-5 py-4 mb-5">
-        <h3 className="font-display text-sm text-warm-dark mb-3">
+      <div className="glass rounded-[2rem] px-6 py-5 mb-6">
+        <h3 className="text-sm font-bold text-slate-800 mb-4">
           Portion Calculator
         </h3>
-        <div className="flex items-center gap-3 mb-3">
-          <label className="font-body text-sm text-warm-dark" htmlFor="portion-input">
+        <div className="flex items-center gap-3 mb-4">
+          <label className="text-sm text-slate-700 font-medium" htmlFor="portion-input">
             How much did you eat?
           </label>
           <input
@@ -85,77 +84,70 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
             placeholder="grams"
             value={portionG}
             onChange={(e) => setPortionG(e.target.value)}
-            className="w-24 px-3 py-2.5 rounded-lg border border-border bg-white text-warm-dark font-body text-base text-center focus:outline-none focus:ring-2 focus:ring-gold"
+            className="w-24 px-3 py-2.5 rounded-xl glass-input text-slate-800 text-base text-center font-bold"
           />
-          <span className="font-body text-sm text-warm-light">g</span>
+          <span className="text-sm text-slate-400 font-medium">g</span>
         </div>
 
         {portionGrams > 0 && hasBatchWeight && portionMacros && (
-          <div className="grid grid-cols-4 gap-3 text-center mt-3">
-            {MACRO_FIELDS.map(({ key, label }) => (
-              <div key={key}>
-                <div className="font-display text-lg text-warm-dark">
+          <div className="grid grid-cols-4 gap-3 mt-4">
+            {MACRO_FIELDS.map(({ key, label, color, bg }) => (
+              <div key={key} className={`${bg} rounded-2xl p-3 text-center`}>
+                <div className={`text-lg font-bold ${color}`}>
                   {portionMacros[key]}
                 </div>
-                <div className="text-xs text-warm-light">{label}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">{label}</div>
               </div>
             ))}
           </div>
         )}
 
         {portionGrams > 0 && !hasBatchWeight && (
-          <div className="mt-3">
-            <div className="grid grid-cols-4 gap-3 text-center">
-              {MACRO_FIELDS.map(({ key, label }) => (
-                <div key={key}>
-                  <div className="font-display text-lg text-warm-dark">
+          <div className="mt-4">
+            <div className="grid grid-cols-4 gap-3">
+              {MACRO_FIELDS.map(({ key, label, color, bg }) => (
+                <div key={key} className={`${bg} rounded-2xl p-3 text-center`}>
+                  <div className={`text-lg font-bold ${color}`}>
                     {perServing[key]}
                   </div>
-                  <div className="text-xs text-warm-light">{label}</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">{label}</div>
                 </div>
               ))}
             </div>
-            <p className="font-body text-xs text-warm-light mt-2 text-center">
+            <p className="text-xs text-slate-400 mt-3 text-center font-medium">
               Per serving estimate. Weigh the batch for exact tracking.
             </p>
           </div>
         )}
 
         {!portionGrams && !hasBatchWeight && (
-          <p className="font-body text-xs text-warm-light">
+          <p className="text-xs text-slate-400 font-medium">
             Weigh the batch for exact tracking.
           </p>
         )}
       </div>
 
       {/* Per-ingredient breakdown */}
-      <div className="overflow-x-auto">
-        <table className="w-full font-body text-sm">
+      <div className="glass rounded-[2rem] px-6 py-5 overflow-x-auto">
+        <h3 className="text-sm font-bold text-slate-800 mb-4">Per Ingredient</h3>
+        <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-warm-light text-xs">
-              <th className="py-2.5 pr-4 font-normal">Ingredient</th>
-              <th className="py-2.5 px-2 font-normal text-right">Cal</th>
-              <th className="py-2.5 px-2 font-normal text-right">Protein</th>
-              <th className="py-2.5 px-2 font-normal text-right">Carbs</th>
-              <th className="py-2.5 pl-2 font-normal text-right">Fat</th>
+            <tr className="border-b border-slate-100 text-left text-slate-400 text-xs">
+              <th className="py-2.5 pr-4 font-bold">Ingredient</th>
+              <th className="py-2.5 px-2 font-bold text-right">Cal</th>
+              <th className="py-2.5 px-2 font-bold text-right">Protein</th>
+              <th className="py-2.5 px-2 font-bold text-right">Carbs</th>
+              <th className="py-2.5 pl-2 font-bold text-right">Fat</th>
             </tr>
           </thead>
           <tbody>
             {ingredients.map((ing) => (
-              <tr key={ing.id} className="border-b border-border/30">
-                <td className="py-2.5 pr-4 text-warm-dark">{ing.name}</td>
-                <td className="py-2.5 px-2 text-right text-warm-light">
-                  {fmt(ing.calories)}
-                </td>
-                <td className="py-2.5 px-2 text-right text-warm-light">
-                  {fmt(ing.protein, "g")}
-                </td>
-                <td className="py-2.5 px-2 text-right text-warm-light">
-                  {fmt(ing.carbs, "g")}
-                </td>
-                <td className="py-2.5 pl-2 text-right text-warm-light">
-                  {fmt(ing.fat, "g")}
-                </td>
+              <tr key={ing.id} className="border-b border-slate-50">
+                <td className="py-3 pr-4 text-slate-700 font-semibold">{ing.name}</td>
+                <td className="py-3 px-2 text-right text-slate-500">{fmt(ing.calories)}</td>
+                <td className="py-3 px-2 text-right text-slate-500">{fmt(ing.protein, "g")}</td>
+                <td className="py-3 px-2 text-right text-slate-500">{fmt(ing.carbs, "g")}</td>
+                <td className="py-3 pl-2 text-right text-slate-500">{fmt(ing.fat, "g")}</td>
               </tr>
             ))}
           </tbody>

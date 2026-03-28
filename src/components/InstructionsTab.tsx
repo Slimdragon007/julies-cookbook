@@ -1,12 +1,11 @@
 import React from "react";
+import { CheckCircle2 } from "lucide-react";
 
 interface Props {
   preparation: string;
 }
 
 export default function InstructionsTab({ preparation }: Props) {
-  // Split preparation into steps: by newlines, filtering empties
-  // Also strip leading numbers/dots/dashes that some recipes have
   const steps = preparation
     .split(/\n/)
     .map((s) => s.trim())
@@ -15,7 +14,7 @@ export default function InstructionsTab({ preparation }: Props) {
 
   if (steps.length === 0) {
     return (
-      <p className="font-body text-base text-warm-light">
+      <p className="text-slate-500 font-medium">
         No instructions available.
       </p>
     );
@@ -23,19 +22,30 @@ export default function InstructionsTab({ preparation }: Props) {
 
   return (
     <div>
-      <h2 className="font-display text-xl text-warm-dark mb-5">Instructions</h2>
-      <ol className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800 mb-8">Method</h2>
+      <div className="space-y-8 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100/50">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-4">
-            <div className="w-8 h-8 rounded-full bg-linen flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="font-display text-sm text-warm-dark">{i + 1}</span>
+          <div key={i} className="flex gap-6 relative">
+            <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-white border border-white shadow-sm text-sky-600 text-sm font-bold flex items-center justify-center z-10">
+              {i + 1}
             </div>
-            <p className="font-body text-base leading-7 text-warm-dark/80 flex-1">
-              {step}
-            </p>
-          </li>
+            <div className="pt-1.5 flex-1 glass p-5 rounded-3xl">
+              <p className="text-slate-600 leading-relaxed text-[15px] font-medium">
+                {step}
+              </p>
+            </div>
+          </div>
         ))}
-      </ol>
+      </div>
+
+      {/* Completion card */}
+      <div className="text-center p-10 bg-gradient-to-br from-sky-50 to-blue-50 rounded-[3rem] border border-white shadow-sm mt-10">
+        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
+          <CheckCircle2 className="w-8 h-8 text-sky-500" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Bon Appetit!</h3>
+        <p className="text-slate-500 text-sm font-medium">Enjoy your meal.</p>
+      </div>
     </div>
   );
 }

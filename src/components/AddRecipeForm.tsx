@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Link2, Sparkles, Plus, Type, Zap, ScanLine, CheckCircle2, Loader2, ShoppingBasket } from "lucide-react";
+import clsx from "clsx";
 
 interface ScrapeResult {
   recipe: {
@@ -15,6 +17,7 @@ interface ScrapeResult {
 }
 
 type Status = "idle" | "scraping" | "success" | "partial" | "error" | "blocked";
+type Tab = "link" | "text";
 
 const URL_STEPS = [
   "Fetching recipe page...",
@@ -30,6 +33,7 @@ const TEXT_STEPS = [
 ];
 
 export default function AddRecipeForm() {
+  const [activeTab, setActiveTab] = useState<Tab>("link");
   const [url, setUrl] = useState("");
   const [pasteText, setPasteText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -38,7 +42,7 @@ export default function AddRecipeForm() {
   const [error, setError] = useState("");
   const [blockedUrl, setBlockedUrl] = useState("");
 
-  const steps = blockedUrl ? TEXT_STEPS : URL_STEPS;
+  const steps = blockedUrl || activeTab === "text" ? TEXT_STEPS : URL_STEPS;
 
   async function handleUrlSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +70,7 @@ export default function AddRecipeForm() {
       if (data.blocked) {
         setBlockedUrl(url.trim());
         setStatus("blocked");
+        setActiveTab("text");
         return;
       }
 
@@ -132,191 +137,256 @@ export default function AddRecipeForm() {
     setBlockedUrl("");
   }
 
-  return (
-    <div className="max-w-lg mx-auto">
-      <div className="mb-6">
-        <h2 className="font-display text-2xl text-warm-dark">Add Recipe</h2>
-        <p className="font-body text-sm text-warm-light mt-1">
-          Paste a recipe URL and we&apos;ll add it to the cookbook
-        </p>
-      </div>
-
-      {status === "idle" || status === "error" ? (
-        <form onSubmit={handleUrlSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="url" className="block font-body text-sm text-warm-dark mb-1">
-              Recipe URL
-            </label>
-            <input
-              id="url"
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.seriouseats.com/best-chicken..."
-              className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none"
-              required
-            />
+  // Success / Partial state
+  if ((status === "success" || status === "partial") && result) {
+    return (
+      <div className="min-h-screen pt-20 lg:pt-10 pb-32">
+        <div className="max-w-2xl mx-auto px-4 text-center py-12">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${status === "success" ? "bg-emerald-50 border border-emerald-100" : "bg-amber-50 border border-amber-100"}`}>
+            <CheckCircle2 className={`w-10 h-10 ${status === "success" ? "text-emerald-500" : "text-amber-500"}`} />
           </div>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 font-body">
-              {error}
-            </div>
-          )}
+          <h3 className="text-2xl font-bold text-slate-800 mb-3">{result.recipe.name}</h3>
 
-          <button
-            type="submit"
-            disabled={!url.trim()}
-            className="w-full font-display text-sm px-6 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gold text-cream hover:brightness-110"
-          >
-            Add to Cookbook
-          </button>
-        </form>
-      ) : status === "blocked" ? (
-        <div>
-          <div className="glass rounded-xl px-5 py-5 mb-5">
-            <p className="font-display text-lg text-warm-dark mb-2">
-              No worries! Just add it here
-            </p>
-            <p className="font-body text-sm text-warm-light">
-              That site didn&apos;t let us grab the recipe automatically.
-              Just copy the recipe from the page and paste it below — we&apos;ll take care of the rest.
-            </p>
-          </div>
-
-          <form onSubmit={handleTextSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="paste" className="block font-body text-sm text-warm-dark mb-1">
-                Recipe text
-              </label>
-              <textarea
-                id="paste"
-                value={pasteText}
-                onChange={(e) => setPasteText(e.target.value)}
-                placeholder={"Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"}
-                rows={8}
-                className="w-full px-4 py-3 rounded-xl glass-input font-body text-base text-warm-dark placeholder:text-warm-light/40 focus:outline-none resize-y min-h-[200px]"
-                required
-              />
-            </div>
-
-            {blockedUrl && (
-              <p className="font-body text-xs text-warm-light truncate">
-                Source: {blockedUrl}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={!pasteText.trim()}
-              className="w-full font-display text-sm px-6 py-3 rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gold text-cream hover:brightness-110"
-            >
-              Add to Cookbook
-            </button>
-
-            <button
-              type="button"
-              onClick={reset}
-              className="w-full font-display text-sm px-6 py-3 rounded-xl glass text-warm-light hover:bg-white/[0.09] transition-colors"
-            >
-              Try a Different URL
-            </button>
-          </form>
-        </div>
-      ) : status === "scraping" ? (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 border-4 border-white/10 border-t-gold rounded-full animate-spin mx-auto mb-6" />
-
-          <p className="font-display text-lg text-warm-dark mb-4">
-            {steps[step]}
-          </p>
-
-          <div className="flex justify-center gap-2 mb-4">
-            {steps.map((_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  i <= step ? "bg-warm" : "bg-border"
-                }`}
-              />
-            ))}
-          </div>
-
-          <p className="font-body text-xs text-warm-light">
-            This usually takes 15-30 seconds
-          </p>
-        </div>
-      ) : (status === "success" || status === "partial") && result ? (
-        <div className="text-center py-8">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${status === "success" ? "bg-green-500/10" : "bg-amber-500/10"}`}>
-            {status === "success" ? (
-              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            )}
-          </div>
-
-          <h3 className="font-display text-xl text-warm-dark mb-2">
-            {result.recipe.name}
-          </h3>
-
-          <div className="flex justify-center gap-4 text-sm text-warm-light font-body mb-4">
+          <div className="flex justify-center gap-4 text-sm text-slate-500 font-semibold mb-4">
             {result.recipe.servings && <span>{result.recipe.servings} servings</span>}
             <span>{result.recipe.ingredientCount} ingredients</span>
             {result.recipe.hasImage ? (
-              <span className="text-green-600">Photo added</span>
+              <span className="text-emerald-600">Photo added</span>
             ) : (
               <span className="text-amber-600">No photo found</span>
             )}
           </div>
 
           {status === "partial" && (
-            <p className="font-body text-xs text-amber-600 mb-4">
-              Recipe saved but no photo was available from that site. You can add one manually later.
+            <p className="text-xs text-amber-600 font-medium mb-4">
+              Recipe saved but no photo was available. You can add one later.
             </p>
           )}
 
-          <p className="font-body text-xs text-warm-light mb-6">
+          <p className="text-xs text-slate-400 mb-8 font-medium">
             Live on the site within 60 seconds
           </p>
 
           <div className="flex gap-3 justify-center">
             <a
               href={`/recipe/${result.recipe.slug}`}
-              className="font-display text-sm px-6 py-2.5 rounded-xl bg-gold text-cream hover:brightness-110 transition-all"
+              className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               View Recipe
             </a>
             <button
               onClick={reset}
-              className="font-display text-sm px-6 py-2.5 rounded-xl glass text-warm-light hover:bg-white/[0.09] transition-colors"
+              className="px-8 py-4 glass rounded-2xl text-slate-600 font-bold hover:bg-white/60 transition-all"
             >
               Add Another
             </button>
           </div>
         </div>
-      ) : null}
+      </div>
+    );
+  }
 
-      {/* Feedback link */}
-      <div className="mt-8 pt-6 border-t border-border text-center">
-        <p className="font-body text-xs text-warm-light">
-          For any feedback, please use the{" "}
-          <button
-            type="button"
-            onClick={() => {
-              const fab = document.querySelector("[data-chat-fab]") as HTMLButtonElement | null;
-              if (fab) fab.click();
-            }}
-            className="text-gold underline hover:text-warm-dark"
-          >
-            chat assistant
-          </button>
-          {" "}or message Slim directly.
-        </p>
+  return (
+    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-sky-100 selection:text-sky-900">
+      <div className="max-w-2xl mx-auto px-4">
+        {/* Header */}
+        <div className="mb-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 glass rounded-3xl shadow-sm mb-6">
+            <Plus className="w-8 h-8 text-sky-500" />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Expand Your Collection</h1>
+          <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
+            Paste a recipe URL or copy-paste the recipe text to add it to your cookbook.
+          </p>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="max-w-md mx-auto mb-10">
+          <div className="glass p-1.5 rounded-[2rem] relative flex items-center">
+            <div
+              className="absolute bg-white border border-white/60 shadow-md rounded-[1.75rem] z-0 transition-all duration-300"
+              style={{
+                left: activeTab === "link" ? "6px" : "calc(50% + 2px)",
+                width: "calc(50% - 8px)",
+                height: "calc(100% - 12px)",
+                top: "6px",
+              }}
+            />
+            <button
+              onClick={() => { setActiveTab("link"); if (status === "error") setStatus("idle"); }}
+              className={clsx(
+                "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
+                activeTab === "link" ? "text-sky-600" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <Link2 className="w-4 h-4" />
+              Paste Link
+            </button>
+            <button
+              onClick={() => { setActiveTab("text"); if (status === "error") setStatus("idle"); }}
+              className={clsx(
+                "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
+                activeTab === "text" ? "text-sky-600" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <Type className="w-4 h-4" />
+              Paste Text
+            </button>
+          </div>
+        </div>
+
+        {/* Form Card */}
+        <div className="relative">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-sky-200/20 rounded-full blur-[60px] pointer-events-none" />
+
+          <div className="glass-strong rounded-[3rem] p-8 sm:p-12 overflow-hidden relative">
+            {/* Loading Overlay */}
+            {status === "scraping" && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-20 h-20 glass rounded-3xl flex items-center justify-center mb-6 mx-auto relative overflow-hidden">
+                  {activeTab === "link" ? (
+                    <Link2 className="w-8 h-8 text-sky-500" />
+                  ) : (
+                    <ScanLine className="w-8 h-8 text-sky-500" />
+                  )}
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  {steps[step]}
+                </h3>
+                <div className="flex justify-center gap-2 my-4">
+                  {steps.map((_, i) => (
+                    <div
+                      key={i}
+                      className={clsx(
+                        "w-2.5 h-2.5 rounded-full transition-colors",
+                        i <= step ? "bg-sky-500" : "bg-slate-200"
+                      )}
+                    />
+                  ))}
+                </div>
+                <p className="text-slate-500 text-sm font-medium">
+                  This usually takes 15-30 seconds
+                </p>
+                <Loader2 className="w-6 h-6 text-sky-400 animate-spin mt-6" />
+              </div>
+            )}
+
+            {activeTab === "link" ? (
+              <form onSubmit={handleUrlSubmit} className="relative z-10">
+                <div className="mb-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 bg-sky-50 rounded-xl flex items-center justify-center">
+                      <Zap className="w-4 h-4 text-sky-500" />
+                    </div>
+                    <span className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">Smart Import</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Paste a Link</h2>
+                  <p className="text-slate-500 font-medium text-sm">We&apos;ll automatically strip out the ads and long stories.</p>
+                </div>
+
+                <div className="mb-8">
+                  <input
+                    type="url"
+                    required
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://cooking.nytimes.com/recipes/..."
+                    className="w-full h-16 glass-input text-slate-800 px-6 rounded-2xl text-[15px] font-medium placeholder:text-slate-300 shadow-sm"
+                  />
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium mb-6">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!url.trim() || status === "scraping"}
+                  className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Extract Recipe
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleTextSubmit} className="relative z-10">
+                <div className="mb-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center">
+                      <ScanLine className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Text Input</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Paste Recipe Text</h2>
+                  <p className="text-slate-500 font-medium text-sm">Copy the recipe from any page and paste it below.</p>
+                </div>
+
+                <div className="mb-6">
+                  <textarea
+                    value={pasteText}
+                    onChange={(e) => setPasteText(e.target.value)}
+                    placeholder={"Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"}
+                    rows={8}
+                    className="w-full glass-input text-slate-800 px-6 py-4 rounded-2xl text-[15px] font-medium placeholder:text-slate-300 shadow-sm resize-y min-h-[200px]"
+                    required
+                  />
+                </div>
+
+                {blockedUrl && (
+                  <p className="text-xs text-slate-400 truncate mb-4 font-medium">
+                    Source: {blockedUrl}
+                  </p>
+                )}
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium mb-6">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!pasteText.trim() || status === "scraping"}
+                  className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Extract Recipe
+                </button>
+
+                {blockedUrl && (
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="w-full mt-3 h-14 glass rounded-2xl text-slate-500 font-bold hover:bg-white/60 transition-all"
+                  >
+                    Try a Different URL
+                  </button>
+                )}
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Tips */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-6 px-4">
+          <div className="p-6 glass rounded-[2rem]">
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+              <Sparkles className="w-5 h-5 text-sky-400" />
+            </div>
+            <h4 className="font-bold text-slate-800 mb-1">Ad-Free Content</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">We extract only the core recipe data, leaving behind the clutter and long intros.</p>
+          </div>
+          <div className="p-6 glass rounded-[2rem]">
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+              <ShoppingBasket className="w-5 h-5 text-sky-400" />
+            </div>
+            <h4 className="font-bold text-slate-800 mb-1">Auto-List Sync</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">Ingredients are automatically formatted so you can add them to your grocery list with one tap.</p>
+          </div>
+        </div>
       </div>
     </div>
   );

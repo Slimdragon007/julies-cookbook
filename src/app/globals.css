@@ -2,18 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  color: #1e293b;
-  background: #FDFCFB;
+:root {
+  --warm-cream: #FAF8F4;
+  --warm-gold: #C4952E;
+  --warm-gold-light: #D4A853;
+  --warm-brown: #8B7355;
+  --warm-dark: #2D2417;
 }
 
-/* Ambient background with animated blobs for liquid glass effect */
+body {
+  color: #2D2417;
+  background: #FAF8F4;
+}
+
+/* Ambient background with warm color orbs */
 .ambient-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: #FDFCFB;
+  background: #FAF8F4;
 }
 
 .ambient-bg::before {
@@ -23,7 +31,7 @@ body {
   left: -5%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(196, 149, 46, 0.06) 0%, transparent 70%);
   border-radius: 50%;
   filter: blur(120px);
   animation: float1 20s ease-in-out infinite;
@@ -36,7 +44,7 @@ body {
   right: -5%;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(139, 115, 85, 0.05) 0%, transparent 70%);
   border-radius: 50%;
   filter: blur(100px);
   animation: float2 25s ease-in-out infinite;
@@ -52,37 +60,36 @@ body {
   50% { transform: translate(-80px, 120px) scale(1.1); }
 }
 
-/* Subtle grid overlay */
 .ambient-bg .grid-overlay {
   position: absolute;
   inset: 0;
-  opacity: 0.03;
+  opacity: 0.02;
   mix-blend-mode: multiply;
-  background-image: linear-gradient(rgba(0, 166, 244, 0.2) 1.5px, transparent 1.5px),
-    linear-gradient(90deg, rgba(0, 166, 244, 0.2) 1.5px, transparent 1.5px);
+  background-image: linear-gradient(rgba(139, 115, 85, 0.15) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(139, 115, 85, 0.15) 1.5px, transparent 1.5px);
   background-size: 80px 80px;
 }
 
-/* Glass utility classes */
+/* Glass utility classes — warm tint */
 .glass {
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 253, 248, 0.5);
+  border: 1px solid rgba(255, 253, 248, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 8px 32px rgba(45, 36, 23, 0.03);
 }
 
 .glass-strong {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 253, 248, 0.6);
+  border: 1px solid rgba(255, 253, 248, 0.8);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
-  box-shadow: 0 12px 48px rgba(0, 166, 244, 0.08);
+  box-shadow: 0 12px 48px rgba(196, 149, 46, 0.06);
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 253, 248, 0.7);
+  border: 1px solid rgba(255, 253, 248, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -90,28 +97,23 @@ body {
 
 .glass-input:focus {
   background: rgba(255, 255, 255, 1);
-  border-color: rgba(14, 165, 233, 0.3);
+  border-color: rgba(196, 149, 46, 0.3);
   outline: none;
-  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+  box-shadow: 0 0 0 4px rgba(196, 149, 46, 0.08);
 }
 
 select.glass-input {
-  color: #1e293b;
+  color: #2D2417;
 }
 
 select.glass-input option {
   background: #ffffff;
-  color: #1e293b;
+  color: #2D2417;
 }
 
-/* Hide scrollbar utility */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Progress bar animation */
 @keyframes progress-shine {
@@ -120,29 +122,20 @@ select.glass-input option {
 }
 
 /* Smooth page transitions */
-main {
-  animation: fadeIn 0.2s ease-out;
-}
-
+main { animation: fadeIn 0.2s ease-out; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* PWA standalone mode adjustments */
+/* PWA standalone mode */
 @media (display-mode: standalone) {
   body {
-    /* Extra top padding for notch/status bar */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
 /* Touch optimization */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button, a {
-  touch-action: manipulation;
-}
+* { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }

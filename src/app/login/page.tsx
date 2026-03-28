@@ -39,13 +39,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex flex-col items-center justify-center px-4 relative overflow-hidden selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen bg-[#FAF8F4] flex flex-col items-center justify-center px-4 relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
       {/* Ambient blobs */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-sky-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
-        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-blue-100/20 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
+        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-amber-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-amber-100/15 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
         <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(rgba(0, 166, 244, 0.2) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(0, 166, 244, 0.2) 1.5px, transparent 1.5px)',
+          backgroundImage: 'linear-gradient(rgba(196, 149, 46, 0.2) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(196, 149, 46, 0.2) 1.5px, transparent 1.5px)',
           backgroundSize: '80px 80px'
         }} />
       </div>
@@ -53,10 +53,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md mx-auto flex flex-col items-center relative z-10">
         {/* Logo */}
         <div className="relative mb-12">
-          <div className="w-24 h-24 bg-gradient-to-br from-sky-400 to-blue-500 rounded-[2.5rem] flex items-center justify-center shadow-[0_12px_32px_rgba(0,166,244,0.25)] border-4 border-white relative z-10">
+          <div className="w-24 h-24 bg-gradient-to-br from-amber-600 to-amber-700 rounded-[2.5rem] flex items-center justify-center shadow-[0_12px_32px_rgba(196,149,46,0.25)] border-4 border-white relative z-10">
             <BookHeart className="text-white w-10 h-10" />
           </div>
-          <div className="absolute inset-[-12px] bg-sky-100/50 rounded-[3rem] blur-xl" />
+          <div className="absolute inset-[-12px] bg-amber-100/50 rounded-[3rem] blur-xl" />
         </div>
 
         <div className="text-center mb-10">
@@ -68,11 +68,11 @@ export default function LoginPage() {
 
         {/* Login Card */}
         <div className="w-full glass-strong p-8 sm:p-10 rounded-[3rem] relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-200/10 rounded-full blur-[40px] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/10 rounded-full blur-[40px] pointer-events-none" />
 
           <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1" htmlFor="email">
+              <label className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1" htmlFor="email">
                 <Mail className="w-3 h-3" />
                 Email Address
               </label>
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center pr-1">
-                <label className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1" htmlFor="password">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1" htmlFor="password">
                   <Lock className="w-3 h-3" />
                   Password
                 </label>
@@ -115,7 +115,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_16px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_16px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? (
                 <Loader2 className="w-6 h-6 animate-spin" />
@@ -141,7 +141,7 @@ export default function LoginPage() {
             href="/demo"
             className="group flex items-center gap-4 px-6 py-3 rounded-2xl glass hover:bg-white/60 transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
               <svg className="w-3.5 h-3.5 ml-0.5 fill-current" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
@@ -154,7 +154,7 @@ export default function LoginPage() {
 
           <Link
             href="/signup"
-            className="text-[13px] font-bold text-sky-600 hover:underline transition-all"
+            className="text-[13px] font-bold text-amber-700 hover:underline transition-all"
           >
             Create an account
           </Link>

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0ea5e9",
+  themeColor: "#C4952E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -43,7 +43,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${inter.variable} font-body antialiased text-slate-800 bg-[#FDFCFB]`}>
+      <body className={`${inter.variable} font-body antialiased text-slate-800 bg-[#FAF8F4]`}>
         <div className="ambient-bg">
           <div className="grid-overlay" />
         </div>

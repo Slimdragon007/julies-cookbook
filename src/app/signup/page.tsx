@@ -53,10 +53,10 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center px-4">
         <div className="w-full max-w-sm text-center">
-          <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
-            <Sparkles className="w-8 h-8 text-sky-500" />
+          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
+            <Sparkles className="w-8 h-8 text-amber-600" />
           </div>
           <h1 className="text-3xl font-bold text-slate-800 mb-4">
             Welcome to the family!
@@ -70,21 +70,21 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex items-center justify-center px-4 relative overflow-hidden selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center px-4 relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
       {/* Ambient blobs */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-sky-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
-        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-blue-100/20 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
+        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-amber-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-amber-100/15 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
       </div>
 
       <div className="w-full max-w-md z-10">
         {/* Logo */}
         <div className="flex justify-center mb-10">
           <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-sky-400 to-blue-500 rounded-[2rem] flex items-center justify-center shadow-[0_12px_32px_rgba(0,166,244,0.25)] border-4 border-white">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-600 to-amber-700 rounded-[2rem] flex items-center justify-center shadow-[0_12px_32px_rgba(196,149,46,0.25)] border-4 border-white">
               <BookHeart className="text-white w-8 h-8" />
             </div>
-            <div className="absolute inset-[-10px] bg-sky-100/50 rounded-[2.5rem] blur-xl -z-10" />
+            <div className="absolute inset-[-10px] bg-amber-100/50 rounded-[2.5rem] blur-xl -z-10" />
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="invite" className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">
+              <label htmlFor="invite" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
                 <KeyRound className="w-3 h-3" />
                 Invite Code
               </label>
@@ -113,7 +113,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">
+              <label htmlFor="email" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
                 <Mail className="w-3 h-3" />
                 Email
               </label>
@@ -129,7 +129,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">
+              <label htmlFor="password" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
                 <Lock className="w-3 h-3" />
                 Password
               </label>
@@ -145,7 +145,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="flex items-center gap-2 text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">
+              <label htmlFor="confirmPassword" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
                 <Lock className="w-3 h-3" />
                 Confirm Password
               </label>
@@ -169,7 +169,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_16px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_16px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? (
                 <Loader2 className="w-6 h-6 animate-spin" />
@@ -184,7 +184,7 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-slate-400">
             Already have an account?{" "}
-            <Link href="/login" className="text-sky-600 font-bold hover:underline">
+            <Link href="/login" className="text-amber-700 font-bold hover:underline">
               Sign in
             </Link>
           </p>

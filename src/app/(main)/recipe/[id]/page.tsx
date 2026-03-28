@@ -36,11 +36,11 @@ export default async function RecipePage({
   if (!recipe) notFound();
 
   return (
-    <div className="min-h-screen relative selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen relative selection:bg-amber-100 selection:text-amber-900">
       {/* Background blobs */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-50/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-sky-50/30 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-amber-50/30 rounded-full blur-[100px]" />
       </div>
 
       <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:min-h-screen relative z-10">
@@ -56,8 +56,8 @@ export default async function RecipePage({
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center">
-              <Sparkles className="w-16 h-16 text-sky-300" />
+            <div className="w-full h-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+              <Sparkles className="w-16 h-16 text-amber-300" />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-slate-900/30" />
@@ -75,7 +75,7 @@ export default async function RecipePage({
           {/* Title overlay (mobile) */}
           <div className="absolute bottom-0 left-0 right-0 p-8 pb-12 lg:hidden">
             {recipe.cuisineTag && (
-              <span className="inline-block px-3 py-1 bg-sky-500/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-sky-400/50">
+              <span className="inline-block px-3 py-1 bg-amber-600/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-amber-500/50">
                 {recipe.cuisineTag}
               </span>
             )}
@@ -95,7 +95,7 @@ export default async function RecipePage({
           {/* Title (desktop) */}
           <div className="hidden lg:block mb-8">
             {recipe.cuisineTag && (
-              <span className="inline-block px-3 py-1 bg-sky-100 text-sky-700 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-sky-200">
+              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-amber-200">
                 {recipe.cuisineTag}
               </span>
             )}
@@ -107,7 +107,7 @@ export default async function RecipePage({
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-4 mb-10">
             {[
-              { icon: Clock, label: "Prep Time", value: recipe.prepTime ? `${recipe.prepTime} min` : "N/A", color: "text-sky-500", bg: "bg-sky-50" },
+              { icon: Clock, label: "Prep Time", value: recipe.prepTime ? `${recipe.prepTime} min` : "N/A", color: "text-amber-600", bg: "bg-amber-50" },
               { icon: Flame, label: "Cook Time", value: recipe.cookTime ? `${recipe.cookTime} min` : "N/A", color: "text-orange-500", bg: "bg-orange-50" },
               { icon: Users, label: "Servings", value: recipe.servings ? `${recipe.servings}` : "N/A", color: "text-emerald-500", bg: "bg-emerald-50" },
             ].map(({ icon: Icon, label, value, color, bg }) => (
@@ -125,12 +125,12 @@ export default async function RecipePage({
           {(recipe.dietaryTags.length > 0 || recipe.julieRating) && (
             <div className="flex flex-wrap items-center gap-2 mb-8">
               {recipe.dietaryTags.map((tag) => (
-                <span key={tag} className="bg-sky-50 text-sky-700 text-xs font-bold px-3 py-1.5 rounded-full border border-sky-100">
+                <span key={tag} className="bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-200">
                   {tag}
                 </span>
               ))}
               {recipe.julieRating && (
-                <span className="ml-auto text-sky-500 text-sm font-bold">
+                <span className="ml-auto text-amber-600 text-sm font-bold">
                   {"★".repeat(recipe.julieRating)}
                   <span className="text-slate-200">{"★".repeat(5 - recipe.julieRating)}</span>
                 </span>
@@ -153,7 +153,7 @@ export default async function RecipePage({
                 href={recipe.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sky-600 hover:text-sky-700 text-xs font-bold underline"
+                className="text-amber-700 hover:text-amber-800 text-xs font-bold underline"
               >
                 Original recipe source
               </a>

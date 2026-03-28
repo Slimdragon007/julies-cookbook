@@ -178,7 +178,7 @@ export default function AddRecipeForm() {
           <div className="flex gap-3 justify-center">
             <a
               href={`/recipe/${result.recipe.slug}`}
-              className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               View Recipe
             </a>
@@ -195,12 +195,12 @@ export default function AddRecipeForm() {
   }
 
   return (
-    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-amber-100 selection:text-amber-900">
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <div className="mb-12 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 glass rounded-3xl shadow-sm mb-6">
-            <Plus className="w-8 h-8 text-sky-500" />
+            <Plus className="w-8 h-8 text-amber-600" />
           </div>
           <h1 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Expand Your Collection</h1>
           <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
@@ -224,7 +224,7 @@ export default function AddRecipeForm() {
               onClick={() => { setActiveTab("link"); if (status === "error") setStatus("idle"); }}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
-                activeTab === "link" ? "text-sky-600" : "text-slate-400 hover:text-slate-600"
+                activeTab === "link" ? "text-amber-700" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <Link2 className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function AddRecipeForm() {
               onClick={() => { setActiveTab("text"); if (status === "error") setStatus("idle"); }}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
-                activeTab === "text" ? "text-sky-600" : "text-slate-400 hover:text-slate-600"
+                activeTab === "text" ? "text-amber-700" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <Type className="w-4 h-4" />
@@ -245,7 +245,7 @@ export default function AddRecipeForm() {
 
         {/* Form Card */}
         <div className="relative">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-sky-200/20 rounded-full blur-[60px] pointer-events-none" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-200/15 rounded-full blur-[60px] pointer-events-none" />
 
           <div className="glass-strong rounded-[3rem] p-8 sm:p-12 overflow-hidden relative">
             {/* Loading Overlay */}
@@ -253,9 +253,9 @@ export default function AddRecipeForm() {
               <div className="absolute inset-0 bg-white/60 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-20 h-20 glass rounded-3xl flex items-center justify-center mb-6 mx-auto relative overflow-hidden">
                   {activeTab === "link" ? (
-                    <Link2 className="w-8 h-8 text-sky-500" />
+                    <Link2 className="w-8 h-8 text-amber-600" />
                   ) : (
-                    <ScanLine className="w-8 h-8 text-sky-500" />
+                    <ScanLine className="w-8 h-8 text-amber-600" />
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">
@@ -267,7 +267,7 @@ export default function AddRecipeForm() {
                       key={i}
                       className={clsx(
                         "w-2.5 h-2.5 rounded-full transition-colors",
-                        i <= step ? "bg-sky-500" : "bg-slate-200"
+                        i <= step ? "bg-amber-600" : "bg-slate-200"
                       )}
                     />
                   ))}
@@ -275,7 +275,7 @@ export default function AddRecipeForm() {
                 <p className="text-slate-500 text-sm font-medium">
                   This usually takes 15-30 seconds
                 </p>
-                <Loader2 className="w-6 h-6 text-sky-400 animate-spin mt-6" />
+                <Loader2 className="w-6 h-6 text-amber-500 animate-spin mt-6" />
               </div>
             )}
 
@@ -283,10 +283,10 @@ export default function AddRecipeForm() {
               <form onSubmit={handleUrlSubmit} className="relative z-10">
                 <div className="mb-10">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-sky-50 rounded-xl flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-sky-500" />
+                    <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
+                      <Zap className="w-4 h-4 text-amber-600" />
                     </div>
-                    <span className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">Smart Import</span>
+                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Smart Import</span>
                   </div>
                   <h2 className="text-2xl font-bold text-slate-800 mb-2">Paste a Link</h2>
                   <p className="text-slate-500 font-medium text-sm">We&apos;ll automatically strip out the ads and long stories.</p>
@@ -312,7 +312,7 @@ export default function AddRecipeForm() {
                 <button
                   type="submit"
                   disabled={!url.trim() || status === "scraping"}
-                  className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Sparkles className="w-5 h-5" />
                   Extract Recipe
@@ -357,7 +357,7 @@ export default function AddRecipeForm() {
                 <button
                   type="submit"
                   disabled={!pasteText.trim() || status === "scraping"}
-                  className="w-full h-16 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Sparkles className="w-5 h-5" />
                   Extract Recipe
@@ -381,14 +381,14 @@ export default function AddRecipeForm() {
         <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-6 px-4">
           <div className="p-6 glass rounded-[2rem]">
             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-              <Sparkles className="w-5 h-5 text-sky-400" />
+              <Sparkles className="w-5 h-5 text-amber-500" />
             </div>
             <h4 className="font-bold text-slate-800 mb-1">Ad-Free Content</h4>
             <p className="text-xs text-slate-500 leading-relaxed font-medium">We extract only the core recipe data, leaving behind the clutter and long intros.</p>
           </div>
           <div className="p-6 glass rounded-[2rem]">
             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-              <ShoppingBasket className="w-5 h-5 text-sky-400" />
+              <ShoppingBasket className="w-5 h-5 text-amber-500" />
             </div>
             <h4 className="font-bold text-slate-800 mb-1">Auto-List Sync</h4>
             <p className="text-xs text-slate-500 leading-relaxed font-medium">Ingredients are automatically formatted so you can add them to your grocery list with one tap.</p>

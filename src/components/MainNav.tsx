@@ -32,11 +32,11 @@ export default function MainNav({
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex flex-col relative pb-20 lg:pb-0 overflow-x-hidden selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen bg-[#FAF8F4] flex flex-col relative pb-20 lg:pb-0 overflow-x-hidden selection:bg-amber-100 selection:text-amber-900">
       {/* Desktop sidebar */}
       <nav className="hidden lg:flex flex-col fixed left-4 top-4 bottom-4 w-20 xl:w-64 glass-strong rounded-3xl z-50">
         <div className="flex items-center gap-3 px-5 py-8 xl:px-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-200/50">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-300/30">
             <BookHeart className="w-5 h-5 text-white" />
           </div>
           <span className="hidden xl:block text-[18px] font-bold text-slate-800 tracking-tight">
@@ -54,11 +54,11 @@ export default function MainNav({
                 className={clsx(
                   "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all relative group",
                   active
-                    ? "text-sky-700 bg-white/60 border border-white shadow-sm"
+                    ? "text-amber-800 bg-white/60 border border-white shadow-sm"
                     : "text-slate-500 hover:text-slate-800 hover:bg-white/30"
                 )}
               >
-                <Icon className={clsx("w-5 h-5 shrink-0 transition-transform group-hover:scale-110", active && "text-sky-600")} />
+                <Icon className={clsx("w-5 h-5 shrink-0 transition-transform group-hover:scale-110", active && "text-amber-700")} />
                 <span className="hidden xl:block text-[14px] font-semibold">{label}</span>
               </Link>
             );
@@ -68,7 +68,7 @@ export default function MainNav({
         <div className="px-3 xl:px-4 pb-6 mt-auto border-t border-slate-100/50 pt-6 space-y-2">
           <button
             onClick={() => setChatOpen(true)}
-            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 hover:text-sky-500 hover:bg-sky-50 transition-all w-full group"
+            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-all w-full group"
           >
             <MessageCircle className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
             <span className="hidden xl:block text-[14px] font-semibold">Ask AI</span>
@@ -82,7 +82,7 @@ export default function MainNav({
         <div className="fixed top-0 left-0 right-0 lg:hidden z-40 bg-white/95 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
           <div className="flex items-center justify-between max-w-lg mx-auto px-5 py-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-xl flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl flex items-center justify-center shadow-sm">
                 <BookHeart className="w-4 h-4 text-white" />
               </div>
               <span className="text-[16px] font-bold text-slate-800 tracking-tight">Cookbook</span>
@@ -91,7 +91,7 @@ export default function MainNav({
               <button
                 onClick={() => setChatOpen(true)}
                 aria-label="Open chat assistant"
-                className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500 hover:bg-sky-100 active:scale-95 transition-all"
+                className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 hover:bg-amber-100 active:scale-95 transition-all"
               >
                 <MessageCircle className="w-[18px] h-[18px]" />
               </button>
@@ -122,10 +122,10 @@ export default function MainNav({
                     href={href}
                     className="flex flex-col items-center justify-center px-3 py-1 active:scale-95 transition-transform"
                   >
-                    <div className="w-11 h-11 bg-gradient-to-br from-sky-400 to-blue-500 rounded-[14px] flex items-center justify-center shadow-lg shadow-sky-300/40 -mt-3 mb-0.5">
+                    <div className="w-11 h-11 bg-gradient-to-br from-amber-600 to-amber-700 rounded-[14px] flex items-center justify-center shadow-lg shadow-amber-300/30 -mt-3 mb-0.5">
                       <PlusCircle className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-[10px] font-semibold text-sky-500">Add</span>
+                    <span className="text-[10px] font-semibold text-amber-600">Add</span>
                   </Link>
                 );
               }
@@ -136,7 +136,7 @@ export default function MainNav({
                   href={href}
                   className={clsx(
                     "flex flex-col items-center justify-center px-3 py-1 min-w-[56px] active:scale-95 transition-all",
-                    active ? "text-sky-500" : "text-slate-400"
+                    active ? "text-amber-600" : "text-slate-400"
                   )}
                 >
                   <Icon className={clsx("w-[22px] h-[22px] mb-0.5", active && "stroke-[2.5px]")} />

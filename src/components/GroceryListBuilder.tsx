@@ -119,7 +119,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
   const progress = totalItems === 0 ? 0 : Math.round((checked.size / totalItems) * 100);
 
   return (
-    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-amber-100 selection:text-amber-900">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-10">
@@ -127,7 +127,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
             <div>
               <div className="flex items-center gap-4 mb-2">
                 <div className="w-12 h-12 glass rounded-2xl flex items-center justify-center shadow-sm">
-                  <ShoppingBasket className="w-6 h-6 text-sky-500" />
+                  <ShoppingBasket className="w-6 h-6 text-amber-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Shopping List</h1>
               </div>
@@ -142,8 +142,8 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
 
         {recipes.length === 0 ? (
           <div className="text-center py-24 glass rounded-[3rem]">
-            <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
-              <ShoppingBasket className="w-8 h-8 text-sky-200" />
+            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
+              <ShoppingBasket className="w-8 h-8 text-amber-200" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">No recipes yet</h3>
             <p className="text-slate-500 max-w-xs mx-auto mb-6">
@@ -151,7 +151,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
             </p>
             <a
               href="/add-recipe"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               Add Your First Recipe
             </a>
@@ -162,7 +162,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
             <div className="flex items-center gap-3 mb-6">
               <button
                 onClick={selectAll}
-                className="text-sky-600 text-xs font-bold hover:underline transition-colors"
+                className="text-amber-700 text-xs font-bold hover:underline transition-colors"
               >
                 Select all
               </button>
@@ -189,7 +189,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                     className={clsx(
                       "text-left rounded-[1.75rem] overflow-hidden transition-all duration-200 border p-4",
                       isSelected
-                        ? "bg-sky-50/50 border-sky-200 shadow-[0_4px_12px_rgba(0,166,244,0.1)]"
+                        ? "bg-amber-50/50 border-amber-200 shadow-[0_4px_12px_rgba(196,149,46,0.1)]"
                         : "glass hover:bg-white/60"
                     )}
                   >
@@ -198,8 +198,8 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                         className={clsx(
                           "w-7 h-7 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all",
                           isSelected
-                            ? "bg-sky-500 border-sky-500 shadow-[0_4px_12px_rgba(0,166,244,0.3)]"
-                            : "border-sky-100 bg-white"
+                            ? "bg-amber-600 border-amber-600 shadow-[0_4px_12px_rgba(196,149,46,0.3)]"
+                            : "border-amber-200 bg-white"
                         )}
                       >
                         {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
@@ -232,7 +232,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
               <button
                 onClick={() => setShowList(true)}
                 disabled={selected.size === 0}
-                className="px-10 py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold transition-all disabled:opacity-40 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:shadow-[0_12px_32px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                className="px-10 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold transition-all disabled:opacity-40 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
               >
                 Generate Shopping List ({selected.size} {selected.size === 1 ? "recipe" : "recipes"})
               </button>
@@ -243,17 +243,17 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
             {/* Progress bar */}
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 mb-10 items-stretch">
               <div className="glass p-6 rounded-[2rem] relative overflow-hidden group">
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-sky-200/20 rounded-full blur-[60px] pointer-events-none" />
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-amber-200/15 rounded-full blur-[60px] pointer-events-none" />
                 <div className="flex items-center justify-between mb-4 relative z-10">
                   <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4 text-sky-400" />
+                    <LayoutGrid className="w-4 h-4 text-amber-500" />
                     Progress
                   </span>
-                  <span className="text-lg font-black text-sky-600">{progress}%</span>
+                  <span className="text-lg font-black text-amber-700">{progress}%</span>
                 </div>
                 <div className="relative h-4 bg-white/60 backdrop-blur-sm rounded-full overflow-hidden border border-white/40 shadow-inner z-10">
                   <div
-                    className="h-full bg-gradient-to-r from-sky-400 to-blue-500 rounded-full relative transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-amber-600 to-amber-700 rounded-full relative transition-all duration-500"
                     style={{ width: `${progress}%` }}
                   >
                     <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[progress-shine_2s_linear_infinite]" />
@@ -265,7 +265,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
             {/* Back button */}
             <button
               onClick={() => { setShowList(false); setChecked(new Set()); }}
-              className="flex items-center gap-2 text-sky-600 font-bold text-sm mb-6 hover:gap-3 transition-all"
+              className="flex items-center gap-2 text-amber-700 font-bold text-sm mb-6 hover:gap-3 transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
               Change recipes
@@ -284,7 +284,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
               {groceryList && groceryList.map(([category, items]) => (
                 <div key={category} className="flex flex-col">
                   <div className="flex items-center gap-3 mb-4 px-2">
-                    <div className="w-2 h-2 rounded-full bg-sky-400" />
+                    <div className="w-2 h-2 rounded-full bg-amber-500" />
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                       {category}
                     </h3>
@@ -303,14 +303,14 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                             "w-full flex items-center gap-4 p-5 rounded-[1.75rem] transition-all text-left border group relative overflow-hidden",
                             isChecked
                               ? "bg-white/20 border-white/40 opacity-70"
-                              : "glass hover:bg-white/60 hover:border-sky-200"
+                              : "glass hover:bg-white/60 hover:border-amber-200"
                           )}
                         >
                           <div className={clsx(
                             "w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all",
                             isChecked
                               ? "bg-emerald-500 border-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
-                              : "border-sky-100 bg-white group-hover:border-sky-300"
+                              : "border-amber-200 bg-white group-hover:border-amber-300"
                           )}>
                             {isChecked && <Check className="w-5 h-5 text-white stroke-[4]" />}
                           </div>
@@ -329,7 +329,7 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                             </span>
                           )}
                           {!isChecked && (
-                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-sky-400 transition-colors" />
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
                           )}
                         </button>
                       );

@@ -10,7 +10,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   return (
     <Link href={`/recipe/${recipe.slug}`}>
       <div className="group cursor-pointer">
-        <div className="relative glass rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:shadow-[0_16px_48px_rgba(0,166,244,0.12)] hover:-translate-y-2">
+        <div className="relative glass rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:shadow-[0_16px_48px_rgba(196,149,46,0.12)] hover:-translate-y-2">
           {/* Image */}
           <div className="relative h-64 overflow-hidden">
             {recipe.imageUrl ? (
@@ -22,8 +22,8 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-sky-50 to-blue-50 flex items-center justify-center">
-                <Sparkles className="w-12 h-12 text-sky-200" />
+              <div className="w-full h-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                <Sparkles className="w-12 h-12 text-amber-200" />
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent opacity-60" />
@@ -31,7 +31,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
             {/* Time Badge */}
             {totalTime && (
               <div className="absolute top-5 right-5 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-2xl text-[12px] font-bold text-slate-800 flex items-center gap-1.5 border border-white shadow-sm">
-                <Clock className="w-3.5 h-3.5 text-sky-500" />
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
                 {totalTime}m
               </div>
             )}
@@ -46,14 +46,14 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
 
           {/* Content */}
           <div className="p-6 pt-5">
-            <h3 className="text-xl font-bold text-slate-800 mb-4 line-clamp-1 group-hover:text-sky-600 transition-colors">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 line-clamp-1 group-hover:text-amber-700 transition-colors">
               {recipe.name}
             </h3>
 
             <div className="flex items-center gap-6">
               {recipe.servings && (
                 <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                  <Users className="w-4 h-4 text-sky-400" />
+                  <Users className="w-4 h-4 text-amber-500" />
                   <span>{recipe.servings} servings</span>
                 </div>
               )}
@@ -61,7 +61,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
                 <>
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                   <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                    <Sparkles className="w-4 h-4 text-sky-400" />
+                    <Sparkles className="w-4 h-4 text-amber-500" />
                     <span>{Math.round(recipe.caloriesPerServing)} cal</span>
                   </div>
                 </>

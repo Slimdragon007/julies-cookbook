@@ -27,7 +27,7 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-slate-800">Ingredients</h2>
-          <div className="px-4 py-1.5 bg-sky-50 text-sky-700 text-xs font-bold rounded-full border border-sky-100 flex items-center gap-2">
+          <div className="px-4 py-1.5 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-200 flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5" />
             {ingredients.length} Items
           </div>
@@ -35,7 +35,7 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
         <div className="flex items-center gap-3 glass rounded-full px-4 py-2">
           <button
             onClick={() => onServingsChange(Math.max(1, servings - 1))}
-            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-sky-50 active:scale-90 transition-all shadow-sm"
+            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm"
             aria-label="Decrease servings"
           >
             −
@@ -45,7 +45,7 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
           </span>
           <button
             onClick={() => onServingsChange(servings + 1)}
-            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-sky-50 active:scale-90 transition-all shadow-sm"
+            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm"
             aria-label="Increase servings"
           >
             +
@@ -58,10 +58,10 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
         {ingredients.map((ing) => (
           <div
             key={ing.id}
-            className="group flex items-center gap-4 glass p-4 rounded-[1.5rem] hover:bg-white/60 hover:border-sky-200 transition-all"
+            className="group flex items-center gap-4 glass p-4 rounded-[1.5rem] hover:bg-white/60 hover:border-amber-200 transition-all"
           >
-            <div className="w-6 h-6 rounded-full border-2 border-sky-100 flex items-center justify-center group-hover:border-sky-300 transition-colors">
-              <div className="w-2.5 h-2.5 rounded-full bg-sky-200 group-hover:bg-sky-500 transition-all scale-0 group-hover:scale-100" />
+            <div className="w-6 h-6 rounded-full border-2 border-amber-200 flex items-center justify-center group-hover:border-amber-300 transition-colors">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-200 group-hover:bg-amber-600 transition-all scale-0 group-hover:scale-100" />
             </div>
             <span className="text-slate-700 font-semibold text-[15px]">
               {ing.quantity != null && (

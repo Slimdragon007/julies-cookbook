@@ -69,7 +69,7 @@ export default function WeeklySummary() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
       </div>
     );
   }
@@ -79,8 +79,8 @@ export default function WeeklySummary() {
   if (daysWithData.length === 0) {
     return (
       <div className="text-center py-24 glass rounded-[3rem]">
-        <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
-          <BarChart3 className="w-8 h-8 text-sky-200" />
+        <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
+          <BarChart3 className="w-8 h-8 text-amber-200" />
         </div>
         <h3 className="text-xl font-bold text-slate-800 mb-2">No data yet</h3>
         <p className="text-slate-500 max-w-xs mx-auto mb-6">
@@ -88,7 +88,7 @@ export default function WeeklySummary() {
         </p>
         <a
           href="/log"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
         >
           Log Your First Meal
         </a>
@@ -123,7 +123,7 @@ export default function WeeklySummary() {
         </h3>
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: "Calories", value: averages.calories, color: "text-sky-600", bg: "bg-sky-50" },
+            { label: "Calories", value: averages.calories, color: "text-amber-700", bg: "bg-amber-50" },
             { label: "Protein", value: `${averages.protein}g`, color: "text-emerald-600", bg: "bg-emerald-50" },
             { label: "Carbs", value: `${averages.carbs}g`, color: "text-orange-600", bg: "bg-orange-50" },
             { label: "Fat", value: `${averages.fat}g`, color: "text-purple-600", bg: "bg-purple-50" },

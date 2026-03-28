@@ -35,7 +35,7 @@ function formatMessage(text: string) {
     if (bulletMatch) {
       listItems.push(
         <li key={`li-${i}`} className="flex gap-1.5">
-          <span className="text-sky-400 shrink-0">&#8226;</span>
+          <span className="text-amber-500 shrink-0">&#8226;</span>
           <span>{renderInline(bulletMatch[1])}</span>
         </li>
       );
@@ -72,7 +72,7 @@ function renderInline(text: string): React.ReactNode {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sky-600 underline hover:text-sky-700"
+          className="text-amber-700 underline hover:text-amber-800"
         >
           {display}
         </a>
@@ -164,7 +164,7 @@ export default function ChatDrawer({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100/50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <h2 className="text-lg font-bold text-slate-800">Ask Julie&apos;s Assistant</h2>
@@ -208,7 +208,7 @@ export default function ChatDrawer({
               <span
                 className={`inline-block px-4 py-3 rounded-2xl text-left font-medium ${
                   msg.role === "user"
-                    ? "bg-gradient-to-r from-sky-500 to-blue-500 text-white"
+                    ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white"
                     : "glass text-slate-700"
                 }`}
               >
@@ -223,7 +223,7 @@ export default function ChatDrawer({
                       href={cite.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-[11px] text-sky-600 hover:text-sky-700 truncate font-medium"
+                      className="block text-[11px] text-amber-700 hover:text-amber-800 truncate font-medium"
                     >
                       {cite.title}
                     </a>
@@ -243,7 +243,7 @@ export default function ChatDrawer({
             <div className="flex justify-center">
               <button
                 onClick={() => sendMessage(lastFailedMessage)}
-                className="text-xs font-bold text-sky-600 bg-sky-50 px-4 py-2 rounded-full hover:bg-sky-100 active:scale-95 transition-all"
+                className="text-xs font-bold text-amber-700 bg-amber-50 px-4 py-2 rounded-full hover:bg-amber-100 active:scale-95 transition-all"
               >
                 Retry last message
               </button>
@@ -271,7 +271,7 @@ export default function ChatDrawer({
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="w-12 h-12 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(0,166,244,0.25)] hover:scale-105 active:scale-95"
+            className="w-12 h-12 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(196,149,46,0.25)] hover:scale-105 active:scale-95"
           >
             <Send className="w-5 h-5" />
           </button>

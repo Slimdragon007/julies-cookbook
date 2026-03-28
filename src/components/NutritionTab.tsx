@@ -12,7 +12,7 @@ interface Props {
 }
 
 const MACRO_FIELDS = [
-  { key: "calories", label: "Calories", color: "text-sky-600", bg: "bg-sky-50" },
+  { key: "calories", label: "Calories", color: "text-amber-700", bg: "bg-amber-50" },
   { key: "protein", label: "Protein (g)", color: "text-emerald-600", bg: "bg-emerald-50" },
   { key: "carbs", label: "Carbs (g)", color: "text-orange-600", bg: "bg-orange-50" },
   { key: "fat", label: "Fat (g)", color: "text-purple-600", bg: "bg-purple-50" },

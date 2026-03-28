@@ -26,7 +26,7 @@ export default async function HomePage() {
           <h1
             className="text-3xl font-bold tracking-tight"
             style={{
-              backgroundImage: "linear-gradient(45deg, #1d293d, #45556c, #00a6f4)",
+              backgroundImage: "linear-gradient(45deg, #2D2417, #8B7355, #C4952E)",
               backgroundSize: "200% auto",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -34,7 +34,7 @@ export default async function HomePage() {
           >
             Hello, {displayName}
           </h1>
-          <Sparkles className="w-6 h-6 text-sky-400" />
+          <Sparkles className="w-6 h-6 text-amber-500" />
         </div>
         <p className="text-slate-500 font-medium text-[15px]">
           Find your next favorite meal today.
@@ -45,7 +45,7 @@ export default async function HomePage() {
       <section>
         <div className="flex items-center justify-between mb-6 px-2">
           <h2 className="text-xl font-bold text-slate-800">Your Recipes</h2>
-          <span className="text-sky-600 font-bold text-sm">
+          <span className="text-amber-700 font-bold text-sm">
             {recipes.length} {recipes.length === 1 ? "recipe" : "recipes"}
           </span>
         </div>
@@ -58,8 +58,8 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="text-center py-24 glass rounded-[3rem]">
-            <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
-              <Sparkles className="w-8 h-8 text-sky-200" />
+            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
+              <Sparkles className="w-8 h-8 text-amber-200" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">No recipes yet</h3>
             <p className="text-slate-500 max-w-xs mx-auto">

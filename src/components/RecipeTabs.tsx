@@ -40,7 +40,7 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings, 
               className={clsx(
                 "flex-1 py-3 text-center text-sm font-bold transition-all rounded-xl",
                 activeTab === key
-                  ? "text-sky-600 bg-white border border-white shadow-sm"
+                  ? "text-amber-700 bg-white border border-white shadow-sm"
                   : "text-slate-400 hover:text-slate-600"
               )}
             >

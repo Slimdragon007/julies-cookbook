@@ -110,7 +110,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       <form onSubmit={handleSubmit} className="glass-strong rounded-[2rem] p-6 mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Recipe</label>
+            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Recipe</label>
             <select
               value={recipeId}
               onChange={(e) => setRecipeId(e.target.value)}
@@ -124,7 +124,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Meal</label>
+            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Meal</label>
             <select
               value={meal}
               onChange={(e) => setMeal(e.target.value)}
@@ -136,7 +136,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Portion (grams)</label>
+            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Portion (grams)</label>
             <input
               type="number"
               inputMode="numeric"
@@ -148,7 +148,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-sky-600 uppercase tracking-[0.2em] pl-1">Date</label>
+            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Date</label>
             <input
               type="date"
               value={logDate}
@@ -161,13 +161,13 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
           <button
             type="submit"
             disabled={saving || !recipeId || !portionG}
-            className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl font-bold transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(0,166,244,0.3)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+            className="px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {saving ? "Saving..." : "Log Meal"}
           </button>
           {message && (
-            <span className="text-sm text-sky-600 font-bold">{message}</span>
+            <span className="text-sm text-amber-700 font-bold">{message}</span>
           )}
         </div>
       </form>
@@ -178,7 +178,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
           <h3 className="text-sm font-bold text-slate-800 mb-4">Day Total</h3>
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: "Calories", value: todayTotal.cal, color: "text-sky-600", bg: "bg-sky-50" },
+              { label: "Calories", value: todayTotal.cal, color: "text-amber-700", bg: "bg-amber-50" },
               { label: "Protein", value: `${todayTotal.p}g`, color: "text-emerald-600", bg: "bg-emerald-50" },
               { label: "Carbs", value: `${todayTotal.c}g`, color: "text-orange-600", bg: "bg-orange-50" },
               { label: "Fat", value: `${todayTotal.f}g`, color: "text-purple-600", bg: "bg-purple-50" },
@@ -213,7 +213,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
               </div>
               <div className="text-right">
                 <span className="text-sm font-bold text-slate-800">{entry.portion_g}g</span>
-                <span className="text-xs text-sky-600 font-bold ml-2">{entry.calories} cal</span>
+                <span className="text-xs text-amber-700 font-bold ml-2">{entry.calories} cal</span>
               </div>
             </div>
           ))}

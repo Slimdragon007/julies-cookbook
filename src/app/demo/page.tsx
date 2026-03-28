@@ -129,25 +129,25 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] flex flex-col relative overflow-hidden selection:bg-sky-100 selection:text-sky-900">
+    <div className="min-h-screen bg-[#FAF8F4] flex flex-col relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
       {/* Ambient blobs */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <motion.div
           animate={{ x: [0, 60, 0], y: [0, 40, 0], scale: [1, 1.2, 1] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] bg-sky-100/30 rounded-full blur-[120px]"
+          className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] bg-amber-100/30 rounded-full blur-[120px]"
         />
         <motion.div
           animate={{ x: [0, -80, 0], y: [0, 80, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-5%] right-[5%] w-[500px] h-[500px] bg-blue-100/20 rounded-full blur-[100px]"
+          className="absolute bottom-[-5%] right-[5%] w-[500px] h-[500px] bg-amber-100/15 rounded-full blur-[100px]"
         />
       </div>
 
       {/* Top bar */}
       <div className="relative z-30 flex items-center justify-between px-6 sm:px-10 pt-12 lg:pt-8 pb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-200/50">
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-300/30">
             <BookHeart className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -177,7 +177,7 @@ export default function DemoPage() {
               className={clsx(
                 "flex items-center gap-2.5 px-4 py-3 rounded-[1.75rem] text-[13px] font-bold transition-all whitespace-nowrap relative",
                 idx === currentStep
-                  ? "text-sky-600 bg-white shadow-md border border-sky-100/50"
+                  ? "text-amber-700 bg-white shadow-md border border-amber-200/50"
                   : idx < currentStep
                   ? "text-emerald-600 bg-white/40 hover:bg-white/60"
                   : "text-slate-400 bg-transparent hover:bg-white/20"
@@ -186,7 +186,7 @@ export default function DemoPage() {
               {idx < currentStep ? (
                 <Check className="w-4 h-4 stroke-[3]" />
               ) : (
-                <div className={clsx("w-5 h-5 rounded-lg flex items-center justify-center", idx === currentStep ? "bg-sky-50" : "bg-slate-100/50")}>
+                <div className={clsx("w-5 h-5 rounded-lg flex items-center justify-center", idx === currentStep ? "bg-amber-50" : "bg-slate-100/50")}>
                   {step.icon}
                 </div>
               )}
@@ -200,13 +200,13 @@ export default function DemoPage() {
           <div className="flex items-center gap-1.5 shrink-0 pr-1">
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-10 h-10 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center text-slate-500 hover:text-sky-600 transition-all active:scale-90"
+              className="w-10 h-10 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center text-slate-500 hover:text-amber-700 transition-all active:scale-90"
             >
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
             </button>
             <button
               onClick={restart}
-              className="w-10 h-10 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center text-slate-500 hover:text-sky-600 transition-all active:scale-90"
+              className="w-10 h-10 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center text-slate-500 hover:text-amber-700 transition-all active:scale-90"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -227,11 +227,11 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 text-sky-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-sky-100">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-amber-200">
                     <Link2 className="w-3 h-3" /> Step 01: Capture
                   </div>
                   <h2 className="text-4xl sm:text-5xl font-black text-slate-800 mb-6 tracking-tight leading-[1.1]">
-                    Import from <span className="text-sky-500">Anywhere.</span>
+                    Import from <span className="text-amber-600">Anywhere.</span>
                   </h2>
                   <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
                     Just copy the URL of any recipe website. We&apos;ll extract only the ingredients and steps, leaving the ads behind.
@@ -241,25 +241,25 @@ export default function DemoPage() {
                 <div className="max-w-md mx-auto w-full">
                   <div className="glass-strong rounded-[3rem] p-10 relative">
                     <div className="flex items-center gap-3 mb-8">
-                      <div className="w-10 h-10 bg-sky-50 rounded-2xl flex items-center justify-center">
-                        <Clipboard className="w-5 h-5 text-sky-500" />
+                      <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center">
+                        <Clipboard className="w-5 h-5 text-amber-600" />
                       </div>
                       <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">URL Smart Detector</span>
                     </div>
 
-                    <div className="bg-white/80 border border-sky-100 rounded-2xl px-6 py-5 min-h-[64px] flex items-center shadow-inner mb-6">
+                    <div className="bg-white/80 border border-amber-200 rounded-2xl px-6 py-5 min-h-[64px] flex items-center shadow-inner mb-6">
                       <span className="text-slate-700 font-bold text-[15px] break-all">
                         {typedUrl}
                       </span>
                       <motion.span
                         animate={{ opacity: [1, 0] }}
                         transition={{ repeat: Infinity, duration: 0.8 }}
-                        className="inline-block w-1 h-6 bg-sky-400 ml-1 rounded-full"
+                        className="inline-block w-1 h-6 bg-amber-500 ml-1 rounded-full"
                       />
                     </div>
 
                     <div className={clsx(
-                      "bg-sky-500 text-white py-5 rounded-2xl font-black text-center text-[15px] shadow-[0_8px_24px_rgba(0,166,244,0.25)] flex items-center justify-center gap-3 transition-opacity",
+                      "bg-amber-600 text-white py-5 rounded-2xl font-black text-center text-[15px] shadow-[0_8px_24px_rgba(196,149,46,0.25)] flex items-center justify-center gap-3 transition-opacity",
                       typedUrl.length > 30 ? "opacity-100" : "opacity-40"
                     )}>
                       Import Recipe <ArrowRight className="w-5 h-5" />
@@ -433,11 +433,11 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left order-first lg:order-last">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-sky-50 text-sky-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-sky-100">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-amber-200">
                     <ShoppingBasket className="w-3 h-3" /> Step 04: Shopping
                   </div>
                   <h2 className="text-4xl sm:text-5xl font-black text-slate-800 mb-6 tracking-tight leading-[1.1]">
-                    Smart <span className="text-sky-500">Groceries.</span>
+                    Smart <span className="text-amber-600">Groceries.</span>
                   </h2>
                   <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
                     Instantly sync ingredients to your shopping list. Mark them off as you go, and never wander aimlessly through aisles again.
@@ -446,7 +446,7 @@ export default function DemoPage() {
 
                 <div className="max-w-md mx-auto w-full">
                   <div className="glass-strong rounded-[3rem] p-10 relative overflow-hidden">
-                    <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-sky-200/20 rounded-full blur-[60px] pointer-events-none" />
+                    <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-amber-200/15 rounded-full blur-[60px] pointer-events-none" />
 
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-8 px-1">
@@ -455,7 +455,7 @@ export default function DemoPage() {
                           <span className="text-[14px] font-black text-slate-800">Fresh Pantry</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-2xl font-black text-sky-600 leading-none block">
+                          <span className="text-2xl font-black text-amber-700 leading-none block">
                             {Math.round((checkedItems.size / DEMO_RECIPE.ingredients.length) * 100)}%
                           </span>
                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Done</span>
@@ -465,7 +465,7 @@ export default function DemoPage() {
                       <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden border border-white shadow-inner mb-10">
                         <motion.div
                           animate={{ width: `${(checkedItems.size / DEMO_RECIPE.ingredients.length) * 100}%` }}
-                          className="h-full bg-gradient-to-r from-sky-400 to-blue-500 rounded-full"
+                          className="h-full bg-gradient-to-r from-amber-600 to-amber-700 rounded-full"
                         />
                       </div>
 
@@ -482,7 +482,7 @@ export default function DemoPage() {
                             >
                               <div className={clsx(
                                 "w-7 h-7 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all shadow-sm",
-                                checked ? "bg-emerald-500 border-emerald-500" : "border-sky-100 bg-white"
+                                checked ? "bg-emerald-500 border-emerald-500" : "border-amber-200 bg-white"
                               )}>
                                 {checked && <Check className="w-4 h-4 text-white stroke-[4]" />}
                               </div>
@@ -508,14 +508,14 @@ export default function DemoPage() {
         <div className="mt-20 pb-16 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-40">
           <Link
             href="/signup"
-            className="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-blue-500 text-white px-10 py-5 rounded-[2rem] font-black text-[16px] flex items-center justify-center gap-3 shadow-[0_12px_40px_rgba(0,166,244,0.3)] hover:shadow-[0_16px_48px_rgba(0,166,244,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 text-white px-10 py-5 rounded-[2rem] font-black text-[16px] flex items-center justify-center gap-3 shadow-[0_12px_40px_rgba(196,149,46,0.3)] hover:shadow-[0_16px_48px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             Try It Yourself — Create an Account
             <ArrowRight className="w-5 h-5" />
           </Link>
           <Link
             href="/login"
-            className="w-full sm:w-auto text-slate-500 hover:text-sky-600 px-8 py-5 rounded-[2rem] font-bold text-[15px] transition-all glass"
+            className="w-full sm:w-auto text-slate-500 hover:text-amber-700 px-8 py-5 rounded-[2rem] font-bold text-[15px] transition-all glass"
           >
             Sign in to Existing Account
           </Link>

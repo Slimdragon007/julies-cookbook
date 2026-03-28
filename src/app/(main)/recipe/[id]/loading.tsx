@@ -13,7 +13,7 @@ export default function RecipeLoading() {
 
           {/* Title */}
           <div className="hidden lg:block mb-8">
-            <div className="h-5 w-20 bg-sky-100 rounded-full mb-3" />
+            <div className="h-5 w-20 bg-amber-100 rounded-full mb-3" />
             <div className="h-12 w-3/4 bg-slate-200/50 rounded-2xl" />
           </div>
 

@@ -25,6 +25,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
 
+    // Verify ownership before updating
+    const { data: existing } = await supabase
+      .from("recipes").select("id").eq("id", id).eq("user_id", user.id).single();
+    if (!existing) return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+
     const { error } = await supabase
       .from("recipes")
       .update(dbUpdates)
@@ -59,7 +64,8 @@ export async function DELETE(req: NextRequest) {
 
     if (!recipe) return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
 
-    // Delete ingredients first (CASCADE should handle this, but be explicit)
+    // Delete related data first (food_log + ingredients)
+    await supabase.from("food_log").delete().eq("recipe_id", id);
     await supabase.from("ingredients").delete().eq("recipe_id", id);
 
     // Delete recipe

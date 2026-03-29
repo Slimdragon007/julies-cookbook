@@ -37,9 +37,9 @@ export default function RecipeActions({ recipe }: Props) {
       body: JSON.stringify({
         id: recipe.id,
         name: name.trim(),
-        servings: servings ? parseInt(servings) : null,
-        prepTime: prepTime ? parseInt(prepTime) : null,
-        cookTime: cookTime ? parseInt(cookTime) : null,
+        servings: servings ? (parseInt(servings) || null) : null,
+        prepTime: prepTime ? (parseInt(prepTime) || null) : null,
+        cookTime: cookTime ? (parseInt(cookTime) || null) : null,
         cuisineTag: cuisineTag || null,
       }),
     });

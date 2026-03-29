@@ -21,7 +21,6 @@ export default async function ProfilePage() {
           email={user?.email || ""}
           displayName={displayName}
           recipeCount={recipes.length}
-          userId={user?.id || ""}
         />
       </div>
     </div>

@@ -4,7 +4,7 @@
 Multi-user recipe cookbook web app. Each user has their own recipes, ingredients, and food logs. Features include recipe scraping, nutritional tracking, food logging, and an AI chat assistant. Registration is invite-only (family members).
 
 ## Tech Stack
-- **Framework:** Next.js 14 App Router (dynamic rendering, `force-dynamic`)
+- **Framework:** Next.js 14 App Router (dynamic rendering via cookie-based auth)
 - **Database:** Supabase (PostgreSQL) — replaced Airtable as of March 2026
 - **Styling:** Tailwind CSS with Liquid Glass theme (cream `#FDFCFB`, sky-blue `#0ea5e9`, slate text, glassmorphic cards with backdrop-blur)
 - **Fonts:** Inter (display + body) via `next/font/google`
@@ -85,7 +85,7 @@ Vercel builds fail on `@typescript-eslint/no-unused-vars` and `prefer-const` err
 `next build` fails locally if `fonts.googleapis.com` is blocked. Builds work fine on Vercel.
 
 ### 3. Dynamic rendering
-Pages use `force-dynamic` (no ISR) because data is per-user. Changes appear immediately after refresh.
+Pages render dynamically via cookie-based auth (`createSupabaseServer()` reads cookies, which opts into dynamic rendering automatically). No `force-dynamic` needed — the Next.js Router Cache handles client-side caching (30s).
 
 ### 4. Map iterator downlevelIteration
 `for...of` on `Map.entries()` fails TypeScript compilation. Use `map.forEach()` instead.

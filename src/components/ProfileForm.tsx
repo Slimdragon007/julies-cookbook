@@ -9,7 +9,6 @@ interface Props {
   email: string;
   displayName: string;
   recipeCount: number;
-  userId: string;
 }
 
 export default function ProfileForm({ email, displayName, recipeCount }: Props) {
@@ -23,7 +22,7 @@ export default function ProfileForm({ email, displayName, recipeCount }: Props) 
     if (!name.trim()) return;
     setSaving(true);
     const { error } = await supabase.auth.updateUser({
-      data: { display_name: name.trim() },
+      data: { display_name: name.trim().slice(0, 50) },
     });
     setSaving(false);
     if (!error) {
@@ -85,6 +84,7 @@ export default function ProfileForm({ email, displayName, recipeCount }: Props) 
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Enter your name"
+                maxLength={50}
                 className="flex-1 h-12 px-4 rounded-xl glass-input text-slate-800 font-bold placeholder:text-slate-300"
               />
               <button

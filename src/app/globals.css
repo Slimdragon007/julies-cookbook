@@ -140,15 +140,11 @@ main { animation: fadeIn 0.2s ease-out; }
 * { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
 
-/* Fix mobile Safari bottom nav shifting on scroll */
-@supports (-webkit-touch-callout: none) {
-  .mobile-bottom-nav {
-    position: fixed;
-    bottom: 0;
-    /* Use -webkit-fill-available to stick to visual viewport bottom */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-  }
+/* Fix mobile bottom nav shifting on scroll (all browsers) */
+.mobile-bottom-nav {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
 }
 
 /* Prevent body scroll bounce that shifts fixed elements */

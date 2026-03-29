@@ -41,11 +41,21 @@ Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), recip
 
 All must be set in Vercel project settings for production.
 
+## Commands
+- `npm run dev` — start dev server on port 3000
+- `npm run build` — production build
+- `npm run lint` — ESLint check
+- `npm run test` — run unit tests (Vitest, 53 tests)
+- `npm run test:e2e` — run e2e tests (Playwright, 28 tests — needs dev server running)
+- `npm run test:watch` — Vitest in watch mode
+- `npm run scrape <url>` — CLI recipe scraper (writes to Supabase)
+
 ## Key Files
 - `src/lib/supabase/admin.ts` — Supabase admin client (service role key)
 - `src/lib/supabase/server.ts` — Supabase server client (anon key, cookie-based auth)
 - `src/lib/supabase/client.ts` — Supabase browser client (anon key)
-- `src/lib/supabase/middleware.ts` — Auth middleware (redirects, session refresh)
+- `src/middleware.ts` — Supabase auth middleware (protects all routes except /login, /signup, /demo)
+- `src/lib/supabase/middleware.ts` — Auth middleware helper (redirects, session refresh)
 - `src/app/signup/page.tsx` — Invite-only sign-up page
 - `src/app/api/signup/route.ts` — Server-side signup with invite code validation
 - `src/lib/data.ts` — Data layer: getAllRecipes(), getRecipeById(), getRecipeContext(), getAllRecipeIds()
@@ -67,6 +77,14 @@ All must be set in Vercel project settings for production.
 - `scripts/scrape-recipe.mjs` — CLI recipe scraper (writes to Supabase)
 - `scripts/migrate-to-supabase.mjs` — One-time Airtable → Supabase migration
 - `scripts/audit.mjs` — Supabase data audit (recipes, ingredients, images, food log)
+
+## Testing
+- **Unit tests:** Vitest — `src/lib/__tests__/` (macros, fractions, unit-conversions, USDA API)
+- **E2E tests:** Playwright — `e2e/` (auth, demo, pages, nutrition unit picker, food log unit picker)
+- **Config:** `vitest.config.mts` (excludes e2e/), `playwright.config.ts` (chromium, port 3000)
+- **E2E test user:** `e2e-test@julies-cookbook.test` / `E2eTestPass2026!` (created via Supabase admin API)
+- **E2E test recipe:** `e2e-test-pasta` with 4 ingredients, batch weight 800g (seeded in Supabase)
+- **Pre-commit hooks:** Husky runs `next lint` + `tsc --noEmit` before every commit
 
 ## Key Architecture Decisions
 
@@ -96,18 +114,24 @@ Pages render dynamically via cookie-based auth (`createSupabaseServer()` reads c
 ### 4. Map iterator downlevelIteration
 `for...of` on `Map.entries()` fails TypeScript compilation. Use `map.forEach()` instead.
 
+### 5. Dual scraper paths must stay in sync
+Both `scripts/scrape-recipe.mjs` (CLI) and `src/app/api/scrape/route.ts` (web API) have independent USDA lookup + macro estimation code. The `.mjs` file cannot import TypeScript modules. Changes to scraping, nutrition, or ingredient normalization logic must be applied to BOTH paths.
+
 ## Current State (as of March 28, 2026)
 - Multi-user with per-user recipes, ingredients, and food logs
 - Invite-only registration (INVITE_CODE env var, server-side validation)
 - Auth: Supabase email/password, middleware-enforced
 - Supabase project: cqfszhxuvvsgusvjdyqx (us-east-1)
-- UI restyled to "Liquid Glass" theme: light bg (#FDFCFB), sky-blue accents, Inter font, glassmorphic cards with backdrop-blur
+- UI: "Liquid Glass" theme — light bg (#FDFCFB), sky-blue accents, Inter font, glassmorphic cards
 - Desktop sidebar nav + mobile bottom nav (5 items) with elevated Add button
 - Tabs: Ingredients | Instructions | Nutrition with sky-blue pill-style tab switcher
-- Portion calculator in Nutrition tab
-- Food log page (/log) with meal logging and daily totals
+- Portion calculator with customizable units (servings, cups, oz, tbsp, tsp, grams)
+- USDA FoodData Central API for accurate nutritional data (replaces AI estimation)
+- Food log page (/log) with meal logging, daily totals, and user-friendly unit display
 - Weekly summary page (/summary) with 7-day averages
 - Chatbot working with per-user recipe context
+- 53 unit tests (Vitest) + 28 e2e tests (Playwright)
+- Husky pre-commit hooks (lint + type-check)
 - Data source: Supabase (Airtable permanently retired)
 
 ## Notion

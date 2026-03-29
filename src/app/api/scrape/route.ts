@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { calculateIngredientMacros } from "@/lib/usda";
 import * as cheerio from "cheerio";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -529,14 +530,27 @@ ${contextBrief}`,
       return NextResponse.json({ error: `"${recipe.name}" already exists in your cookbook` }, { status: 409 });
     }
 
-    // Step 4: Normalize ingredients
-    const ingredients: NormalizedIngredient[] = (recipe.ingredients || [])
+    // Step 4: Normalize ingredients (USDA API primary, hardcoded fallback)
+    const rawIngredients = (recipe.ingredients || [])
       .map((ing: RawIngredient) => {
         const name = normalizeName((ing.name || "").replace(/[""'']/g, "").trim());
         const unit = assignUnit(name, ing.quantity, ing.unit);
         let category = CATEGORY_MAP[name] || ing.category || "Other";
         if (!VALID_CATEGORIES.includes(category)) category = "Other";
+        return { name, quantity: ing.quantity ?? 1, unit, category, ing };
+      })
+      .filter((r: { name: string }) => r.name);
 
+    const ingredients: NormalizedIngredient[] = await Promise.all(
+      rawIngredients.map(async ({ name, quantity, unit, category, ing }: { name: string; quantity: number; unit: string; category: string; ing: RawIngredient }) => {
+        // Try USDA API first for exact macros
+        const usda = await calculateIngredientMacros(name, quantity, unit);
+
+        if (usda) {
+          return { name, quantity, unit, category, cal: usda.calories, pro: usda.protein, carb: usda.carbs, fat: usda.fat };
+        }
+
+        // Fallback: Claude's estimate from extraction, then hardcoded table
         let cal = ing.calories ?? null;
         let pro = ing.protein_g ?? null;
         let carb = ing.carbs_g ?? null;
@@ -554,7 +568,7 @@ ${contextBrief}`,
 
         return {
           name,
-          quantity: ing.quantity ?? 1,
+          quantity,
           unit,
           category,
           cal: Math.round(cal ?? 0),
@@ -563,7 +577,7 @@ ${contextBrief}`,
           fat: Math.round(fat ?? 0),
         };
       })
-      .filter((ing: NormalizedIngredient) => ing.name);
+    );
 
     // Step 5: Map cuisine
     if (recipe.cuisineTag && !VALID_CUISINES.includes(recipe.cuisineTag)) {

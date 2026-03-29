@@ -3,7 +3,8 @@
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { Recipe } from "@/lib/types";
-import { calculatePortionMacros } from "@/lib/macros";
+import { calculatePortionMacros, perServingMacros, sumIngredientMacros } from "@/lib/macros";
+import { PORTION_UNITS, toGrams, type PortionUnit } from "@/lib/unit-conversions";
 import { Loader2 } from "lucide-react";
 
 interface LogEntry {
@@ -11,6 +12,8 @@ interface LogEntry {
   recipe_id: string;
   meal: string;
   portion_g: number;
+  portion_amount?: number;
+  portion_unit?: string;
   calories: number;
   protein_g: number;
   carbs_g: number;
@@ -27,7 +30,8 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
   const [recipeId, setRecipeId] = useState("");
   const [meal, setMeal] = useState<string>("Lunch");
-  const [portionG, setPortionG] = useState("");
+  const [portionAmount, setPortionAmount] = useState("");
+  const [portionUnit, setPortionUnit] = useState<PortionUnit>("servings");
   const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -40,14 +44,36 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
 
   function calculateMacros() {
     const recipe = recipes.find((r) => r.id === recipeId);
-    if (!recipe) return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+    if (!recipe) return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, portion_g: 0 };
 
-    const grams = parseFloat(portionG) || 0;
+    const amount = parseFloat(portionAmount) || 0;
+    const servingsCount = recipe.servings ?? 1;
+
+    // Convert user's unit to grams
+    const grams = toGrams(amount, portionUnit, {
+      totalBatchWeightG: recipe.totalBatchWeightG,
+      servings: servingsCount,
+    });
+
+    // If servings unit with no batch weight, use per-serving math scaled by amount
+    if (grams === null && portionUnit === "servings") {
+      const totals = sumIngredientMacros(recipe.ingredients);
+      const perServing = perServingMacros(totals, servingsCount);
+      return {
+        calories: Math.round(perServing.calories * amount),
+        protein_g: Math.round(perServing.protein * amount),
+        carbs_g: Math.round(perServing.carbs * amount),
+        fat_g: Math.round(perServing.fat * amount),
+        portion_g: 0,
+      };
+    }
+
+    const resolvedGrams = grams ?? 0;
     const { macros } = calculatePortionMacros(
       recipe.ingredients,
-      grams,
+      resolvedGrams,
       recipe.totalBatchWeightG,
-      recipe.servings ?? 1
+      servingsCount
     );
 
     return {
@@ -55,25 +81,29 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       protein_g: macros.protein,
       carbs_g: macros.carbs,
       fat_g: macros.fat,
+      portion_g: resolvedGrams,
     };
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!recipeId || !portionG) return;
+    if (!recipeId || !portionAmount) return;
 
     setSaving(true);
     setMessage("");
 
     const macros = calculateMacros();
     const selectedRecipe = recipes.find(r => r.id === recipeId);
+    const displayAmount = parseFloat(portionAmount) || 0;
 
     // Optimistic update — add entry immediately
     const optimisticEntry: LogEntry = {
       id: `temp-${Date.now()}`,
       recipe_id: recipeId,
       meal,
-      portion_g: parseInt(portionG, 10),
+      portion_g: macros.portion_g,
+      portion_amount: displayAmount,
+      portion_unit: portionUnit,
       calories: macros.calories,
       protein_g: macros.protein_g,
       carbs_g: macros.carbs_g,
@@ -95,9 +125,14 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       body: JSON.stringify({
         recipe_id: recipeId,
         meal,
-        portion_g: parseInt(portionG, 10),
+        portion_g: macros.portion_g,
+        portion_amount: displayAmount,
+        portion_unit: portionUnit,
         log_date: logDate,
-        ...macros,
+        calories: macros.calories,
+        protein_g: macros.protein_g,
+        carbs_g: macros.carbs_g,
+        fat_g: macros.fat_g,
       }),
     });
 
@@ -106,7 +141,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
 
     if (responseData.success) {
       setMessage("Logged!");
-      setPortionG("");
+      setPortionAmount("");
       // Revalidate to get the real entry with server-generated ID
       mutate(`/api/log-meal?date=${logDate}`);
     } else {
@@ -158,16 +193,28 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Portion (grams)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={portionG}
-              onChange={(e) => setPortionG(e.target.value)}
-              placeholder="e.g. 350"
-              className="w-full h-14 px-5 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300"
-              required
-            />
+            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Portion</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.25"
+                value={portionAmount}
+                onChange={(e) => setPortionAmount(e.target.value)}
+                placeholder={portionUnit === "servings" ? "1" : "0"}
+                className="flex-1 h-14 px-5 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300"
+                required
+              />
+              <select
+                value={portionUnit}
+                onChange={(e) => setPortionUnit(e.target.value as PortionUnit)}
+                className="h-14 px-4 rounded-2xl glass-input text-slate-800 text-[15px] font-bold"
+              >
+                {PORTION_UNITS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">Date</label>
@@ -182,7 +229,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
         <div className="flex items-center gap-3">
           <button
             type="submit"
-            disabled={saving || !recipeId || !portionG}
+            disabled={saving || !recipeId || !portionAmount}
             className="px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -238,7 +285,11 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
                 <span className="text-xs text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full">{entry.meal}</span>
               </div>
               <div className="text-right">
-                <span className="text-sm font-bold text-slate-800">{entry.portion_g}g</span>
+                <span className="text-sm font-bold text-slate-800">
+                  {entry.portion_amount && entry.portion_unit
+                    ? `${entry.portion_amount} ${entry.portion_unit}`
+                    : `${entry.portion_g}g`}
+                </span>
                 <span className="text-xs text-amber-700 font-bold ml-2">{entry.calories} cal</span>
               </div>
             </div>

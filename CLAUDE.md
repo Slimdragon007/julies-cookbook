@@ -22,7 +22,7 @@ Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), slug 
 Columns: id (UUID PK), recipe_id (UUID FK → recipes.id ON DELETE CASCADE), name, quantity (DECIMAL), unit, category, calories (INT), protein_g (INT), carbs_g (INT), fat_g (INT)
 
 ### food_log table
-Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), recipe_id (UUID FK → recipes.id), log_date (DATE), meal (TEXT: Breakfast/Lunch/Dinner/Snack), portion_g, calories, protein_g, carbs_g, fat_g, notes, created_at
+Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), recipe_id (UUID FK → recipes.id), log_date (DATE), meal (TEXT: Breakfast/Lunch/Dinner/Snack), portion_g, portion_amount (DECIMAL), portion_unit (TEXT), calories, protein_g, carbs_g, fat_g, notes, created_at
 
 ### RLS Policies
 - Per-user CRUD on recipes and food_log (`auth.uid() = user_id`)
@@ -36,6 +36,7 @@ Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), recip
 - `ANTHROPIC_API_KEY` — For Claude chat API
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — Image uploads
 - `SCRAPINGBEE_API_KEY` — Optional: Cloudflare bypass for recipe scraper (free tier: 1000 calls/month)
+- `USDA_API_KEY` — USDA FoodData Central API key for accurate nutritional data (free: https://fdc.nal.usda.gov/api-key-signup)
 - `INVITE_CODE` — Server-side invite code for signup (no fallback — fails closed if missing)
 
 All must be set in Vercel project settings for production.
@@ -48,6 +49,8 @@ All must be set in Vercel project settings for production.
 - `src/app/signup/page.tsx` — Invite-only sign-up page
 - `src/app/api/signup/route.ts` — Server-side signup with invite code validation
 - `src/lib/data.ts` — Data layer: getAllRecipes(), getRecipeById(), getRecipeContext(), getAllRecipeIds()
+- `src/lib/usda.ts` — USDA FoodData Central API: lookupNutrition(), calculateIngredientMacros()
+- `src/lib/unit-conversions.ts` — Portion unit conversion: toGrams(), PORTION_UNITS (servings/cups/oz/tbsp/tsp/g)
 - `src/lib/types.ts` — Recipe and Ingredient TypeScript interfaces
 - `src/app/recipe/[id]/page.tsx` — Recipe detail page (slug-based routing, dynamic rendering)
 - `src/app/log/page.tsx` — Food log page
@@ -71,7 +74,10 @@ All must be set in Vercel project settings for production.
 Recipe URLs use slugs (e.g., `/recipe/best-goulash`) instead of UUIDs. `getRecipeById()` looks up by slug first, falls back to UUID for backwards compat.
 
 ### Portion calculator
-Uses `total_batch_weight_g` for exact macro calculation: `(portion_g / total_batch_weight_g) * total_recipe_macros`. Falls back to per-serving estimate if batch weight is null.
+Supports multiple units: servings, cups, oz, tbsp, tsp, grams. Converts to grams via `src/lib/unit-conversions.ts` for macro math. Uses `total_batch_weight_g` for exact calculation: `(portion_g / total_batch_weight_g) * total_recipe_macros`. Falls back to per-serving estimate if batch weight is null. "Servings" unit works without batch weight via per-serving math.
+
+### Nutritional data accuracy
+Ingredient macros sourced from USDA FoodData Central API (exact per 100g values). Scraper pipeline: USDA API → Claude AI estimate → hardcoded lookup table → 0. Both scraper paths (CLI + web API) use the same USDA-first approach.
 
 ### Nullish coalescing
 Use `??` (not `||`) for numeric fields. `0 || null` returns `null` (wrong), `0 ?? null` returns `0` (correct).

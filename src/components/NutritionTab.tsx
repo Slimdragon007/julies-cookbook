@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Ingredient } from "@/lib/types";
 import { sumIngredientMacros, portionMacros as calcPortionMacros, perServingMacros } from "@/lib/macros";
+import { PORTION_UNITS, toGrams, type PortionUnit } from "@/lib/unit-conversions";
 
 interface Props {
   ingredients: Ingredient[];
@@ -19,7 +20,8 @@ const MACRO_FIELDS = [
 ] as const;
 
 export default function NutritionTab({ ingredients, scale, servings, totalBatchWeightG }: Props) {
-  const [portionG, setPortionG] = useState<string>("");
+  const [portionAmount, setPortionAmount] = useState<string>("");
+  const [portionUnit, setPortionUnit] = useState<PortionUnit>("servings");
 
   const totals = sumIngredientMacros(ingredients);
 
@@ -32,9 +34,18 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
 
   const servingsLabel = servings === 1 ? "serving" : "servings";
 
-  const portionGrams = parseFloat(portionG) || 0;
+  const amount = parseFloat(portionAmount) || 0;
   const hasBatchWeight = totalBatchWeightG != null && totalBatchWeightG > 0;
-  const portionMacros = hasBatchWeight
+
+  // Convert the user's chosen unit to grams (or null if using servings without batch weight)
+  const portionGrams = amount > 0
+    ? toGrams(amount, portionUnit, { totalBatchWeightG, servings })
+    : 0;
+
+  // If unit is "servings" and we have no batch weight, use per-serving math directly
+  const useServingsFallback = portionUnit === "servings" && !hasBatchWeight && amount > 0;
+
+  const portionMacros = portionGrams && portionGrams > 0 && hasBatchWeight
     ? calcPortionMacros(totals, portionGrams, totalBatchWeightG!)
     : null;
 
@@ -73,23 +84,33 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
         <h3 className="text-sm font-bold text-slate-800 mb-4">
           Portion Calculator
         </h3>
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <label className="text-sm text-slate-700 font-medium" htmlFor="portion-input">
             How much did you eat?
           </label>
           <input
             id="portion-input"
             type="number"
-            inputMode="numeric"
-            placeholder="grams"
-            value={portionG}
-            onChange={(e) => setPortionG(e.target.value)}
-            className="w-24 px-3 py-2.5 rounded-xl glass-input text-slate-800 text-base text-center font-bold"
+            inputMode="decimal"
+            step="0.25"
+            placeholder={portionUnit === "servings" ? "1" : "0"}
+            value={portionAmount}
+            onChange={(e) => setPortionAmount(e.target.value)}
+            className="w-20 px-3 py-2.5 rounded-xl glass-input text-slate-800 text-base text-center font-bold"
           />
-          <span className="text-sm text-slate-400 font-medium">g</span>
+          <select
+            value={portionUnit}
+            onChange={(e) => setPortionUnit(e.target.value as PortionUnit)}
+            className="px-3 py-2.5 rounded-xl glass-input text-slate-800 text-base font-bold"
+          >
+            {PORTION_UNITS.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
         </div>
 
-        {portionGrams > 0 && hasBatchWeight && portionMacros && (
+        {/* Exact macros via batch weight (any unit that converts to grams) */}
+        {amount > 0 && portionMacros && (
           <div className="grid grid-cols-4 gap-3 mt-4">
             {MACRO_FIELDS.map(({ key, label, color, bg }) => (
               <div key={key} className={`${bg} rounded-2xl p-3 text-center`}>
@@ -102,7 +123,30 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
           </div>
         )}
 
-        {portionGrams > 0 && !hasBatchWeight && (
+        {/* Servings-based fallback (no batch weight) */}
+        {useServingsFallback && (
+          <div className="mt-4">
+            <div className="grid grid-cols-4 gap-3">
+              {MACRO_FIELDS.map(({ key, label, color, bg }) => {
+                const scaled = Math.round(perServing[key] * amount);
+                return (
+                  <div key={key} className={`${bg} rounded-2xl p-3 text-center`}>
+                    <div className={`text-lg font-bold ${color}`}>
+                      {scaled}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">{label}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-slate-400 mt-3 text-center font-medium">
+              Per serving estimate. Set batch weight for exact tracking.
+            </p>
+          </div>
+        )}
+
+        {/* Non-servings unit without batch weight */}
+        {amount > 0 && !portionMacros && !useServingsFallback && (
           <div className="mt-4">
             <div className="grid grid-cols-4 gap-3">
               {MACRO_FIELDS.map(({ key, label, color, bg }) => (
@@ -115,15 +159,9 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
               ))}
             </div>
             <p className="text-xs text-slate-400 mt-3 text-center font-medium">
-              Per serving estimate. Weigh the batch for exact tracking.
+              Set batch weight for exact {portionUnit} tracking. Showing per-serving estimate.
             </p>
           </div>
-        )}
-
-        {!portionGrams && !hasBatchWeight && (
-          <p className="text-xs text-slate-400 font-medium">
-            Weigh the batch for exact tracking.
-          </p>
         )}
       </div>
 

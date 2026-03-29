@@ -172,7 +172,62 @@ function assignUnit(name, qty, rawUnit) {
 }
 
 // ============================================================
-// INGREDIENT DATA CONTRACT: USDA Macro Estimation
+// USDA FoodData Central API (primary source for macros)
+// ============================================================
+const USDA_BASE = "https://api.nal.usda.gov/fdc/v1";
+const usdaCache = new Map();
+
+const EACH_GRAMS = {
+  egg: 50, onion: 150, garlic: 3, carrot: 61, "bell pepper": 120,
+  "red bell pepper": 120, lemon: 58, zucchini: 196, "hamburger bun": 43,
+  potato: 213, tomato: 123, "sweet potato": 130, banana: 118, apple: 182,
+};
+
+const CLI_GRAMS_PER_UNIT = {
+  "/tsp": 4.9, "/tbsp": 14.8, "/cup": 237,
+  "/oz": 28.35, "/lb": 453.6, "/each": 100, "/can": 425,
+};
+
+function ingredientToGramsCLI(name, qty, unit) {
+  const u = unit.startsWith("/") ? unit : `/${unit}`;
+  if (u === "/each") {
+    const perItem = EACH_GRAMS[name.toLowerCase()] ?? CLI_GRAMS_PER_UNIT["/each"];
+    return qty * perItem;
+  }
+  return qty * (CLI_GRAMS_PER_UNIT[u] ?? 100);
+}
+
+async function lookupUSDA(ingredientName) {
+  const key = process.env.USDA_API_KEY;
+  if (!key) return null;
+  const cacheKey = ingredientName.toLowerCase().trim();
+  if (usdaCache.has(cacheKey)) return usdaCache.get(cacheKey);
+  try {
+    const params = new URLSearchParams({
+      api_key: key, query: cacheKey, dataType: "SR Legacy,Foundation", pageSize: "3",
+    });
+    const res = await fetch(`${USDA_BASE}/foods/search?${params}`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) { usdaCache.set(cacheKey, null); return null; }
+    const data = await res.json();
+    const food = data.foods?.[0];
+    if (!food) { usdaCache.set(cacheKey, null); return null; }
+    const get = (id) => food.foodNutrients.find((n) => n.nutrientId === id)?.value ?? 0;
+    const result = { cal: Math.round(get(1008)), p: Math.round(get(1003)), c: Math.round(get(1005)), f: Math.round(get(1004)) };
+    usdaCache.set(cacheKey, result);
+    return result;
+  } catch { usdaCache.set(cacheKey, null); return null; }
+}
+
+async function calcUSDAMacros(name, qty, unit) {
+  const per100g = await lookupUSDA(name);
+  if (!per100g) return null;
+  const grams = ingredientToGramsCLI(name, qty, unit);
+  const scale = grams / 100;
+  return { cal: Math.round(per100g.cal * scale), p: Math.round(per100g.p * scale), c: Math.round(per100g.c * scale), f: Math.round(per100g.f * scale) };
+}
+
+// ============================================================
+// INGREDIENT DATA CONTRACT: Hardcoded Macro Fallback
 // ============================================================
 const MACROS = {
   "olive oil": { per: "tbsp", cal: 119, p: 0, c: 0, f: 14 },
@@ -613,22 +668,20 @@ function validateRecipeData(recipe) {
   }
 
   // Post-extraction normalization: enforce data contract on every ingredient
+  // USDA API is primary source; hardcoded table + Claude estimate are fallbacks
   const rejected = [];
   if (recipe.ingredients) {
-    recipe.ingredients = recipe.ingredients.map((ing, i) => {
-      // Normalize name
+    const normalized = [];
+    for (let i = 0; i < recipe.ingredients.length; i++) {
+      const ing = recipe.ingredients[i];
       const rawName = (ing.name || "").replace(/[""'']/g, "").trim();
       const name = normalizeName(rawName);
 
-      // Normalize unit
       const unit = assignUnit(name, ing.quantity, ing.unit);
-
-      // Validate unit is in allowed cooking units
       if (!VALID_COOKING_UNITS.includes(unit)) {
         issues.push(`ingredient "${name}" got invalid unit "${unit}", defaulting to /tsp`);
       }
 
-      // Normalize category
       let category = CATEGORY_MAP[name] || ing.category || "Other";
       if (!VALID_CATEGORIES.includes(category)) {
         issues.push(`ingredient "${name}" category "${category}" invalid, setting to Other`);
@@ -638,37 +691,44 @@ function validateRecipeData(recipe) {
         category = "Other";
       }
 
-      // Normalize macros: use Claude's estimate, fall back to USDA reference, round to whole
-      let cal = ing.calories ?? ing.estimatedCalories ?? null;
-      let pro = ing.protein_g ?? ing.estimatedProtein ?? null;
-      let carb = ing.carbs_g ?? ing.estimatedCarbs ?? null;
-      let fat = ing.fat_g ?? ing.estimatedFat ?? null;
+      // Try USDA API first for exact macros
+      const qty = ing.quantity ?? 1;
+      const usda = await calcUSDAMacros(name, qty, unit);
 
-      // If any macro is missing, try USDA estimate
-      if (cal === null || pro === null || carb === null || fat === null) {
-        const est = estimateMacros(name, ing.quantity, unit);
-        if (est) {
-          if (cal === null) cal = est.cal;
-          if (pro === null) pro = est.p;
-          if (carb === null) carb = est.c;
-          if (fat === null) fat = est.f;
+      let cal, pro, carb, fat;
+      if (usda) {
+        cal = usda.cal; pro = usda.p; carb = usda.c; fat = usda.f;
+      } else {
+        // Fallback: Claude's estimate, then hardcoded table
+        cal = ing.calories ?? ing.estimatedCalories ?? null;
+        pro = ing.protein_g ?? ing.estimatedProtein ?? null;
+        carb = ing.carbs_g ?? ing.estimatedCarbs ?? null;
+        fat = ing.fat_g ?? ing.estimatedFat ?? null;
+
+        if (cal === null || pro === null || carb === null || fat === null) {
+          const est = estimateMacros(name, qty, unit);
+          if (est) {
+            if (cal === null) cal = est.cal;
+            if (pro === null) pro = est.p;
+            if (carb === null) carb = est.c;
+            if (fat === null) fat = est.f;
+          }
         }
+
+        cal = Math.round(cal ?? 0);
+        pro = Math.round(pro ?? 0);
+        carb = Math.round(carb ?? 0);
+        fat = Math.round(fat ?? 0);
       }
 
-      // Final fallback: 0 for completely unknown
-      cal = Math.round(cal ?? 0);
-      pro = Math.round(pro ?? 0);
-      carb = Math.round(carb ?? 0);
-      fat = Math.round(fat ?? 0);
-
-      // Reject if still missing name or unit
       if (!name) {
         rejected.push(`ingredient ${i}: no name`);
-        return null;
+        continue;
       }
 
-      return { name, quantity: ing.quantity ?? 1, unit, category, cal, pro, carb, fat };
-    }).filter(Boolean);
+      normalized.push({ name, quantity: qty, unit, category, cal, pro, carb, fat });
+    }
+    recipe.ingredients = normalized;
   }
 
   // Final validation: reject any ingredient missing required fields
@@ -820,7 +880,7 @@ async function main() {
     console.log("  - lowercase, singular, canonical names");
     console.log("  - cooking units only (tsp, tbsp, cup, oz, lb, each, can)");
     console.log("  - valid category (Produce, Meat, Fish, Dairy, Spice, Pantry, Grocery, Bakery, Other)");
-    console.log("  - USDA-based macros (whole numbers)");
+    console.log("  - USDA FoodData Central API macros (hardcoded fallback if no API key)");
     process.exit(0);
   }
 

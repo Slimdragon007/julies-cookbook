@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { recipe_id, meal, portion_g, calories, protein_g, carbs_g, fat_g, log_date, notes } = body;
+    const { recipe_id, meal, portion_g, portion_amount, portion_unit, calories, protein_g, carbs_g, fat_g, log_date, notes } = body;
 
-    if (!recipe_id || !meal || !portion_g) {
-      return NextResponse.json({ error: "recipe_id, meal, and portion_g are required" }, { status: 400 });
+    if (!recipe_id || !meal) {
+      return NextResponse.json({ error: "recipe_id and meal are required" }, { status: 400 });
     }
 
     const { data, error } = await supabase
@@ -28,7 +28,9 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         recipe_id,
         meal,
-        portion_g,
+        portion_g: portion_g || 0,
+        portion_amount: portion_amount || null,
+        portion_unit: portion_unit || null,
         calories,
         protein_g,
         carbs_g,

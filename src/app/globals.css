@@ -140,6 +140,28 @@ main { animation: fadeIn 0.2s ease-out; }
 * { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
 
+/* Fix mobile Safari bottom nav shifting on scroll */
+@supports (-webkit-touch-callout: none) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    /* Use -webkit-fill-available to stick to visual viewport bottom */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Prevent body scroll bounce that shifts fixed elements */
+html {
+  overflow: hidden;
+  height: 100%;
+}
+body {
+  overflow: auto;
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* View Transitions — smooth page navigation */
 @supports (view-transition-name: none) {
   ::view-transition-old(root) {

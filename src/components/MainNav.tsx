@@ -126,7 +126,7 @@ export default function MainNav({
 
       {/* Mobile bottom nav — iOS-style tab bar */}
       {!hideNav && (
-        <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200/60 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 6px)" }}>
+        <nav className="mobile-bottom-nav fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200/60 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]" style={{ paddingBottom: "env(safe-area-inset-bottom, 6px)" }}>
           <div className="px-2 pt-1.5 pb-1 w-full max-w-lg mx-auto flex justify-around items-end">
             {navItems.map(({ href, icon: Icon, label }) => {
               const active = isActive(pathname, href);

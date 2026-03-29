@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookHeart, ArrowRight, Mail, Lock, KeyRound, Loader2, Sparkles } from "lucide-react";
+import { BookHeart, ArrowRight, Mail, Lock, KeyRound, Loader2, Sparkles, User } from "lucide-react";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -34,7 +35,7 @@ export default function SignupPage() {
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, inviteCode }),
+      body: JSON.stringify({ email, password, inviteCode, displayName: displayName.trim() }),
     });
 
     const data = await res.json();
@@ -109,6 +110,23 @@ export default function SignupPage() {
                 placeholder="Enter invite code"
                 required
                 autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="displayName" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
+                <User className="w-3 h-3" />
+                Your Name
+              </label>
+              <input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
+                placeholder="First and last name"
+                maxLength={50}
+                required
               />
             </div>
 

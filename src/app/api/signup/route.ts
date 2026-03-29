@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, inviteCode } = await req.json();
+    const { email, password, inviteCode, displayName } = await req.json();
 
     if (!inviteCode || !safeCompare(inviteCode, INVITE_CODE)) {
       return NextResponse.json(
@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
       email,
       password,
       email_confirm: true,
+      user_metadata: {
+        display_name: typeof displayName === "string" ? displayName.trim().slice(0, 50) : undefined,
+      },
     });
 
     if (error) {

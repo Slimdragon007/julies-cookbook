@@ -13,7 +13,7 @@ interface LogEntry {
   meal: string;
   portion_g: number;
   portion_amount?: number;
-  portion_unit?: string;
+  portion_unit?: PortionUnit;
   calories: number;
   protein_g: number;
   carbs_g: number;

@@ -41,8 +41,9 @@ const NUTRIENT_IDS = {
   FAT: 1004,        // g (total fat)
 } as const;
 
-// In-memory cache to avoid redundant API calls during a scrape session
-const cache = new Map<string, USDANutrient | null>();
+// In-memory cache — cap at 500 entries to prevent unbounded growth in long-lived isolates
+const MAX_CACHE_SIZE = 500;
+const cache = new Map<string, USDANutrient>();
 
 /**
  * Look up exact nutrition per 100g from USDA FoodData Central.
@@ -58,7 +59,7 @@ export async function lookupNutrition(
   if (!key) return null;
 
   const cacheKey = ingredientName.toLowerCase().trim();
-  if (cache.has(cacheKey)) return cache.get(cacheKey) ?? null;
+  if (cache.has(cacheKey)) return cache.get(cacheKey)!;
 
   try {
     const params = new URLSearchParams({
@@ -74,7 +75,6 @@ export async function lookupNutrition(
 
     if (!res.ok) {
       console.error(`[usda] API error ${res.status} for "${ingredientName}"`);
-      cache.set(cacheKey, null);
       return null;
     }
 
@@ -82,7 +82,6 @@ export async function lookupNutrition(
     const food = data.foods?.[0];
 
     if (!food) {
-      cache.set(cacheKey, null);
       return null;
     }
 
@@ -98,11 +97,11 @@ export async function lookupNutrition(
       fat: Math.round(getNutrient(NUTRIENT_IDS.FAT)),
     };
 
+    if (cache.size >= MAX_CACHE_SIZE) cache.clear();
     cache.set(cacheKey, result);
     return result;
   } catch (err) {
     console.error(`[usda] Lookup failed for "${ingredientName}":`, err);
-    cache.set(cacheKey, null);
     return null;
   }
 }

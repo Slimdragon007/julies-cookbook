@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Ingredient } from "@/lib/types";
 import { sumIngredientMacros, portionMacros as calcPortionMacros, perServingMacros } from "@/lib/macros";
 import { PORTION_UNITS, toGrams, type PortionUnit } from "@/lib/unit-conversions";
@@ -23,7 +23,7 @@ export default function NutritionTab({ ingredients, scale, servings, totalBatchW
   const [portionAmount, setPortionAmount] = useState<string>("");
   const [portionUnit, setPortionUnit] = useState<PortionUnit>("servings");
 
-  const totals = sumIngredientMacros(ingredients);
+  const totals = useMemo(() => sumIngredientMacros(ingredients), [ingredients]);
 
   function fmt(val: number | null, unit = "") {
     if (val === null) return "\u2014";

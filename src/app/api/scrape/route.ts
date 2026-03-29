@@ -543,14 +543,12 @@ ${contextBrief}`,
 
     const ingredients: NormalizedIngredient[] = await Promise.all(
       rawIngredients.map(async ({ name, quantity, unit, category, ing }: { name: string; quantity: number; unit: string; category: string; ing: RawIngredient }) => {
-        // Try USDA API first for exact macros
         const usda = await calculateIngredientMacros(name, quantity, unit);
 
         if (usda) {
           return { name, quantity, unit, category, cal: usda.calories, pro: usda.protein, carb: usda.carbs, fat: usda.fat };
         }
 
-        // Fallback: Claude's estimate from extraction, then hardcoded table
         let cal = ing.calories ?? null;
         let pro = ing.protein_g ?? null;
         let carb = ing.carbs_g ?? null;

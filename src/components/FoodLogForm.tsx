@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR, { mutate } from "swr";
 import { Recipe } from "@/lib/types";
 import { calculatePortionMacros } from "@/lib/macros";
 import { Loader2 } from "lucide-react";
@@ -21,25 +22,21 @@ interface LogEntry {
 
 const MEALS = ["Breakfast", "Lunch", "Dinner", "Snack"] as const;
 
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
 export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
   const [recipeId, setRecipeId] = useState("");
   const [meal, setMeal] = useState<string>("Lunch");
   const [portionG, setPortionG] = useState("");
   const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
   const [saving, setSaving] = useState(false);
-  const [entries, setEntries] = useState<LogEntry[]>([]);
   const [message, setMessage] = useState("");
 
-  async function loadEntries() {
-    const res = await fetch(`/api/log-meal?date=${logDate}`);
-    const data = await res.json();
-    if (data.entries) setEntries(data.entries);
-  }
-
-  useEffect(() => {
-    loadEntries();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logDate]);
+  const { data, isLoading } = useSWR(`/api/log-meal?date=${logDate}`, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+  });
+  const entries: LogEntry[] = data?.entries || [];
 
   function calculateMacros() {
     const recipe = recipes.find((r) => r.id === recipeId);
@@ -69,6 +66,28 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
     setMessage("");
 
     const macros = calculateMacros();
+    const selectedRecipe = recipes.find(r => r.id === recipeId);
+
+    // Optimistic update — add entry immediately
+    const optimisticEntry: LogEntry = {
+      id: `temp-${Date.now()}`,
+      recipe_id: recipeId,
+      meal,
+      portion_g: parseInt(portionG, 10),
+      calories: macros.calories,
+      protein_g: macros.protein_g,
+      carbs_g: macros.carbs_g,
+      fat_g: macros.fat_g,
+      log_date: logDate,
+      notes: null,
+      recipes: { name: selectedRecipe?.name || "Unknown" },
+    };
+
+    mutate(
+      `/api/log-meal?date=${logDate}`,
+      { entries: [optimisticEntry, ...entries] },
+      false
+    );
 
     const res = await fetch("/api/log-meal", {
       method: "POST",
@@ -82,15 +101,18 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       }),
     });
 
-    const data = await res.json();
+    const responseData = await res.json();
     setSaving(false);
 
-    if (data.success) {
+    if (responseData.success) {
       setMessage("Logged!");
       setPortionG("");
-      loadEntries();
+      // Revalidate to get the real entry with server-generated ID
+      mutate(`/api/log-meal?date=${logDate}`);
     } else {
       setMessage("Couldn't save. Please try again.");
+      // Revert optimistic update
+      mutate(`/api/log-meal?date=${logDate}`);
     }
   }
 
@@ -196,7 +218,11 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       <h3 className="text-lg font-bold text-slate-800 mb-4">
         {logDate === new Date().toISOString().split("T")[0] ? "Today" : logDate}
       </h3>
-      {entries.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+        </div>
+      ) : entries.length === 0 ? (
         <p className="text-sm text-slate-400 font-medium">No meals logged yet.</p>
       ) : (
         <div className="space-y-3">

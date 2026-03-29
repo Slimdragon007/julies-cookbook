@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getRecipeContext } from "@/lib/data";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { logError } from "@/lib/logger";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -101,7 +102,7 @@ ${recipeContext}`;
 
     return NextResponse.json({ response: text, usedWebSearch, citations });
   } catch (error) {
-    console.error("Chat error:", error);
+    logError("Chat error", error, { route: "/api/chat" });
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }

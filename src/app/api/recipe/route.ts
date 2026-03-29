@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { logInfo, logError } from "@/lib/logger";
 
 // PATCH — update a recipe
 export async function PATCH(req: NextRequest) {
@@ -36,10 +37,15 @@ export async function PATCH(req: NextRequest) {
       .eq("id", id)
       .eq("user_id", user.id);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      logError("Recipe update failed", error, { route: "/api/recipe", userId: user.id, action: "PATCH", recipeId: id });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
+    logInfo("Recipe updated", { route: "/api/recipe", userId: user.id, action: "PATCH", recipeId: id });
     return NextResponse.json({ success: true });
   } catch (err) {
+    logError("Recipe PATCH error", err, { route: "/api/recipe", action: "PATCH" });
     return NextResponse.json({ error: err instanceof Error ? err.message : "Unknown error" }, { status: 500 });
   }
 }
@@ -70,10 +76,15 @@ export async function DELETE(req: NextRequest) {
 
     // Delete recipe
     const { error } = await supabase.from("recipes").delete().eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      logError("Recipe delete failed", error, { route: "/api/recipe", userId: user.id, action: "DELETE", recipeId: id });
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
+    logInfo("Recipe deleted", { route: "/api/recipe", userId: user.id, action: "DELETE", recipeId: id });
     return NextResponse.json({ success: true });
   } catch (err) {
+    logError("Recipe DELETE error", err, { route: "/api/recipe", action: "DELETE" });
     return NextResponse.json({ error: err instanceof Error ? err.message : "Unknown error" }, { status: 500 });
   }
 }

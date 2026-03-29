@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { Loader2, BarChart3 } from "lucide-react";
 
 interface DaySummary {
@@ -12,67 +12,48 @@ interface DaySummary {
   meals: number;
 }
 
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
 export default function WeeklySummary() {
-  const [days, setDays] = useState<DaySummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const today = new Date().toISOString().split("T")[0];
+  const { data, isLoading } = useSWR(`/api/log-meal?date=${today}&days=7`, fetcher, {
+    revalidateOnFocus: false,
+  });
 
-  useEffect(() => {
-    async function load() {
-      const today = new Date().toISOString().split("T")[0];
-      const res = await fetch(`/api/log-meal?date=${today}&days=7`);
-      const data = await res.json();
-
-      if (!data.entries) {
-        setLoading(false);
-        return;
-      }
-
-      const byDate = new Map<string, { cal: number; p: number; c: number; f: number; count: number }>();
-
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().split("T")[0];
-        byDate.set(key, { cal: 0, p: 0, c: 0, f: 0, count: 0 });
-      }
-
-      for (const entry of data.entries) {
-        const existing = byDate.get(entry.log_date) || { cal: 0, p: 0, c: 0, f: 0, count: 0 };
-        existing.cal += entry.calories || 0;
-        existing.p += entry.protein_g || 0;
-        existing.c += entry.carbs_g || 0;
-        existing.f += entry.fat_g || 0;
-        existing.count += 1;
-        byDate.set(entry.log_date, existing);
-      }
-
-      const summaries: DaySummary[] = [];
-      byDate.forEach((vals, date) => {
-        summaries.push({
-          date,
-          calories: vals.cal,
-          protein: vals.p,
-          carbs: vals.c,
-          fat: vals.f,
-          meals: vals.count,
-        });
-      });
-
-      summaries.sort((a, b) => b.date.localeCompare(a.date));
-      setDays(summaries);
-      setLoading(false);
-    }
-
-    load();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
       </div>
     );
   }
+
+  // Process entries into daily summaries
+  const byDate = new Map<string, { cal: number; p: number; c: number; f: number; count: number }>();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    byDate.set(key, { cal: 0, p: 0, c: 0, f: 0, count: 0 });
+  }
+
+  if (data?.entries) {
+    for (const entry of data.entries) {
+      const existing = byDate.get(entry.log_date) || { cal: 0, p: 0, c: 0, f: 0, count: 0 };
+      existing.cal += entry.calories || 0;
+      existing.p += entry.protein_g || 0;
+      existing.c += entry.carbs_g || 0;
+      existing.f += entry.fat_g || 0;
+      existing.count += 1;
+      byDate.set(entry.log_date, existing);
+    }
+  }
+
+  const days: DaySummary[] = [];
+  byDate.forEach((vals, date) => {
+    days.push({ date, calories: vals.cal, protein: vals.p, carbs: vals.c, fat: vals.f, meals: vals.count });
+  });
+  days.sort((a, b) => b.date.localeCompare(a.date));
 
   const daysWithData = days.filter((d) => d.meals > 0);
 
@@ -96,7 +77,7 @@ export default function WeeklySummary() {
     );
   }
 
-  const avgCount = daysWithData.length || 1;
+  const avgCount = daysWithData.length;
   const averages = {
     calories: Math.round(daysWithData.reduce((s, d) => s + d.calories, 0) / avgCount),
     protein: Math.round(daysWithData.reduce((s, d) => s + d.protein, 0) / avgCount),
@@ -106,7 +87,6 @@ export default function WeeklySummary() {
 
   function formatDate(dateStr: string) {
     const d = new Date(dateStr + "T12:00:00");
-    const today = new Date().toISOString().split("T")[0];
     if (dateStr === today) return "Today";
     return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   }
@@ -115,12 +95,7 @@ export default function WeeklySummary() {
     <div>
       {/* 7-day averages */}
       <div className="glass rounded-[2rem] px-6 py-5 mb-8">
-        <h3 className="text-sm font-bold text-slate-800 mb-4">
-          7-Day Averages
-          {daysWithData.length === 0 && (
-            <span className="text-slate-400 text-xs ml-2 font-medium">(no data yet)</span>
-          )}
-        </h3>
+        <h3 className="text-sm font-bold text-slate-800 mb-4">7-Day Averages</h3>
         <div className="grid grid-cols-4 gap-3">
           {[
             { label: "Calories", value: averages.calories, color: "text-amber-700", bg: "bg-amber-50" },

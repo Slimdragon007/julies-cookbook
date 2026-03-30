@@ -189,7 +189,7 @@ export async function GET(req: NextRequest) {
       .filter(([, v]) => v.status === "fail")
       .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v.detail || "Failed", inline: true }));
 
-    fetch(webhookUrl, {
+    await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

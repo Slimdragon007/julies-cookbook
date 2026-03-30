@@ -182,6 +182,29 @@ export async function GET(req: NextRequest) {
   // Suppress unused variable warning
   void recipesWithIngs;
 
+  // Alert on failures via Discord webhook (fire-and-forget)
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (overallStatus === "fail" && webhookUrl) {
+    const failedChecks = Object.entries(checks)
+      .filter(([, v]) => v.status === "fail")
+      .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v.detail || "Failed", inline: true }));
+
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: "Cookbook Health",
+        embeds: [{
+          title: "Julie's Cookbook: Health Check Failed",
+          color: 15158332,
+          fields: failedChecks,
+          footer: { text: "julies-cookbook.vercel.app/api/audit" },
+          timestamp: new Date().toISOString(),
+        }],
+      }),
+    }).catch(() => {});
+  }
+
   // Usage tracking (optional, triggered by ?usage=true)
   const includeUsage = req.nextUrl.searchParams.get("usage") === "true";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import type { Metadata } from "next";
 import { getRecipeById } from "@/lib/data";
 import { notFound } from "next/navigation";

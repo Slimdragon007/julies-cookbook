@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/admin";
 
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
 
 interface CheckResult {
   status: "pass" | "fail" | "warn";
@@ -35,11 +35,15 @@ export async function GET(req: NextRequest) {
     "SCRAPINGBEE_API_KEY",
   ];
   const missingEnvs = requiredEnvs.filter((k) =>
-    Array.isArray(k) ? k.every((v) => !process.env[v]) : !process.env[k]
+    Array.isArray(k) ? k.every((v) => !process.env[v]) : !process.env[k],
   );
-  checks.env_vars = missingEnvs.length === 0
-    ? { status: "pass" }
-    : { status: "fail", detail: `Missing: ${missingEnvs.map((k) => Array.isArray(k) ? k.join(" or ") : k).join(", ")}` };
+  checks.env_vars =
+    missingEnvs.length === 0
+      ? { status: "pass" }
+      : {
+          status: "fail",
+          detail: `Missing: ${missingEnvs.map((k) => (Array.isArray(k) ? k.join(" or ") : k)).join(", ")}`,
+        };
 
   // 2. Recipe count
   const { count: recipeCount, error: recipeErr } = await supabase
@@ -48,9 +52,14 @@ export async function GET(req: NextRequest) {
   if (recipeErr) {
     checks.recipe_count = { status: "fail", detail: recipeErr.message };
   } else {
-    checks.recipe_count = (recipeCount ?? 0) >= 15
-      ? { status: "pass", count: recipeCount ?? 0 }
-      : { status: "fail", count: recipeCount ?? 0, detail: "Expected at least 15 recipes" };
+    checks.recipe_count =
+      (recipeCount ?? 0) >= 15
+        ? { status: "pass", count: recipeCount ?? 0 }
+        : {
+            status: "fail",
+            count: recipeCount ?? 0,
+            detail: "Expected at least 15 recipes",
+          };
   }
 
   // 3. Ingredient count
@@ -60,9 +69,14 @@ export async function GET(req: NextRequest) {
   if (ingErr) {
     checks.ingredient_count = { status: "fail", detail: ingErr.message };
   } else {
-    checks.ingredient_count = (ingCount ?? 0) >= 100
-      ? { status: "pass", count: ingCount ?? 0 }
-      : { status: "fail", count: ingCount ?? 0, detail: "Expected at least 100 ingredients" };
+    checks.ingredient_count =
+      (ingCount ?? 0) >= 100
+        ? { status: "pass", count: ingCount ?? 0 }
+        : {
+            status: "fail",
+            count: ingCount ?? 0,
+            detail: "Expected at least 100 ingredients",
+          };
   }
 
   // 4. Recipes with missing images
@@ -71,9 +85,14 @@ export async function GET(req: NextRequest) {
     .select("name")
     .is("image_url", null);
   const noImageCount = noImageRecipes?.length ?? 0;
-  checks.recipes_have_images = noImageCount === 0
-    ? { status: "pass" }
-    : { status: "fail", count: noImageCount, failures: noImageRecipes?.map((r) => r.name) ?? [] };
+  checks.recipes_have_images =
+    noImageCount === 0
+      ? { status: "pass" }
+      : {
+          status: "fail",
+          count: noImageCount,
+          failures: noImageRecipes?.map((r) => r.name) ?? [],
+        };
 
   // 5. Image URLs reachable (HEAD check with 5s timeout)
   const { data: imageRecipes } = await supabase
@@ -87,37 +106,62 @@ export async function GET(req: NextRequest) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         try {
-          const res = await fetch(r.image_url, { method: "HEAD", signal: controller.signal });
+          const res = await fetch(r.image_url, {
+            method: "HEAD",
+            signal: controller.signal,
+          });
           clearTimeout(timeout);
           if (!res.ok) return { name: r.name, error: `HTTP ${res.status}` };
           return null;
         } catch (e) {
           clearTimeout(timeout);
-          return { name: r.name, error: e instanceof Error ? e.message : "fetch error" };
+          return {
+            name: r.name,
+            error: e instanceof Error ? e.message : "fetch error",
+          };
         }
-      })
+      }),
     );
 
     const failures = imageResults
-      .map((r) => r.status === "fulfilled" ? r.value : { name: "unknown", error: "promise rejected" })
+      .map((r) =>
+        r.status === "fulfilled"
+          ? r.value
+          : { name: "unknown", error: "promise rejected" },
+      )
       .filter(Boolean) as { name: string; error: string }[];
 
-    checks.image_urls_reachable = failures.length === 0
-      ? { status: "pass", count: imageRecipes.length }
-      : { status: "fail", count: imageRecipes.length, failures: failures.map((f) => `${f.name}: ${f.error}`) };
+    checks.image_urls_reachable =
+      failures.length === 0
+        ? { status: "pass", count: imageRecipes.length }
+        : {
+            status: "fail",
+            count: imageRecipes.length,
+            failures: failures.map((f) => `${f.name}: ${f.error}`),
+          };
   } else {
-    checks.image_urls_reachable = { status: "warn", detail: "No image URLs to check" };
+    checks.image_urls_reachable = {
+      status: "warn",
+      detail: "No image URLs to check",
+    };
   }
 
   // 6. Orphan ingredients (recipe_id points to non-existent recipe)
-  const { data: allIngredients } = await supabase.from("ingredients").select("id, recipe_id");
+  const { data: allIngredients } = await supabase
+    .from("ingredients")
+    .select("id, recipe_id");
   const { data: allRecipeIds } = await supabase.from("recipes").select("id");
   if (allIngredients && allRecipeIds) {
     const recipeIdSet = new Set(allRecipeIds.map((r) => r.id));
     const orphans = allIngredients.filter((i) => !recipeIdSet.has(i.recipe_id));
-    checks.orphan_ingredients = orphans.length === 0
-      ? { status: "pass" }
-      : { status: "warn", count: orphans.length, detail: `${orphans.length} orphan ingredient(s)` };
+    checks.orphan_ingredients =
+      orphans.length === 0
+        ? { status: "pass" }
+        : {
+            status: "warn",
+            count: orphans.length,
+            detail: `${orphans.length} orphan ingredient(s)`,
+          };
   }
 
   // 7. Recipes without ingredients
@@ -127,7 +171,9 @@ export async function GET(req: NextRequest) {
     .eq("ingredients.id", "");
 
   // Simpler approach: query recipes and count their ingredients
-  const { data: allRecipesForCheck } = await supabase.from("recipes").select("id, name");
+  const { data: allRecipesForCheck } = await supabase
+    .from("recipes")
+    .select("id, name");
   if (allRecipesForCheck) {
     const noIngredients: string[] = [];
     for (const recipe of allRecipesForCheck) {
@@ -137,13 +183,18 @@ export async function GET(req: NextRequest) {
         .eq("recipe_id", recipe.id);
       if ((count ?? 0) === 0) noIngredients.push(recipe.name);
     }
-    checks.recipes_have_ingredients = noIngredients.length === 0
-      ? { status: "pass" }
-      : { status: "warn", count: noIngredients.length, failures: noIngredients };
+    checks.recipes_have_ingredients =
+      noIngredients.length === 0
+        ? { status: "pass" }
+        : {
+            status: "warn",
+            count: noIngredients.length,
+            failures: noIngredients,
+          };
   }
 
   // 8. Homepage reachable (use public domain, not VERCEL_URL which may be protected)
-  const publicUrl = "https://julies-cookbook.vercel.app";
+  const publicUrl = process.env.APP_URL || "https://julies-cookbook.pages.dev";
   try {
     const homeRes = await fetch(publicUrl, { method: "HEAD" });
     checks.homepage_reachable = homeRes.ok
@@ -152,7 +203,10 @@ export async function GET(req: NextRequest) {
         ? { status: "pass", detail: "Deployment protection active (expected)" }
         : { status: "fail", detail: `HTTP ${homeRes.status}` };
   } catch (e) {
-    checks.homepage_reachable = { status: "fail", detail: e instanceof Error ? e.message : "fetch error" };
+    checks.homepage_reachable = {
+      status: "fail",
+      detail: e instanceof Error ? e.message : "fetch error",
+    };
   }
 
   // 9. Chat API responds (verify Anthropic key works)
@@ -164,15 +218,22 @@ export async function GET(req: NextRequest) {
     });
     if (chatRes.status === 401) {
       // Deployment protection — can't self-call, but API key presence was checked above
-      checks.chat_api = { status: "pass", detail: "Skipped (deployment protection)" };
+      checks.chat_api = {
+        status: "pass",
+        detail: "Skipped (deployment protection)",
+      };
     } else {
       const chatData = await chatRes.json();
-      checks.chat_api = chatRes.ok && chatData.response
-        ? { status: "pass" }
-        : { status: "fail", detail: `HTTP ${chatRes.status}` };
+      checks.chat_api =
+        chatRes.ok && chatData.response
+          ? { status: "pass" }
+          : { status: "fail", detail: `HTTP ${chatRes.status}` };
     }
   } catch (e) {
-    checks.chat_api = { status: "fail", detail: e instanceof Error ? e.message : "fetch error" };
+    checks.chat_api = {
+      status: "fail",
+      detail: e instanceof Error ? e.message : "fetch error",
+    };
   }
 
   // Overall status
@@ -187,20 +248,26 @@ export async function GET(req: NextRequest) {
   if (overallStatus === "fail" && webhookUrl) {
     const failedChecks = Object.entries(checks)
       .filter(([, v]) => v.status === "fail")
-      .map(([k, v]) => ({ name: k.replace(/_/g, " "), value: v.detail || "Failed", inline: true }));
+      .map(([k, v]) => ({
+        name: k.replace(/_/g, " "),
+        value: v.detail || "Failed",
+        inline: true,
+      }));
 
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: "Cookbook Health",
-        embeds: [{
-          title: "Julie's Cookbook: Health Check Failed",
-          color: 15158332,
-          fields: failedChecks,
-          footer: { text: "julies-cookbook.vercel.app/api/audit" },
-          timestamp: new Date().toISOString(),
-        }],
+        embeds: [
+          {
+            title: "Julie's Cookbook: Health Check Failed",
+            color: 15158332,
+            fields: failedChecks,
+            footer: { text: "julies-cookbook.vercel.app/api/audit" },
+            timestamp: new Date().toISOString(),
+          },
+        ],
       }),
     }).catch(() => {});
   }
@@ -216,7 +283,7 @@ export async function GET(req: NextRequest) {
     // ScrapingBee usage
     try {
       const sbRes = await fetch(
-        `https://app.scrapingbee.com/api/v1/usage?api_key=${process.env.SCRAPINGBEE_API_KEY}`
+        `https://app.scrapingbee.com/api/v1/usage?api_key=${process.env.SCRAPINGBEE_API_KEY}`,
       );
       if (sbRes.ok) {
         const sbData = await sbRes.json();
@@ -229,7 +296,9 @@ export async function GET(req: NextRequest) {
         usage.scrapingbee = { error: `HTTP ${sbRes.status}` };
       }
     } catch (e) {
-      usage.scrapingbee = { error: e instanceof Error ? e.message : "fetch error" };
+      usage.scrapingbee = {
+        error: e instanceof Error ? e.message : "fetch error",
+      };
     }
 
     // Supabase database size + counts
@@ -265,19 +334,25 @@ export async function GET(req: NextRequest) {
         `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/usage`,
         {
           headers: {
-            Authorization: `Basic ${Buffer.from(
-              `${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`
-            ).toString("base64")}`,
+            Authorization: `Basic ${btoa(`${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`)}`,
           },
-        }
+        },
       );
       if (cloudRes.ok) {
         const cloudData = await cloudRes.json();
         usage.cloudinary = {
-          storage_used_mb: Math.round((cloudData.storage?.usage ?? 0) / 1024 / 1024),
-          storage_limit_mb: Math.round((cloudData.storage?.limit ?? 0) / 1024 / 1024),
-          bandwidth_used_mb: Math.round((cloudData.bandwidth?.usage ?? 0) / 1024 / 1024),
-          bandwidth_limit_mb: Math.round((cloudData.bandwidth?.limit ?? 0) / 1024 / 1024),
+          storage_used_mb: Math.round(
+            (cloudData.storage?.usage ?? 0) / 1024 / 1024,
+          ),
+          storage_limit_mb: Math.round(
+            (cloudData.storage?.limit ?? 0) / 1024 / 1024,
+          ),
+          bandwidth_used_mb: Math.round(
+            (cloudData.bandwidth?.usage ?? 0) / 1024 / 1024,
+          ),
+          bandwidth_limit_mb: Math.round(
+            (cloudData.bandwidth?.limit ?? 0) / 1024 / 1024,
+          ),
           transformations_used: cloudData.transformations?.usage ?? 0,
           transformations_limit: cloudData.transformations?.limit ?? 0,
           objects: cloudData.objects?.usage ?? 0,
@@ -286,7 +361,9 @@ export async function GET(req: NextRequest) {
         usage.cloudinary = { error: `HTTP ${cloudRes.status}` };
       }
     } catch (e) {
-      usage.cloudinary = { error: e instanceof Error ? e.message : "fetch error" };
+      usage.cloudinary = {
+        error: e instanceof Error ? e.message : "fetch error",
+      };
     }
 
     // Anthropic — no public usage API, but we can note the key is set

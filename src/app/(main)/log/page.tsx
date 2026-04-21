@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { getAllRecipes } from "@/lib/data";
 import FoodLogForm from "@/components/FoodLogForm";
 import { createSupabaseServer } from "@/lib/supabase/server";

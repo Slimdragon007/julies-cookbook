@@ -1,11 +1,11 @@
+export const runtime = "edge";
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { calculateIngredientMacros } from "@/lib/usda";
 import * as cheerio from "cheerio";
 import Anthropic from "@anthropic-ai/sdk";
-
-export const maxDuration = 60;
 
 // --- Scrape context: accumulates metadata through fallback steps for AI awareness ---
 interface ScrapeContext {
@@ -36,19 +36,32 @@ function buildContextPrompt(ctx: ScrapeContext): string {
   const lines: string[] = [];
   lines.push(`Acquisition method: ${ctx.method}`);
   lines.push(`Content format: ${ctx.contentFormat}`);
-  if (ctx.fetchAttempts > 1) lines.push(`Fetch attempts: ${ctx.fetchAttempts} (retried due to failures)`);
-  if (ctx.circuitBreakerTripped) lines.push("Circuit breaker was tripped — this domain has recently blocked direct requests");
-  if (ctx.errors.length > 0) lines.push(`Issues encountered: ${ctx.errors.join("; ")}`);
+  if (ctx.fetchAttempts > 1)
+    lines.push(
+      `Fetch attempts: ${ctx.fetchAttempts} (retried due to failures)`,
+    );
+  if (ctx.circuitBreakerTripped)
+    lines.push(
+      "Circuit breaker was tripped — this domain has recently blocked direct requests",
+    );
+  if (ctx.errors.length > 0)
+    lines.push(`Issues encountered: ${ctx.errors.join("; ")}`);
   lines.push(`Content length: ${ctx.contentLengthChars} chars`);
 
   if (ctx.method === "scrapingbee") {
-    lines.push("NOTE: Content was fetched via proxy (ScrapingBee) because the site blocked direct access. The HTML may include rendered JavaScript content. Look for recipe data in structured elements.");
+    lines.push(
+      "NOTE: Content was fetched via proxy (ScrapingBee) because the site blocked direct access. The HTML may include rendered JavaScript content. Look for recipe data in structured elements.",
+    );
   }
   if (ctx.method === "text-paste") {
-    lines.push("NOTE: This is user-pasted text, likely copied from a recipe website or a physical cookbook. It may contain ads, navigation text, or other non-recipe content mixed in. Be thorough but lenient — extract the recipe even if formatting is messy or incomplete.");
+    lines.push(
+      "NOTE: This is user-pasted text, likely copied from a recipe website or a physical cookbook. It may contain ads, navigation text, or other non-recipe content mixed in. Be thorough but lenient — extract the recipe even if formatting is messy or incomplete.",
+    );
   }
   if (ctx.contentFormat === "body-text") {
-    lines.push("NOTE: No structured JSON-LD recipe data was found. Content is raw page text which may include ads, comments, and non-recipe content. Focus on identifying the core recipe structure (title, ingredients list, instructions).");
+    lines.push(
+      "NOTE: No structured JSON-LD recipe data was found. Content is raw page text which may include ads, comments, and non-recipe content. Focus on identifying the core recipe structure (title, ingredients list, instructions).",
+    );
   }
 
   return lines.join("\n");
@@ -62,7 +75,11 @@ const blockedDomains = new Map<string, number>(); // domain → timestamp
 const CIRCUIT_BREAKER_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 function getDomain(url: string): string {
-  try { return new URL(url).hostname; } catch { return url; }
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }
 
 function isCircuitOpen(domain: string): boolean {
@@ -80,7 +97,11 @@ function tripCircuit(domain: string) {
 }
 
 // --- Fetch with timeout ---
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -94,7 +115,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  { maxAttempts = 2, timeoutMs = 15000, initialDelayMs = 1000 } = {}
+  { maxAttempts = 2, timeoutMs = 15000, initialDelayMs = 1000 } = {},
 ): Promise<Response> {
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -112,53 +133,132 @@ async function fetchWithRetry(
       }
     }
     if (attempt < maxAttempts - 1) {
-      await new Promise(r => setTimeout(r, initialDelayMs * Math.pow(2, attempt)));
+      await new Promise((r) =>
+        setTimeout(r, initialDelayMs * Math.pow(2, attempt)),
+      );
     }
   }
   throw lastError || new Error("Fetch failed");
 }
 
-const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
-const VALID_DIETARY = ["Vegetarian", "Gluten-Free", "Dairy-Free", "High Protein", "Comfort Food"];
-const VALID_COOKING_UNITS = ["/tsp", "/tbsp", "/cup", "/oz", "/lb", "/each", "/can"];
-const VALID_CATEGORIES = ["Produce", "Meat", "Fish", "Dairy", "Spice", "Pantry", "Grocery", "Bakery", "Other"];
+const VALID_CUISINES = [
+  "American",
+  "Moroccan",
+  "Italian",
+  "Asian",
+  "Mediterranean",
+  "Other",
+];
+const VALID_DIETARY = [
+  "Vegetarian",
+  "Gluten-Free",
+  "Dairy-Free",
+  "High Protein",
+  "Comfort Food",
+];
+const VALID_COOKING_UNITS = [
+  "/tsp",
+  "/tbsp",
+  "/cup",
+  "/oz",
+  "/lb",
+  "/each",
+  "/can",
+];
+const VALID_CATEGORIES = [
+  "Produce",
+  "Meat",
+  "Fish",
+  "Dairy",
+  "Spice",
+  "Pantry",
+  "Grocery",
+  "Bakery",
+  "Other",
+];
 
 const UNIT_MAP: Record<string, string> = {
-  cups: "/cup", cup: "/cup",
-  oz: "/oz", ounce: "/oz", ounces: "/oz",
-  lb: "/lb", lbs: "/lb", pound: "/lb", pounds: "/lb",
-  can: "/can", cans: "/can",
-  each: "/each", whole: "/each", piece: "/each", pieces: "/each",
-  cloves: "/each", clove: "/each",
-  tbsp: "/tbsp", tablespoon: "/tbsp", tablespoons: "/tbsp",
-  tsp: "/tsp", teaspoon: "/tsp", teaspoons: "/tsp",
+  cups: "/cup",
+  cup: "/cup",
+  oz: "/oz",
+  ounce: "/oz",
+  ounces: "/oz",
+  lb: "/lb",
+  lbs: "/lb",
+  pound: "/lb",
+  pounds: "/lb",
+  can: "/can",
+  cans: "/can",
+  each: "/each",
+  whole: "/each",
+  piece: "/each",
+  pieces: "/each",
+  cloves: "/each",
+  clove: "/each",
+  tbsp: "/tbsp",
+  tablespoon: "/tbsp",
+  tablespoons: "/tbsp",
+  tsp: "/tsp",
+  teaspoon: "/tsp",
+  teaspoons: "/tsp",
 };
 
 const CUISINE_MAP: Record<string, string> = {
   "Middle Eastern": "Mediterranean",
-  French: "Other", Mexican: "Other", Indian: "Other",
-  Japanese: "Asian", Chinese: "Asian", Thai: "Asian", Korean: "Asian", Vietnamese: "Asian",
+  French: "Other",
+  Mexican: "Other",
+  Indian: "Other",
+  Japanese: "Asian",
+  Chinese: "Asian",
+  Thai: "Asian",
+  Korean: "Asian",
+  Vietnamese: "Asian",
 };
 
 const CANONICAL_NAMES: Record<string, string> = {
-  "extra-virgin olive oil": "olive oil", "extra virgin olive oil": "olive oil", "evoo": "olive oil",
-  "large eggs": "egg", "large egg": "egg", "eggs": "egg",
-  "carrots": "carrot", "onions": "onion", "potatoes": "potato",
-  "sweet potatoes": "sweet potato", "bell peppers": "bell pepper",
-  "red bell peppers": "red bell pepper", "strawberries": "strawberry",
-  "blueberries": "blueberry", "lentils": "lentil", "chickpeas": "chickpea",
-  "tomatoes": "tomato", "green onions": "green onion",
-  "cloves garlic": "garlic", "garlic cloves": "garlic",
-  "chicken breasts": "chicken breast", "chicken thighs": "chicken thigh",
-  "hamburger buns": "hamburger bun", "dried apricots": "dried apricot",
-  "golden raisins": "golden raisin", "slivered almonds": "slivered almond",
+  "extra-virgin olive oil": "olive oil",
+  "extra virgin olive oil": "olive oil",
+  evoo: "olive oil",
+  "large eggs": "egg",
+  "large egg": "egg",
+  eggs: "egg",
+  carrots: "carrot",
+  onions: "onion",
+  potatoes: "potato",
+  "sweet potatoes": "sweet potato",
+  "bell peppers": "bell pepper",
+  "red bell peppers": "red bell pepper",
+  strawberries: "strawberry",
+  blueberries: "blueberry",
+  lentils: "lentil",
+  chickpeas: "chickpea",
+  tomatoes: "tomato",
+  "green onions": "green onion",
+  "cloves garlic": "garlic",
+  "garlic cloves": "garlic",
+  "chicken breasts": "chicken breast",
+  "chicken thighs": "chicken thigh",
+  "hamburger buns": "hamburger bun",
+  "dried apricots": "dried apricot",
+  "golden raisins": "golden raisin",
+  "slivered almonds": "slivered almond",
 };
 
 const KEEP_WITH_ADJECTIVE = [
-  "sweet potato", "fresh parsley", "fresh ginger", "dried apricot",
-  "dried thyme", "red bell pepper", "red pepper flakes", "red wine vinegar",
-  "brown sugar", "brown rice", "sharp cheddar", "colby jack cheese",
-  "diced tomatoes", "crushed tomatoes",
+  "sweet potato",
+  "fresh parsley",
+  "fresh ginger",
+  "dried apricot",
+  "dried thyme",
+  "red bell pepper",
+  "red pepper flakes",
+  "red wine vinegar",
+  "brown sugar",
+  "brown rice",
+  "sharp cheddar",
+  "colby jack cheese",
+  "diced tomatoes",
+  "crushed tomatoes",
 ];
 
 function normalizeName(name: string): string {
@@ -168,12 +268,26 @@ function normalizeName(name: string): string {
   for (const adj of ["large", "medium", "small"]) {
     if (n.startsWith(adj + " ")) n = n.slice(adj.length + 1);
   }
-  const noStrip = ["peas", "collard greens", "diced tomatoes", "crushed tomatoes",
-    "red pepper flakes", "golden raisins", "slivered almonds"];
-  if (!noStrip.includes(n) && n.endsWith("s") && !n.endsWith("ss") && !n.endsWith("us")) {
-    const singular = n.endsWith("ies") ? n.slice(0, -3) + "y"
-      : n.endsWith("es") ? n.slice(0, -2)
-      : n.slice(0, -1);
+  const noStrip = [
+    "peas",
+    "collard greens",
+    "diced tomatoes",
+    "crushed tomatoes",
+    "red pepper flakes",
+    "golden raisins",
+    "slivered almonds",
+  ];
+  if (
+    !noStrip.includes(n) &&
+    n.endsWith("s") &&
+    !n.endsWith("ss") &&
+    !n.endsWith("us")
+  ) {
+    const singular = n.endsWith("ies")
+      ? n.slice(0, -3) + "y"
+      : n.endsWith("es")
+        ? n.slice(0, -2)
+        : n.slice(0, -1);
     if (singular.length > 2) n = singular;
   }
   if (CANONICAL_NAMES[n]) return CANONICAL_NAMES[n];
@@ -181,81 +295,181 @@ function normalizeName(name: string): string {
 }
 
 const CATEGORY_MAP: Record<string, string> = {
-  "onion": "Produce", "garlic": "Produce", "carrot": "Produce",
-  "bell pepper": "Produce", "red bell pepper": "Produce", "zucchini": "Produce",
-  "sweet potato": "Produce", "lemon": "Produce", "blueberry": "Produce",
-  "strawberry": "Produce", "collard greens": "Produce", "broccoli": "Produce",
-  "green onion": "Produce", "fresh parsley": "Produce", "fresh ginger": "Produce",
-  "dried apricot": "Produce", "potato": "Produce", "tomato": "Produce", "russet potato": "Produce",
-  "ground beef": "Meat", "chicken breast": "Meat", "chicken thigh": "Meat",
-  "egg": "Dairy", "butter": "Dairy", "milk": "Dairy", "heavy cream": "Dairy",
-  "evaporated milk": "Dairy", "feta cheese": "Dairy", "cheddar cheese": "Dairy",
-  "sharp cheddar": "Dairy", "colby jack cheese": "Dairy", "vanilla ice cream": "Dairy",
-  "salt": "Spice", "black pepper": "Spice", "cumin": "Spice", "paprika": "Spice",
-  "italian seasoning": "Spice", "dried thyme": "Spice", "curry powder": "Spice",
-  "red pepper flakes": "Spice", "sea salt": "Spice", "montreal steak seasoning": "Spice",
+  onion: "Produce",
+  garlic: "Produce",
+  carrot: "Produce",
+  "bell pepper": "Produce",
+  "red bell pepper": "Produce",
+  zucchini: "Produce",
+  "sweet potato": "Produce",
+  lemon: "Produce",
+  blueberry: "Produce",
+  strawberry: "Produce",
+  "collard greens": "Produce",
+  broccoli: "Produce",
+  "green onion": "Produce",
+  "fresh parsley": "Produce",
+  "fresh ginger": "Produce",
+  "dried apricot": "Produce",
+  potato: "Produce",
+  tomato: "Produce",
+  "russet potato": "Produce",
+  "ground beef": "Meat",
+  "chicken breast": "Meat",
+  "chicken thigh": "Meat",
+  egg: "Dairy",
+  butter: "Dairy",
+  milk: "Dairy",
+  "heavy cream": "Dairy",
+  "evaporated milk": "Dairy",
+  "feta cheese": "Dairy",
+  "cheddar cheese": "Dairy",
+  "sharp cheddar": "Dairy",
+  "colby jack cheese": "Dairy",
+  "vanilla ice cream": "Dairy",
+  salt: "Spice",
+  "black pepper": "Spice",
+  cumin: "Spice",
+  paprika: "Spice",
+  "italian seasoning": "Spice",
+  "dried thyme": "Spice",
+  "curry powder": "Spice",
+  "red pepper flakes": "Spice",
+  "sea salt": "Spice",
+  "montreal steak seasoning": "Spice",
   "baking powder": "Spice",
-  "olive oil": "Pantry", "soy sauce": "Pantry", "honey": "Pantry",
-  "maple syrup": "Pantry", "vinegar": "Pantry", "red wine vinegar": "Pantry",
-  "rice vinegar": "Pantry", "tomato paste": "Pantry", "dijon mustard": "Pantry",
-  "bbq sauce": "Pantry", "tamari": "Pantry", "chili garlic sauce": "Pantry",
-  "toasted sesame oil": "Pantry", "cornstarch": "Pantry", "brown sugar": "Pantry",
-  "sugar": "Pantry", "icing sugar": "Pantry", "chocolate sauce": "Pantry",
-  "lemon juice": "Pantry", "peanut butter": "Pantry", "vanilla extract": "Pantry", "ketchup": "Pantry",
-  "all-purpose flour": "Grocery", "white rice": "Grocery", "brown rice": "Grocery",
-  "elbow macaroni": "Grocery", "cavatappi pasta": "Grocery", "couscous": "Grocery",
-  "lentil": "Grocery", "chickpea": "Grocery", "golden raisin": "Grocery",
-  "slivered almond": "Grocery", "diced tomatoes": "Grocery",
-  "crushed tomatoes": "Grocery", "tomato sauce": "Grocery",
-  "vegetable broth": "Grocery", "chicken broth": "Grocery", "beef broth": "Grocery",
-  "water": "Grocery", "extra-firm tofu": "Grocery", "peas": "Grocery",
+  "olive oil": "Pantry",
+  "soy sauce": "Pantry",
+  honey: "Pantry",
+  "maple syrup": "Pantry",
+  vinegar: "Pantry",
+  "red wine vinegar": "Pantry",
+  "rice vinegar": "Pantry",
+  "tomato paste": "Pantry",
+  "dijon mustard": "Pantry",
+  "bbq sauce": "Pantry",
+  tamari: "Pantry",
+  "chili garlic sauce": "Pantry",
+  "toasted sesame oil": "Pantry",
+  cornstarch: "Pantry",
+  "brown sugar": "Pantry",
+  sugar: "Pantry",
+  "icing sugar": "Pantry",
+  "chocolate sauce": "Pantry",
+  "lemon juice": "Pantry",
+  "peanut butter": "Pantry",
+  "vanilla extract": "Pantry",
+  ketchup: "Pantry",
+  "all-purpose flour": "Grocery",
+  "white rice": "Grocery",
+  "brown rice": "Grocery",
+  "elbow macaroni": "Grocery",
+  "cavatappi pasta": "Grocery",
+  couscous: "Grocery",
+  lentil: "Grocery",
+  chickpea: "Grocery",
+  "golden raisin": "Grocery",
+  "slivered almond": "Grocery",
+  "diced tomatoes": "Grocery",
+  "crushed tomatoes": "Grocery",
+  "tomato sauce": "Grocery",
+  "vegetable broth": "Grocery",
+  "chicken broth": "Grocery",
+  "beef broth": "Grocery",
+  water: "Grocery",
+  "extra-firm tofu": "Grocery",
+  peas: "Grocery",
   "hamburger bun": "Bakery",
 };
 
 const SPICES = [
-  "salt", "black pepper", "cumin", "paprika", "italian seasoning",
-  "dried thyme", "curry powder", "red pepper flakes", "baking powder",
-  "sea salt", "montreal steak seasoning",
+  "salt",
+  "black pepper",
+  "cumin",
+  "paprika",
+  "italian seasoning",
+  "dried thyme",
+  "curry powder",
+  "red pepper flakes",
+  "baking powder",
+  "sea salt",
+  "montreal steak seasoning",
 ];
 const SMALL_LIQUIDS = [
-  "olive oil", "soy sauce", "honey", "maple syrup", "vinegar",
-  "red wine vinegar", "rice vinegar", "tomato paste", "dijon mustard",
-  "lemon juice", "cornstarch", "brown sugar", "sugar", "fresh ginger",
-  "bbq sauce", "tamari", "chili garlic sauce", "toasted sesame oil",
-  "vanilla extract", "ketchup",
+  "olive oil",
+  "soy sauce",
+  "honey",
+  "maple syrup",
+  "vinegar",
+  "red wine vinegar",
+  "rice vinegar",
+  "tomato paste",
+  "dijon mustard",
+  "lemon juice",
+  "cornstarch",
+  "brown sugar",
+  "sugar",
+  "fresh ginger",
+  "bbq sauce",
+  "tamari",
+  "chili garlic sauce",
+  "toasted sesame oil",
+  "vanilla extract",
+  "ketchup",
 ];
 
-function assignUnit(name: string, qty: number | null, rawUnit: string | null): string {
-  const mapped = rawUnit ? (UNIT_MAP[rawUnit.toLowerCase()] || null) : null;
+function assignUnit(
+  name: string,
+  qty: number | null,
+  rawUnit: string | null,
+): string {
+  const mapped = rawUnit ? UNIT_MAP[rawUnit.toLowerCase()] || null : null;
   if (mapped && VALID_COOKING_UNITS.includes(mapped)) return mapped;
   if (SPICES.includes(name) && (qty ?? 1) <= 3) return "/tsp";
   if (SMALL_LIQUIDS.includes(name) && (qty ?? 1) <= 3) return "/tbsp";
-  const countable = ["egg", "onion", "garlic", "bell pepper", "red bell pepper",
-    "carrot", "zucchini", "lemon", "hamburger bun", "potato", "tomato",
-    "sweet potato", "dried apricot", "strawberry", "green onion"];
+  const countable = [
+    "egg",
+    "onion",
+    "garlic",
+    "bell pepper",
+    "red bell pepper",
+    "carrot",
+    "zucchini",
+    "lemon",
+    "hamburger bun",
+    "potato",
+    "tomato",
+    "sweet potato",
+    "dried apricot",
+    "strawberry",
+    "green onion",
+  ];
   if (countable.includes(name)) return "/each";
   return "/tsp";
 }
 
-const MACROS: Record<string, { per: string; cal: number; p: number; c: number; f: number }> = {
+const MACROS: Record<
+  string,
+  { per: string; cal: number; p: number; c: number; f: number }
+> = {
   "olive oil": { per: "tbsp", cal: 119, p: 0, c: 0, f: 14 },
-  "butter": { per: "tbsp", cal: 102, p: 0, c: 0, f: 12 },
+  butter: { per: "tbsp", cal: 102, p: 0, c: 0, f: 12 },
   "ground beef": { per: "lb", cal: 1152, p: 77, c: 0, f: 92 },
   "chicken breast": { per: "lb", cal: 748, p: 139, c: 0, f: 16 },
   "chicken thigh": { per: "lb", cal: 1085, p: 109, c: 0, f: 69 },
-  "egg": { per: "each", cal: 72, p: 6, c: 0, f: 5 },
+  egg: { per: "each", cal: 72, p: 6, c: 0, f: 5 },
   "all-purpose flour": { per: "cup", cal: 455, p: 13, c: 95, f: 1 },
   "white rice": { per: "cup", cal: 675, p: 13, c: 148, f: 1 },
-  "lentil": { per: "cup", cal: 678, p: 50, c: 115, f: 2 },
-  "milk": { per: "cup", cal: 149, p: 8, c: 12, f: 8 },
+  lentil: { per: "cup", cal: 678, p: 50, c: 115, f: 2 },
+  milk: { per: "cup", cal: 149, p: 8, c: 12, f: 8 },
   "cheddar cheese": { per: "cup", cal: 455, p: 28, c: 1, f: 37 },
-  "salt": { per: "tsp", cal: 0, p: 0, c: 0, f: 0 },
+  salt: { per: "tsp", cal: 0, p: 0, c: 0, f: 0 },
   "black pepper": { per: "tsp", cal: 6, p: 0, c: 2, f: 0 },
   "soy sauce": { per: "tbsp", cal: 9, p: 1, c: 1, f: 0 },
-  "honey": { per: "tbsp", cal: 64, p: 0, c: 17, f: 0 },
-  "onion": { per: "each", cal: 44, p: 1, c: 10, f: 0 },
-  "garlic": { per: "each", cal: 4, p: 0, c: 1, f: 0 },
-  "sugar": { per: "tbsp", cal: 48, p: 0, c: 12, f: 0 },
+  honey: { per: "tbsp", cal: 64, p: 0, c: 17, f: 0 },
+  onion: { per: "each", cal: 44, p: 1, c: 10, f: 0 },
+  garlic: { per: "each", cal: 4, p: 0, c: 1, f: 0 },
+  sugar: { per: "tbsp", cal: 48, p: 0, c: 12, f: 0 },
 };
 
 function getUnitMultiplier(recipeUnit: string | null, refUnit: string): number {
@@ -274,7 +488,12 @@ function estimateMacros(name: string, qty: number | null, unit: string) {
   const q = qty ?? 1;
   const multiplier = getUnitMultiplier(unit, ref.per);
   const scale = q * multiplier;
-  return { cal: Math.round(ref.cal * scale), p: Math.round(ref.p * scale), c: Math.round(ref.c * scale), f: Math.round(ref.f * scale) };
+  return {
+    cal: Math.round(ref.cal * scale),
+    p: Math.round(ref.p * scale),
+    c: Math.round(ref.c * scale),
+    f: Math.round(ref.f * scale),
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,11 +517,33 @@ function slugify(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+// Edge-compatible Cloudinary signed upload — uses Web Crypto SHA-1 instead of
+// the Node.js cloudinary SDK, which imports http/https/stream at module scope.
+async function cloudinarySign(
+  params: Record<string, string>,
+  apiSecret: string,
+): Promise<string> {
+  const sortedStr =
+    Object.keys(params)
+      .sort()
+      .map((k) => `${k}=${params[k]}`)
+      .join("&") + apiSecret;
+  const buf = await crypto.subtle.digest(
+    "SHA-1",
+    new TextEncoder().encode(sortedStr),
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Auth check
     const authSupabase = await createSupabaseServer();
-    const { data: { user } } = await authSupabase.auth.getUser();
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -310,11 +551,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { url, text: pastedText, sourceUrl: textSourceUrl } = body;
 
-    const isTextMode = typeof pastedText === "string" && pastedText.trim().length > 0;
+    const isTextMode =
+      typeof pastedText === "string" && pastedText.trim().length > 0;
     const isUrlMode = typeof url === "string" && url.startsWith("http");
 
     if (!isTextMode && !isUrlMode) {
-      return NextResponse.json({ error: "Provide a recipe URL or paste recipe text" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Provide a recipe URL or paste recipe text" },
+        { status: 400 },
+      );
     }
 
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -345,15 +590,23 @@ export async function POST(req: NextRequest) {
         ctx.errors.push(`Circuit breaker open for ${domain}`);
         const sbKey = process.env.SCRAPINGBEE_API_KEY;
         if (!sbKey) {
-          return NextResponse.json({ blocked: true, url, reason: "Domain recently blocked" }, { status: 422 });
+          return NextResponse.json(
+            { blocked: true, url, reason: "Domain recently blocked" },
+            { status: 422 },
+          );
         }
         // Try ScrapingBee even for circuit-broken domains (it uses proxies)
         try {
           ctx.method = "scrapingbee";
           ctx.fetchAttempts++;
-          const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
-            api_key: sbKey, url, render_js: "true", premium_proxy: "true",
-          })}`;
+          const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams(
+            {
+              api_key: sbKey,
+              url,
+              render_js: "true",
+              premium_proxy: "true",
+            },
+          )}`;
           const sbRes = await fetchWithTimeout(sbUrl, {}, 30000);
           if (!sbRes.ok) {
             return NextResponse.json({ blocked: true, url }, { status: 422 });
@@ -367,19 +620,28 @@ export async function POST(req: NextRequest) {
         let directRes: Response;
         try {
           ctx.fetchAttempts++;
-          directRes = await fetchWithRetry(url, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-              Accept: "text/html,application/xhtml+xml",
+          directRes = await fetchWithRetry(
+            url,
+            {
+              headers: {
+                "User-Agent":
+                  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                Accept: "text/html,application/xhtml+xml",
+              },
+              redirect: "follow",
             },
-            redirect: "follow",
-          }, { maxAttempts: 2, timeoutMs: 15000 });
+            { maxAttempts: 2, timeoutMs: 15000 },
+          );
         } catch (fetchErr) {
           // All retries exhausted — treat as blocked
-          const reason = fetchErr instanceof Error ? fetchErr.message : "Fetch failed";
+          const reason =
+            fetchErr instanceof Error ? fetchErr.message : "Fetch failed";
           ctx.errors.push(`Direct fetch failed: ${reason}`);
           tripCircuit(domain);
-          return NextResponse.json({ blocked: true, url, reason }, { status: 422 });
+          return NextResponse.json(
+            { blocked: true, url, reason },
+            { status: 422 },
+          );
         }
 
         if (directRes.status === 403) {
@@ -394,9 +656,14 @@ export async function POST(req: NextRequest) {
           try {
             ctx.method = "scrapingbee";
             ctx.fetchAttempts++;
-            const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
-              api_key: sbKey, url, render_js: "true", premium_proxy: "true",
-            })}`;
+            const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams(
+              {
+                api_key: sbKey,
+                url,
+                render_js: "true",
+                premium_proxy: "true",
+              },
+            )}`;
             const sbRes = await fetchWithTimeout(sbUrl, {}, 30000);
             if (!sbRes.ok) {
               return NextResponse.json({ blocked: true, url }, { status: 422 });
@@ -418,22 +685,35 @@ export async function POST(req: NextRequest) {
           const data = JSON.parse($(el).html() || "");
           const items = Array.isArray(data) ? data : data["@graph"] || [data];
           for (const item of items) {
-            if (item["@type"] === "Recipe" || (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))) {
+            if (
+              item["@type"] === "Recipe" ||
+              (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))
+            ) {
               jsonLd = item;
             }
           }
-        } catch { /* ignore malformed JSON-LD */ }
+        } catch {
+          /* ignore malformed JSON-LD */
+        }
       });
 
       $("script, style, nav, footer, header, aside").remove();
-      const bodyText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 10000);
+      const bodyText = $("body")
+        .text()
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 10000);
 
       // Extract image URL with multiple fallbacks
       if (jsonLd?.["image"]) {
         const img = jsonLd["image"];
         imageUrl = Array.isArray(img)
-          ? (typeof img[0] === "string" ? img[0] : (img[0] as Record<string, string>)?.url)
-          : (typeof img === "string" ? img : (img as Record<string, string>)?.url);
+          ? typeof img[0] === "string"
+            ? img[0]
+            : (img[0] as Record<string, string>)?.url
+          : typeof img === "string"
+            ? img
+            : (img as Record<string, string>)?.url;
       }
       if (!imageUrl) {
         imageUrl = $('meta[property="og:image"]').attr("content") || null;
@@ -443,8 +723,13 @@ export async function POST(req: NextRequest) {
       }
       if (!imageUrl) {
         // Broader image search: look for any large image in the page
-        const candidates = $("article img, .recipe img, .post img, main img, .hero img, [class*=recipe] img, [class*=featured] img, .entry-content img");
-        const heroImg = candidates.first().attr("src") || candidates.first().attr("data-src") || candidates.first().attr("data-lazy-src");
+        const candidates = $(
+          "article img, .recipe img, .post img, main img, .hero img, [class*=recipe] img, [class*=featured] img, .entry-content img",
+        );
+        const heroImg =
+          candidates.first().attr("src") ||
+          candidates.first().attr("data-src") ||
+          candidates.first().attr("data-lazy-src");
         if (heroImg) imageUrl = heroImg;
       }
 
@@ -459,7 +744,10 @@ export async function POST(req: NextRequest) {
       ctx.contentLengthChars = source.length;
 
       if (!jsonLd && bodyText.length < 200) {
-        return NextResponse.json({ error: "Could not extract content from URL" }, { status: 422 });
+        return NextResponse.json(
+          { error: "Could not extract content from URL" },
+          { status: 422 },
+        );
       }
     }
 
@@ -469,31 +757,43 @@ export async function POST(req: NextRequest) {
     let response;
     try {
       const contextBrief = buildContextPrompt(ctx);
-      response = await anthropic.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        system: `You are a recipe data extraction assistant. Extract structured recipe data from web content.
+      response = await anthropic.messages.create(
+        {
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 4096,
+          system: `You are a recipe data extraction assistant. Extract structured recipe data from web content.
 Return ONLY valid JSON with: name, preparation (numbered steps), servings, cookTime, prepTime, cuisineTag (one of ${JSON.stringify(VALID_CUISINES)} or null), dietaryTags (from ${JSON.stringify(VALID_DIETARY)}), ingredients array.
 Each ingredient needs: name (lowercase, singular), quantity (number), unit (tsp/tbsp/cup/oz/lb/each/can), category (${VALID_CATEGORIES.join("/")}), calories, protein_g, carbs_g, fat_g (whole numbers, USDA estimates for recipe qty).
 If you cannot extract a recipe, return {"name": null}.
 
 ACQUISITION CONTEXT (how this content was obtained):
 ${contextBrief}`,
-        messages: [{
-          role: "user",
-          content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${finalSourceUrl}\n\nContent:\n${source}`,
-        }],
-      }, { signal: claudeController.signal });
+          messages: [
+            {
+              role: "user",
+              content: `Extract recipe data from this content. Return ONLY valid JSON.\n\nSource URL: ${finalSourceUrl}\n\nContent:\n${source}`,
+            },
+          ],
+        },
+        { signal: claudeController.signal },
+      );
     } catch (claudeErr) {
       clearTimeout(claudeTimer);
       if (claudeErr instanceof Error && claudeErr.name === "AbortError") {
-        return NextResponse.json({ error: "AI extraction timed out — try pasting the recipe text instead" }, { status: 504 });
+        return NextResponse.json(
+          {
+            error:
+              "AI extraction timed out — try pasting the recipe text instead",
+          },
+          { status: 504 },
+        );
       }
       throw claudeErr;
     }
     clearTimeout(claudeTimer);
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    const text =
+      response.content[0].type === "text" ? response.content[0].text : "";
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     const jsonStr = jsonMatch ? jsonMatch[1].trim() : text.trim();
 
@@ -501,11 +801,17 @@ ${contextBrief}`,
     try {
       recipe = JSON.parse(jsonStr);
     } catch {
-      return NextResponse.json({ error: "Claude returned invalid JSON" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Claude returned invalid JSON" },
+        { status: 500 },
+      );
     }
 
     if (!recipe.name) {
-      return NextResponse.json({ error: "Could not identify a recipe from that URL" }, { status: 422 });
+      return NextResponse.json(
+        { error: "Could not identify a recipe from that URL" },
+        { status: 422 },
+      );
     }
 
     // Step 3: Duplicate check (scoped to this user)
@@ -517,7 +823,12 @@ ${contextBrief}`,
         .eq("source_url", finalSourceUrl)
         .limit(1);
       if (urlDupes && urlDupes.length > 0) {
-        return NextResponse.json({ error: `"${urlDupes[0].name}" already exists in your cookbook (same URL)` }, { status: 409 });
+        return NextResponse.json(
+          {
+            error: `"${urlDupes[0].name}" already exists in your cookbook (same URL)`,
+          },
+          { status: 409 },
+        );
       }
     }
     const { data: nameDupes } = await supabase
@@ -527,13 +838,18 @@ ${contextBrief}`,
       .eq("name", recipe.name)
       .limit(1);
     if (nameDupes && nameDupes.length > 0) {
-      return NextResponse.json({ error: `"${recipe.name}" already exists in your cookbook` }, { status: 409 });
+      return NextResponse.json(
+        { error: `"${recipe.name}" already exists in your cookbook` },
+        { status: 409 },
+      );
     }
 
     // Step 4: Normalize ingredients (USDA API primary, hardcoded fallback)
     const rawIngredients = (recipe.ingredients || [])
       .map((ing: RawIngredient) => {
-        const name = normalizeName((ing.name || "").replace(/[""'']/g, "").trim());
+        const name = normalizeName(
+          (ing.name || "").replace(/[""'']/g, "").trim(),
+        );
         const unit = assignUnit(name, ing.quantity, ing.unit);
         let category = CATEGORY_MAP[name] || ing.category || "Other";
         if (!VALID_CATEGORIES.includes(category)) category = "Other";
@@ -542,39 +858,62 @@ ${contextBrief}`,
       .filter((r: { name: string }) => r.name);
 
     const ingredients: NormalizedIngredient[] = await Promise.all(
-      rawIngredients.map(async ({ name, quantity, unit, category, ing }: { name: string; quantity: number; unit: string; category: string; ing: RawIngredient }) => {
-        const usda = await calculateIngredientMacros(name, quantity, unit);
-
-        if (usda) {
-          return { name, quantity, unit, category, cal: usda.calories, pro: usda.protein, carb: usda.carbs, fat: usda.fat };
-        }
-
-        let cal = ing.calories ?? null;
-        let pro = ing.protein_g ?? null;
-        let carb = ing.carbs_g ?? null;
-        let fat = ing.fat_g ?? null;
-
-        if (cal === null || pro === null || carb === null || fat === null) {
-          const est = estimateMacros(name, ing.quantity, unit);
-          if (est) {
-            if (cal === null) cal = est.cal;
-            if (pro === null) pro = est.p;
-            if (carb === null) carb = est.c;
-            if (fat === null) fat = est.f;
-          }
-        }
-
-        return {
+      rawIngredients.map(
+        async ({
           name,
           quantity,
           unit,
           category,
-          cal: Math.round(cal ?? 0),
-          pro: Math.round(pro ?? 0),
-          carb: Math.round(carb ?? 0),
-          fat: Math.round(fat ?? 0),
-        };
-      })
+          ing,
+        }: {
+          name: string;
+          quantity: number;
+          unit: string;
+          category: string;
+          ing: RawIngredient;
+        }) => {
+          const usda = await calculateIngredientMacros(name, quantity, unit);
+
+          if (usda) {
+            return {
+              name,
+              quantity,
+              unit,
+              category,
+              cal: usda.calories,
+              pro: usda.protein,
+              carb: usda.carbs,
+              fat: usda.fat,
+            };
+          }
+
+          let cal = ing.calories ?? null;
+          let pro = ing.protein_g ?? null;
+          let carb = ing.carbs_g ?? null;
+          let fat = ing.fat_g ?? null;
+
+          if (cal === null || pro === null || carb === null || fat === null) {
+            const est = estimateMacros(name, ing.quantity, unit);
+            if (est) {
+              if (cal === null) cal = est.cal;
+              if (pro === null) pro = est.p;
+              if (carb === null) carb = est.c;
+              if (fat === null) fat = est.f;
+            }
+          }
+
+          return {
+            name,
+            quantity,
+            unit,
+            category,
+            cal: Math.round(cal ?? 0),
+            pro: Math.round(pro ?? 0),
+            carb: Math.round(carb ?? 0),
+            fat: Math.round(fat ?? 0),
+          };
+        },
+      ),
     );
 
     // Step 5: Map cuisine
@@ -582,7 +921,9 @@ ${contextBrief}`,
       recipe.cuisineTag = CUISINE_MAP[recipe.cuisineTag] || null;
     }
     if (recipe.dietaryTags) {
-      recipe.dietaryTags = recipe.dietaryTags.filter((t: string) => VALID_DIETARY.includes(t));
+      recipe.dietaryTags = recipe.dietaryTags.filter((t: string) =>
+        VALID_DIETARY.includes(t),
+      );
     }
 
     // Step 5b: If no image found from scraping, try Pexels API
@@ -592,13 +933,15 @@ ${contextBrief}`,
         const pexelsRes = await fetchWithTimeout(
           `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchQuery + " food")}&per_page=1&orientation=landscape`,
           { headers: { Authorization: process.env.PEXELS_API_KEY } },
-          10000
+          10000,
         );
         if (pexelsRes.ok) {
           const pexelsData = await pexelsRes.json();
           if (pexelsData.photos?.length > 0) {
             imageUrl = pexelsData.photos[0].src.large;
-            ctx.errors.push("Image sourced from Pexels (no image found on recipe page)");
+            ctx.errors.push(
+              "Image sourced from Pexels (no image found on recipe page)",
+            );
           }
         }
       } catch {
@@ -610,22 +953,24 @@ ${contextBrief}`,
     let cloudinaryUrl: string | null = null;
     let imageWarning: string | null = null;
     if (imageUrl && !process.env.CLOUDINARY_CLOUD_NAME) {
-      console.error("[scrape] CLOUDINARY_CLOUD_NAME not set — image upload SKIPPED. Add Cloudinary env vars to Vercel.");
-      imageWarning = "Image found but Cloudinary env vars are missing — image not uploaded";
+      console.error(
+        "[scrape] CLOUDINARY_CLOUD_NAME not set — image upload SKIPPED. Add Cloudinary env vars to Vercel.",
+      );
+      imageWarning =
+        "Image found but Cloudinary env vars are missing — image not uploaded";
     }
     if (imageUrl && process.env.CLOUDINARY_CLOUD_NAME) {
-      const publicId = recipe.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      const { v2: cloudinary } = await import("cloudinary");
-      cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-      });
+      const publicId = recipe.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
       // Build list of URLs to try (original + unwrapped proxy + protocol variants)
       const urlsToTry = [imageUrl];
       if (/^https?:\/\/i\d\.wp\.com\//.test(imageUrl)) {
-        urlsToTry.push(imageUrl.replace(/^https?:\/\/i\d\.wp\.com\//, "https://"));
+        urlsToTry.push(
+          imageUrl.replace(/^https?:\/\/i\d\.wp\.com\//, "https://"),
+        );
       }
       if (imageUrl.startsWith("http://")) {
         urlsToTry.push(imageUrl.replace("http://", "https://"));
@@ -635,24 +980,51 @@ ${contextBrief}`,
         if (cloudinaryUrl) break;
         for (let attempt = 0; attempt < 2; attempt++) {
           try {
-            const result = await cloudinary.uploader.upload(tryUrl, {
+            // Sign the upload request using Web Crypto (edge-compatible — no cloudinary SDK)
+            const timestamp = Math.floor(Date.now() / 1000).toString();
+            const signParams: Record<string, string> = {
               folder: "julies-cookbook",
+              overwrite: "1",
               public_id: publicId,
-              overwrite: true,
-              transformation: [
-                { width: 800, height: 600, crop: "fill", gravity: "auto" },
-                { quality: "auto", fetch_format: "auto" },
-              ],
-            });
-            cloudinaryUrl = result.secure_url;
-            break;
+              timestamp,
+            };
+            const signature = await cloudinarySign(
+              signParams,
+              process.env.CLOUDINARY_API_SECRET!,
+            );
+            const fd = new FormData();
+            fd.append("file", tryUrl);
+            fd.append("folder", "julies-cookbook");
+            fd.append("public_id", publicId);
+            fd.append("overwrite", "1");
+            fd.append("timestamp", timestamp);
+            fd.append("api_key", process.env.CLOUDINARY_API_KEY!);
+            fd.append("signature", signature);
+            const cloudRes = await fetch(
+              `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
+              { method: "POST", body: fd },
+            );
+            if (cloudRes.ok) {
+              const cloudData = await cloudRes.json();
+              cloudinaryUrl = cloudData.secure_url;
+              break;
+            }
+            console.error(
+              `[scrape] Cloudinary upload HTTP ${cloudRes.status} attempt ${attempt + 1}`,
+            );
           } catch (imgErr) {
-            console.error(`[scrape] Image upload attempt ${attempt + 1} failed for ${tryUrl}:`, imgErr);
+            console.error(
+              `[scrape] Image upload attempt ${attempt + 1} failed for ${tryUrl}:`,
+              imgErr,
+            );
           }
         }
       }
       if (!cloudinaryUrl) {
-        console.error("[scrape] Image upload failed for all URL variants:", urlsToTry);
+        console.error(
+          "[scrape] Image upload failed for all URL variants:",
+          urlsToTry,
+        );
       }
     }
 
@@ -664,11 +1036,15 @@ ${contextBrief}`,
         user_id: user.id,
         slug,
         name: recipe.name,
-        preparation: Array.isArray(recipe.preparation) ? recipe.preparation.join("\n") : recipe.preparation,
+        preparation: Array.isArray(recipe.preparation)
+          ? recipe.preparation.join("\n")
+          : recipe.preparation,
         source_url: finalSourceUrl,
         servings: typeof recipe.servings === "number" ? recipe.servings : null,
-        cook_time_minutes: typeof recipe.cookTime === "number" ? recipe.cookTime : null,
-        prep_time_minutes: typeof recipe.prepTime === "number" ? recipe.prepTime : null,
+        cook_time_minutes:
+          typeof recipe.cookTime === "number" ? recipe.cookTime : null,
+        prep_time_minutes:
+          typeof recipe.prepTime === "number" ? recipe.prepTime : null,
         cuisine_tag: recipe.cuisineTag || null,
         dietary_tags: recipe.dietaryTags?.length ? recipe.dietaryTags : [],
         image_url: cloudinaryUrl || null,
@@ -677,35 +1053,39 @@ ${contextBrief}`,
       .single();
 
     if (recipeError) {
-      return NextResponse.json({ error: `Failed to save recipe: ${recipeError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Failed to save recipe: ${recipeError.message}` },
+        { status: 500 },
+      );
     }
 
     const recipeId = recipeRecord.id;
 
     // Create ingredient records (atomic: roll back recipe if this fails)
     if (ingredients.length > 0) {
-      const { error: ingError } = await supabase
-        .from("ingredients")
-        .insert(
-          ingredients.map((ing) => ({
-            recipe_id: recipeId,
-            name: ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            category: ing.category,
-            calories: ing.cal,
-            protein_g: ing.pro,
-            carbs_g: ing.carb,
-            fat_g: ing.fat,
-          }))
-        );
+      const { error: ingError } = await supabase.from("ingredients").insert(
+        ingredients.map((ing) => ({
+          recipe_id: recipeId,
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          category: ing.category,
+          calories: ing.cal,
+          protein_g: ing.pro,
+          carbs_g: ing.carb,
+          fat_g: ing.fat,
+        })),
+      );
 
       if (ingError) {
-        console.error("[scrape] Ingredient save error — rolling back recipe:", ingError);
+        console.error(
+          "[scrape] Ingredient save error — rolling back recipe:",
+          ingError,
+        );
         await supabase.from("recipes").delete().eq("id", recipeId);
         return NextResponse.json(
           { error: `Failed to save ingredients: ${ingError.message}` },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
@@ -727,7 +1107,7 @@ ${contextBrief}`,
     console.error("[scrape] Error:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,4 +1,8 @@
-import { withVercelToolbar } from "@vercel/toolbar/plugins/next";
+import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
+
+if (process.env.NODE_ENV === "development") {
+  await setupDevPlatform();
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -20,4 +24,4 @@ const nextConfig = {
   },
 };
 
-export default withVercelToolbar()(nextConfig);
+export default nextConfig;

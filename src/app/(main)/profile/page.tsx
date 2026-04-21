@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { getAllRecipes } from "@/lib/data";
 import ProfileForm from "@/components/ProfileForm";

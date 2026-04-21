@@ -6,15 +6,23 @@ import { getRecipeContext } from "@/lib/data";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { logError } from "@/lib/logger";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Lazily initialized to avoid build-time failure when ANTHROPIC_API_KEY is only
+// available in the edge runtime, not during next build's module evaluation phase.
+let _anthropic: Anthropic | undefined;
+function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return _anthropic;
+}
 
 export async function POST(req: NextRequest) {
   try {
     // Auth check
     const authSupabase = await createSupabaseServer();
-    const { data: { user } } = await authSupabase.auth.getUser();
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -22,7 +30,10 @@ export async function POST(req: NextRequest) {
     const { message, history } = await req.json();
 
     if (!message || typeof message !== "string") {
-      return NextResponse.json({ error: "Message is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Message is required" },
+        { status: 400 },
+      );
     }
 
     const recipeContext = await getRecipeContext(user.id);
@@ -61,7 +72,7 @@ ${recipeContext}`;
       { role: "user", content: message },
     ];
 
-    const response = await anthropic.messages.create({
+    const response = await getAnthropic().messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
       system: systemPrompt,
@@ -95,7 +106,10 @@ ${recipeContext}`;
             }
           }
         }
-      } else if (block.type === "server_tool_use" || block.type === "web_search_tool_result") {
+      } else if (
+        block.type === "server_tool_use" ||
+        block.type === "web_search_tool_result"
+      ) {
         usedWebSearch = true;
       }
     }
@@ -107,7 +121,7 @@ ${recipeContext}`;
     logError("Chat error", error, { route: "/api/chat" });
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

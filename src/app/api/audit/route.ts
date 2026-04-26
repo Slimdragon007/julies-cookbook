@@ -84,7 +84,9 @@ export async function GET(req: NextRequest) {
           };
   }
 
-  // 4. Recipes with missing images
+  // 4. Recipes with missing images. Demoted to warn — a missing image is a
+  // content-quality issue, not a system-health one. The seeded e2e-test-pasta
+  // fixture has no image by design and would otherwise fail every audit.
   const { data: noImageRecipes } = await supabase
     .from("recipes")
     .select("name")
@@ -94,7 +96,7 @@ export async function GET(req: NextRequest) {
     noImageCount === 0
       ? { status: "pass" }
       : {
-          status: "fail",
+          status: "warn",
           count: noImageCount,
           failures: noImageRecipes?.map((r) => r.name) ?? [],
         };

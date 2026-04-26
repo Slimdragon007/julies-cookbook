@@ -7,8 +7,8 @@
 ### TASK-002 — Resolve dual scraper paths (ADR-002)
 
 **Owner:** unassigned
-**Status:** awaiting decision
-**Notes:** ADR-002 drafted 2026-04-26 with options A–E. Recommended: Option B (TypeScript CLI via `tsx`). Slim picks option, then implementation PR extracts shared logic, deletes Rule 4, marks Pitfall 1 resolved. See `@docs/adr/ADR-002-dual-scraper-paths.md`.
+**Status:** awaiting implementation
+**Notes:** ADR-002 accepted 2026-04-26 with Option B (TypeScript CLI via `tsx`). Implementation deferred to a dedicated session — 2,077 lines of mostly-duplicated logic, zero existing tests, family-critical scraper. Discovery confirmed CLI has its own inline USDA implementation (does not import `src/lib/usda.ts`). Work plan in `@progress.md` 2026-04-26 close-out entry. See `@docs/adr/ADR-002-dual-scraper-paths.md`.
 
 ## Backlog
 

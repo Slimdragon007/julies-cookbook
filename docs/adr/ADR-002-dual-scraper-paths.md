@@ -1,8 +1,8 @@
 # ADR-002: Resolve dual scraper paths
 
 **Date:** 2026-04-26
-**Status:** proposed
-**Decider:** Slim (pending)
+**Status:** accepted (2026-04-26, Slim chose Option B — recommended). Implementation deferred to dedicated session — see `@progress.md`.
+**Decider:** Slim
 
 ## Context
 

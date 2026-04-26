@@ -25,24 +25,22 @@ export async function GET(req: NextRequest) {
   const checks: Record<string, CheckResult> = {};
 
   // 1. Env vars
-  const requiredEnvs: (string | string[])[] = [
-    ["NEXT_PUBLIC_Juliescookbook_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"],
-    ["Juliescookbook_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
+  const requiredEnvs: string[] = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
     "ANTHROPIC_API_KEY",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
     "SCRAPINGBEE_API_KEY",
   ];
-  const missingEnvs = requiredEnvs.filter((k) =>
-    Array.isArray(k) ? k.every((v) => !process.env[v]) : !process.env[k],
-  );
+  const missingEnvs = requiredEnvs.filter((k) => !process.env[k]);
   checks.env_vars =
     missingEnvs.length === 0
       ? { status: "pass" }
       : {
           status: "fail",
-          detail: `Missing: ${missingEnvs.map((k) => (Array.isArray(k) ? k.join(" or ") : k)).join(", ")}`,
+          detail: `Missing: ${missingEnvs.join(", ")}`,
         };
 
   // 2. Recipe count

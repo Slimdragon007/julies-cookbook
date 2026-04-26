@@ -16,6 +16,12 @@
 **Status:** queued
 **Notes:** Cron was dead in `vercel.json` (no Vercel deploy ever bound). Pick one of: Cloudflare Cron Trigger Worker that fetches the audit endpoint, GH Actions `schedule:` workflow with shared-secret call, or external scheduler. Decision goes in ADR-003 (lightweight — single sub-system, but per Law 4 still needs the ADR because it touches the build pipeline).
 
+### TASK-006 — Remove legacy `VERCEL` env var from Cloudflare Pages
+
+**Owner:** unassigned
+**Status:** queued
+**Notes:** Cloudflare Pages production has a `VERCEL` env var (auto-set by Vercel's old build runtime) with no code reference anywhere in `src/` or `scripts/`. Pure inventory cleanup. No ADR needed — this is dead env, not a build-pipeline change. Verified during 2026-04-26 close-out: only `VERCEL` is unused; `PEXELS_API_KEY` is real (scraper image fallback at `src/app/api/scrape/route.ts:930`).
+
 ## Backlog
 
 - Populate `@docs/architecture/{ui,api,data}.md` with real content as each surface gets touched (currently stubs; `infra.md` is now real).

@@ -120,3 +120,39 @@ Verify Cloudflare Pages dashboard env vars for `julies-cookbook` contain no Mark
 **Push:** Performed at end of this batch. CI build on push to `main` will run the Cloudflare Pages auto-deploy (per `.github/workflows/deploy.yml`). Defensive note from TASK-004's progress entry still applies: verify Cloudflare Pages dashboard env vars contain only the canonical `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` keys before relying on the deploy.
 
 **Next:** TASK-002 (scraper ADR-002) is the only remaining user-facing risk. TASK-003 (cron ADR-003) is platform-side. Architecture stubs (ui/api/data) populate-on-touch.
+
+## 2026-04-26 — Deploy + close-out: production verified, env reconciled, TASK-006 spawned
+
+**Executor:** Claude Code (Opus 4.7)
+**Task:** Push the 7 handbook-install commits, verify the Cloudflare deploy, reconcile `@docs/REFERENCE.md` against actual runtime env, and capture remaining cleanup as a TASK.
+**Changed:**
+
+- 6 secrets set in Cloudflare Pages production environment via `wrangler pages secret put` (piped values from `.env.local`, no leakage in tool output): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `INVITE_CODE`, plus a freshly-generated `AUDIT_SECRET` (also written into `.env.local` for local-dev parity), plus `APP_URL=https://julies-cookbook.pages.dev`.
+- `wrangler pages secret list` revealed Cloudflare already had **all** the runtime keys (Anthropic, Cloudinary, USDA, ScrapingBee, Pexels, Discord webhook) — earlier "we don't have the API keys in there" assumption was wrong. Only one true leftover: `VERCEL` env var with no code reference.
+- 7 commits pushed to `origin/main` (`24dbab4..6ddec77`). GH Actions deploy completed successfully (~2 min). Live site smoke-tested: `/` → 307 → `/login`, `/login` → 200, `/signup` → 200. Supabase auth middleware confirmed working in the Cloudflare runtime.
+- `docs/REFERENCE.md` env-var section reconciled against live Cloudflare Pages env. Restructured into Required / Optional / Build-time-only categories. Three previously-undocumented runtime vars added: `INVITE_CODE` (signup gate), `PEXELS_API_KEY` (scraper image fallback at `src/app/api/scrape/route.ts:930`), `USDA_API_KEY` (nutrition lookup with Claude/hardcoded fallback chain). Status header updated: env section reconciled 2026-04-26, other sections still stub.
+- `task_plan.md` gained TASK-006 (remove dead `VERCEL` env var from Cloudflare Pages production). No ADR required — pure inventory cleanup, not a build-pipeline change.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean (run before docs commit)
+- `npx tsc --noEmit` → clean
+- `npm run test` → 46/53 pass (7 pre-existing skips, unchanged)
+- `npm run test:e2e` → not run (no behavior change)
+- Husky pre-commit → fired and passed on the docs commit (third confirmed firing)
+- Live production smoke test → `/login` 200, `/signup` 200, `/` 307 → `/login`
+
+**Doc updates / rules tightened:**
+
+- `@docs/REFERENCE.md` env section is now real; `docs/REFERENCE.md` STUB header narrowed to other sections only.
+- TASK-006 added to `task_plan.md` Active so the `VERCEL` legacy env var doesn't get forgotten.
+- No new rules. The earlier-than-expected discovery that Cloudflare already had keys reinforces handbook §6 DoD: verify reality before assuming, especially for shared/production state.
+
+**Not changed (intentional):**
+
+- TASK-006 (`VERCEL` env-var deletion) **not executed** in this batch. Per auto-mode rule 5, deletion of production env state needs explicit user confirmation; queued as TASK-006 with a note rather than executed inline.
+- TASK-002 (scraper ADR-002) and TASK-003 (cron ADR-003) deferred — both blocked by Law 4 ADR requirement; user has not authorized either workstream.
+- Architecture stubs (`@docs/architecture/{ui,api,data}.md`) left as stubs per handbook directive ("populate as work touches each surface"). `infra.md` was populated during TASK-001.
+- `PEXELS_API_KEY` left in Cloudflare — it's real code, not legacy.
+
+**Next:** TASK-006 needs a one-line execution decision (delete `VERCEL` env var via `wrangler pages secret delete VERCEL --project-name=julies-cookbook`). After that, TASK-002 (scraper) and TASK-003 (cron) are the only handbook items still open, both blocked on ADRs that the user has not yet authorized drafting.

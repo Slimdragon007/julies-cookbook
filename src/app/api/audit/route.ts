@@ -12,7 +12,7 @@ interface CheckResult {
 }
 
 export async function GET(req: NextRequest) {
-  // Auth: accept ?token= or Vercel cron secret header
+  // Auth: accept ?token= or cron secret header
   const token = req.nextUrl.searchParams.get("token");
   const cronSecret = req.headers.get("authorization")?.replace("Bearer ", "");
   const expected = process.env.AUDIT_SECRET;
@@ -191,7 +191,7 @@ export async function GET(req: NextRequest) {
           };
   }
 
-  // 8. Homepage reachable (use public domain, not VERCEL_URL which may be protected)
+  // 8. Homepage reachable (public domain, in case the runtime URL is protected)
   const publicUrl = process.env.APP_URL || "https://julies-cookbook.pages.dev";
   try {
     const homeRes = await fetch(publicUrl, { method: "HEAD" });
@@ -262,7 +262,7 @@ export async function GET(req: NextRequest) {
             title: "Julie's Cookbook: Health Check Failed",
             color: 15158332,
             fields: failedChecks,
-            footer: { text: "julies-cookbook.vercel.app/api/audit" },
+            footer: { text: "julies-cookbook.pages.dev/api/audit" },
             timestamp: new Date().toISOString(),
           },
         ],

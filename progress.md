@@ -227,3 +227,42 @@ Verify Cloudflare Pages dashboard env vars for `julies-cookbook` contain no Mark
 - ADR-002 implementation deferred to a separate commit. Scraper refactor is a multi-file structural change with regression risk; needs discovery before code lands.
 
 **Next:** ADR-002 implementation — Option B (TypeScript CLI via `tsx`). Discovery first (size the duplication, verify `src/lib/usda.ts` shared state, check existing scraper tests), then refactor in a single commit.
+
+## 2026-04-26 — Pre-existing audit-endpoint subrequest-limit bug, fixed in same session as ADR-003
+
+**Executor:** Claude Code (Opus 4.7)
+**Task:** First scheduled audit run (via `workflow_dispatch` immediately after ADR-003 landed) returned `status: fail`. Investigated.
+**Discovery:**
+
+- Cloudflare Workers (which Cloudflare Pages Functions inherit) caps subrequests per invocation at 50 on the free tier. The audit endpoint exceeded that with 27 recipes / 268 ingredients in the dataset.
+- Two volume drivers: (a) an **N+1 ingredient-count loop** in check #7 (`recipes_have_ingredients`) — one Supabase query per recipe, ~27 subrequests just for that check; (b) **26 image-URL HEAD checks** in check #5 (`image_urls_reachable`).
+- The N+1 was always going to fail under Cloudflare. It worked under Vercel because Vercel's runtime didn't enforce the same per-invocation subrequest cap. Migrating to Cloudflare without exercising the audit endpoint hid the bug.
+- Pre-existing — not introduced by ADR-003. ADR-003 surfaced it by being the first thing to actually call the endpoint in production.
+
+**Fix:**
+
+- Replaced the N+1 loop with a set-difference: reuse the already-fetched `allIngredients` array (line 148, originally for the orphan-ingredients check), build a `Set` of `recipe_id`s, filter `allRecipesForCheck` against it. Two queries total instead of N+1.
+- Removed the now-unreferenced `recipesWithIngs` query and its `void recipesWithIngs;` warning-suppression line.
+- New subrequest count under typical load: ~35 (recipe count + ingredient count + recipes_have_images + 26 image HEADs + orphan-ingredients pair + recipes_have_ingredients single + homepage + chat). Comfortable under the 50 limit.
+- Headroom: each additional recipe adds one image-HEAD subrequest. At ~42 recipes the audit will start failing again. Bounded but not infinite.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean
+- `npx tsc --noEmit` → clean
+- `npm run test` → 46/53 pass
+- Husky pre-commit → fired and passed
+- Live runtime smoke: workflow_dispatch the audit workflow after deploy → expect `status: pass`. Verified post-commit (separate verification step).
+
+**Doc updates / rules tightened:**
+
+- ADR-003's status remains `accepted` — the cron implementation is correct. The endpoint bug it surfaced is fixed in the same session for cleanness.
+- Recursive Learning Loop §5 trigger: pre-existing-bug-discovered-via-monitoring is exactly what monitoring is supposed to do. No new rule needed; the handbook already prescribes "wire monitoring before declaring features Done" implicitly via DoD §6.
+- Future risk: if recipe count grows past ~42, the audit's image-HEAD volume will exceed 50 again. Watchlist item, not currently a TASK. Mitigation when needed: gate image checks behind `?heavy=true` and have the daily cron skip them; a weekly cron with `?heavy=true` does the deeper sweep.
+
+**Not changed (intentional):**
+
+- Image-URL HEAD checks left in place. They're useful and still under the cap. Splitting daily/weekly cron is premature optimization at 27 recipes.
+- `?usage=true` path (ScrapingBee + Cloudinary credit checks) untouched. Optional flag, not exercised by the cron.
+
+**Next:** Verify post-deploy with `workflow_dispatch`. If pass, move to ADR-002 implementation.

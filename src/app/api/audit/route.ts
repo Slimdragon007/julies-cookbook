@@ -163,24 +163,20 @@ export async function GET(req: NextRequest) {
   }
 
   // 7. Recipes without ingredients
-  const { data: recipesWithIngs } = await supabase
-    .from("recipes")
-    .select("name, ingredients(id)")
-    .eq("ingredients.id", "");
-
-  // Simpler approach: query recipes and count their ingredients
+  // Two batch queries instead of N+1: get all recipes, get all ingredient
+  // recipe_ids (already fetched above as `allIngredients`), set-diff.
+  // Cloudflare Workers free tier caps subrequests per invocation at 50;
+  // the prior per-recipe count loop blew past that on any non-trivial dataset.
   const { data: allRecipesForCheck } = await supabase
     .from("recipes")
     .select("id, name");
-  if (allRecipesForCheck) {
-    const noIngredients: string[] = [];
-    for (const recipe of allRecipesForCheck) {
-      const { count } = await supabase
-        .from("ingredients")
-        .select("*", { count: "exact", head: true })
-        .eq("recipe_id", recipe.id);
-      if ((count ?? 0) === 0) noIngredients.push(recipe.name);
-    }
+  if (allRecipesForCheck && allIngredients) {
+    const recipesWithIngredients = new Set(
+      allIngredients.map((i) => i.recipe_id),
+    );
+    const noIngredients = allRecipesForCheck
+      .filter((r) => !recipesWithIngredients.has(r.id))
+      .map((r) => r.name);
     checks.recipes_have_ingredients =
       noIngredients.length === 0
         ? { status: "pass" }
@@ -237,9 +233,6 @@ export async function GET(req: NextRequest) {
   // Overall status
   const allStatuses = Object.values(checks).map((c) => c.status);
   const overallStatus = allStatuses.includes("fail") ? "fail" : "pass";
-
-  // Suppress unused variable warning
-  void recipesWithIngs;
 
   // Alert on failures via Discord webhook (fire-and-forget)
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;

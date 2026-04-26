@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "prepare": "node -e \"try{require('husky')()}catch(e){}\"",
+    "prepare": "husky",
     "build:cf": "npx @cloudflare/next-on-pages",
     "preview": "npm run build:cf && wrangler pages dev .vercel/output/static"
   },
@@ -42,6 +42,7 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "husky": "^9.1.7",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",

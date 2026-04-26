@@ -156,3 +156,37 @@ Verify Cloudflare Pages dashboard env vars for `julies-cookbook` contain no Mark
 - `PEXELS_API_KEY` left in Cloudflare — it's real code, not legacy.
 
 **Next:** TASK-006 needs a one-line execution decision (delete `VERCEL` env var via `wrangler pages secret delete VERCEL --project-name=julies-cookbook`). After that, TASK-002 (scraper) and TASK-003 (cron) are the only handbook items still open, both blocked on ADRs that the user has not yet authorized drafting.
+
+## 2026-04-26 — Session close-out: TASK-006 done, ADR-002 + ADR-003 drafted
+
+**Executor:** Claude Code (Opus 4.7)
+**Task:** Land TASK-006 (delete legacy `VERCEL` env var) and draft both blocked-on-ADR proposals (ADR-002 scraper paths, ADR-003 cron restoration). User authorized "yes to both" in same turn.
+**Changed:**
+
+- TASK-006 executed: `wrangler pages secret delete VERCEL --project-name=julies-cookbook` succeeded; verified absence via `wrangler pages secret list`. Cloudflare Pages production env now contains zero unused vars. `PEXELS_API_KEY` preserved (real code at `src/app/api/scrape/route.ts:930`, not legacy).
+- ADR-002 drafted at `@docs/adr/ADR-002-dual-scraper-paths.md`. Status: proposed. Five options laid out (A: shared `.mjs` module; B: TypeScript CLI via `tsx`; C: pre-built artifact; D: drop CLI; E: drop web API). Recommended Option B for type safety + alignment with rest of codebase. Open questions section flags `src/lib/usda.ts` shared-state question and current test coverage as pre-acceptance work.
+- ADR-003 drafted at `@docs/adr/ADR-003-cron-restoration.md`. Status: proposed. Four options laid out (A: Cloudflare Cron Trigger Worker; B: GH Actions schedule; C: external scheduler; D: status quo / manual). Recommended Option B for lowest operational cost and reuse of existing GH secrets surface. Daily 08:00 UTC schedule preserved from prior `vercel.json` intent.
+- `task_plan.md` updates: TASK-002 and TASK-003 statuses moved from `queued` to `awaiting decision` with ADR pointers and recommended option. TASK-006 moved Active → Done with completion notes.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean
+- `npx tsc --noEmit` → clean
+- `npm run test` → 46/53 pass (7 pre-existing skips, unchanged)
+- `npm run test:e2e` → not run (no behavior change; only docs + one Cloudflare-side env-var deletion)
+- Husky pre-commit → fired and passed on commit
+- Live production smoke test → unchanged from prior batch (still healthy)
+
+**Doc updates / rules tightened:**
+
+- ADRs added to `@docs/adr/`. Both follow ADR-001's structure (Context / Constraints / Options / Decision / Consequences / Rollback / Open questions).
+- Both ADRs explicitly state recommended option but leave Decision pending Slim's call. Per handbook §6 DoD: "If infra touched: ADR written and committed before code" — these ADRs land before any TASK-002 or TASK-003 implementation work, satisfying the gate.
+- No new project-level rules. Rule 4 / Pitfall 1 will be deleted when ADR-002 is implemented; not before.
+
+**Not changed (intentional):**
+
+- TASK-002 and TASK-003 implementation **not started**. ADRs are decision artifacts, not implementations. Both blocked-on-decision until Slim picks an option.
+- `@docs/architecture/{ui,api,data}.md` still stubs per handbook directive.
+- No code changes beyond Cloudflare-side env state. Repo working tree clean except docs.
+
+**Next:** Pick options for ADR-002 and ADR-003 when ready. Each implementation is a self-contained PR. Until then the handbook is fully reconciled with reality and there is no drift outstanding.

@@ -25,8 +25,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# local env files (incl. *.backup, *.bak, etc.)
+.env*.local*
+
+# cloudflare wrangler local state
+.wrangler/
+
+# handbook / CLAUDE.md timestamped backups
+CLAUDE.md.bak.*
+CLAUDE.md.pre-handbook
 
 # vercel build output + local state — ignore everything except project.json
 .vercel/*

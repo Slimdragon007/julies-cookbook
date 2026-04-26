@@ -1,8 +1,8 @@
 # ADR-003: Restore `/api/audit` cron under Cloudflare
 
 **Date:** 2026-04-26
-**Status:** proposed
-**Decider:** Slim (pending)
+**Status:** accepted (2026-04-26, Slim chose Option B — recommended)
+**Decider:** Slim
 
 ## Context
 
@@ -68,9 +68,11 @@ Slim hits `/api/audit?token=…` from a browser bookmark or curl when he remembe
 
 ## Decision
 
-Pending. Recommended: **Option B (GitHub Actions schedule)**. Lowest operational cost, reuses existing secret-management surface, makes scheduling visible in the same place CI deploy lives, and the project is already deeply integrated with GitHub Actions for deploy. The "endpoint unreachable" gap (which only Option A explicitly closes) is acceptable for a family-scale app — if Cloudflare Pages goes fully down, Slim will notice without a cron.
+**Option B — GitHub Actions schedule.** Chosen by Slim 2026-04-26. Lowest operational cost, reuses existing secret-management surface, makes scheduling visible in the same place CI deploy lives, and the project is already deeply integrated with GitHub Actions for deploy. The "endpoint unreachable" gap (which only Option A explicitly closes) is acceptable for a family-scale app — if Cloudflare Pages goes fully down, Slim will notice without a cron.
 
-Option A is the right call if the project ever moves toward serious uptime SLA. Option C is the right call if the project ever needs SOC-2-style external attestation. Today, neither applies.
+Option A remains the right call if the project ever moves toward serious uptime SLA. Option C remains the right call if the project ever needs SOC-2-style external attestation. Today, neither applies.
+
+Implementation landed in the same commit that accepted this ADR: `.github/workflows/audit.yml`, daily 08:00 UTC schedule, `workflow_dispatch` for manual runs, `AUDIT_SECRET` added as a GitHub repo secret. Schedule preserves the original `vercel.json` intent (08:00 UTC). The workflow uses `jq` to parse the JSON response and exits non-zero on `status != "pass"`, surfacing failures in the Actions tab and (on email-on-failure config) to Slim's inbox. Existing `DISCORD_WEBHOOK_URL` integration in the audit endpoint itself continues to alert on logical failures.
 
 ## Consequences
 

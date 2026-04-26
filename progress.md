@@ -190,3 +190,40 @@ Verify Cloudflare Pages dashboard env vars for `julies-cookbook` contain no Mark
 - No code changes beyond Cloudflare-side env state. Repo working tree clean except docs.
 
 **Next:** Pick options for ADR-002 and ADR-003 when ready. Each implementation is a self-contained PR. Until then the handbook is fully reconciled with reality and there is no drift outstanding.
+
+## 2026-04-26 — TASK-003 / ADR-003 accepted and implemented (Option B — GH Actions schedule)
+
+**Executor:** Claude Code (Opus 4.7)
+**Task:** Slim authorized "go with your recommendation" for both ADRs. ADR-003 is small and contained, executed first.
+**Changed:**
+
+- `AUDIT_SECRET` added as a GitHub repository secret (`gh secret set AUDIT_SECRET`), value sourced from the AUDIT_SECRET line in `.env.local` (the same value already in Cloudflare Pages production env). Verified via `gh secret list`.
+- `.github/workflows/audit.yml` created. Schedule: `0 8 * * *` (daily 08:00 UTC, matching prior `vercel.json` intent). Also reachable via `workflow_dispatch` for manual runs. Single step uses `curl -fsS` with `Authorization: Bearer $AUDIT_SECRET` header (env-var pattern, no inline `${{ secrets.* }}` interpolation in shell — avoids workflow-injection class). `jq` parses the response and the workflow exits non-zero on `status != "pass"`. Timeout 5 min.
+- ADR-003 status: `proposed` → `accepted` (2026-04-26, Option B). Decision section rewritten with rationale and implementation pointer.
+- `docs/architecture/infra.md` Cron section rewritten from "Currently none" to a real description of the workflow, including manual-trigger instructions and the alert-routing split (logical fail → Discord webhook from endpoint; endpoint-unreachable → GH Actions tab).
+- `docs/architecture/infra.md` Secrets section: added `AUDIT_SECRET` to the GH-secrets list. Removed the dead Marketplace-fallback callout (TASK-004 already closed).
+- `task_plan.md`: TASK-003 moved Active → Done with implementation summary.
+- Project `CLAUDE.md` §9 Current State: TASK-003 + TASK-006 moved to Recently closed; TASK-002 is now the **only** remaining mid-build item.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean (run before commit)
+- `npx tsc --noEmit` → clean
+- `npm run test` → 46/53 pass (7 pre-existing skips, unchanged)
+- `npm run test:e2e` → not run (no behavior change)
+- Husky pre-commit → fired and passed on commit
+- Live runtime smoke: post-commit `workflow_dispatch` of "Daily Audit" — verified `/api/audit` returns `status: pass` from a real GH Action run.
+
+**Doc updates / rules tightened:**
+
+- ADR-003 follows ADR-001's structure and is now accepted-with-implementation in the same commit (acceptable here because the implementation is a single workflow file, not a multi-file refactor — for ADR-002, decision and implementation will land in separate commits).
+- `infra.md` is now the single source of truth for what's deployed and how it's scheduled. References from `CLAUDE.md` §5 pointer table already point here.
+- No new project rules. Pitfall 6 (infra ping-pong) rule remains active for any future deploy/vendor/build-pipeline change.
+
+**Not changed (intentional):**
+
+- Schedule slip is acceptable. GH Actions cron can be delayed up to ~15 min during peak load; daily 08:00 UTC is not business-critical.
+- Only one alert path for endpoint-unreachable (GH Actions tab + email-on-failure if Slim has it configured). ADR-003 explicitly accepts this gap; Option A would close it but adds a Worker.
+- ADR-002 implementation deferred to a separate commit. Scraper refactor is a multi-file structural change with regression risk; needs discovery before code lands.
+
+**Next:** ADR-002 implementation — Option B (TypeScript CLI via `tsx`). Discovery first (size the duplication, verify `src/lib/usda.ts` shared state, check existing scraper tests), then refactor in a single commit.

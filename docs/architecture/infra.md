@@ -14,22 +14,33 @@
 
 ## Secrets
 
-GitHub Actions deploy reads from repo secrets:
+GitHub Actions reads from repo secrets:
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
+- `NEXT_PUBLIC_SUPABASE_URL` — deploy build-time
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — deploy build-time
+- `CLOUDFLARE_API_TOKEN` — wrangler auth
+- `CLOUDFLARE_ACCOUNT_ID` — wrangler auth
+- `AUDIT_SECRET` — daily audit workflow auth (added 2026-04-26 per ADR-003)
 
-The Marketplace fallback names (`NEXT_PUBLIC_Juliescookbook_*`) are not populated in this environment. See project CLAUDE.md Rule 5 and TASK-004.
+Cloudflare Pages production environment holds the runtime secrets — see `@docs/REFERENCE.md` env section for the canonical list.
+
+The Marketplace fallback names (`NEXT_PUBLIC_Juliescookbook_*`) were removed from code 2026-04-25 (TASK-004) and are no longer read anywhere.
 
 ## Cron
 
-Currently **none.** The prior `vercel.json` cron for `/api/audit` was never firing (no Vercel deploy was bound). Restoring it under Cloudflare (Cron Trigger Worker, GH Actions schedule, or external scheduler) is **TASK-003.**
+Daily 08:00 UTC via `.github/workflows/audit.yml` (ADR-003, accepted 2026-04-26).
 
-## What Got Removed (2026-04-25)
+- Calls `https://julies-cookbook.pages.dev/api/audit` with `Authorization: Bearer $AUDIT_SECRET`.
+- `jq` parses the response; workflow exits non-zero on `status != "pass"`.
+- Manual trigger: GitHub Actions tab → "Daily Audit" → Run workflow.
+- Logical-failure alerts come from the audit endpoint itself via `DISCORD_WEBHOOK_URL`. Endpoint-unreachable alerts surface in the GitHub Actions tab (and via configured email-on-failure).
+
+## What Got Removed (2026-04-25 → 2026-04-26)
 
 - `vercel.json` (deleted via `git rm`, ADR-001)
+- Marketplace env-var fallback in `src/lib/supabase/env.ts` and `src/app/api/audit/route.ts` (TASK-004)
+- Residual Vercel strings in audit route (TASK-005)
+- Legacy `VERCEL` env var from Cloudflare Pages production (TASK-006)
 
 ## Future Infra Changes
 

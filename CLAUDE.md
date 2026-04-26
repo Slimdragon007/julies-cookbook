@@ -179,9 +179,9 @@ _(Last edit: 2026-04-26, post-handbook-install audit)_
 
 **Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 53 unit tests (46 pass / 7 pre-existing skips) + 28 E2E.
 
-**Mid-build / unresolved:** Dual scraper paths divergence risk (ADR-002 pending, TASK-002). `/api/audit` cron not bound to a scheduler on Cloudflare yet (TASK-003, needs ADR-003). `@docs/architecture/{ui,api,data}.md` are still stubs; populate as work touches each surface.
+**Mid-build / unresolved:** Dual scraper paths divergence risk (TASK-002, ADR-002 accepted Option B 2026-04-26 — implementation pending). `@docs/architecture/{ui,api,data}.md` are still stubs; populate as work touches each surface.
 
-**Recently closed (2026-04-25 → 2026-04-26):** ADR-001 / TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback decommissioned, single Supabase naming scheme). TASK-005 (residual Vercel strings in audit route cleaned up). Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) wired up — handbook DoD §6 now matches reality.
+**Recently closed (2026-04-25 → 2026-04-26):** ADR-001 / TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback decommissioned, single Supabase naming scheme). TASK-005 (residual Vercel strings in audit route cleaned up). TASK-006 (legacy `VERCEL` env var removed from Cloudflare Pages). TASK-003 / ADR-003 (`/api/audit` cron restored via GitHub Actions daily schedule). Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) wired up — handbook DoD §6 now matches reality.
 
 **Blocked:** Scraper changes require ADR-002 first. Any new infra change requires its own ADR per Law 4. UI work and isolated API work can proceed in worktrees.
 

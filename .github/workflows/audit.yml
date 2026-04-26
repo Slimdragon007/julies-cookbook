@@ -1,0 +1,31 @@
+name: Daily Audit
+
+on:
+  schedule:
+    # 08:00 UTC daily — matches the original vercel.json cron intent (ADR-003)
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    name: Hit /api/audit and verify pass
+    timeout-minutes: 5
+    steps:
+      - name: Call audit endpoint
+        env:
+          AUDIT_SECRET: ${{ secrets.AUDIT_SECRET }}
+          AUDIT_URL: https://julies-cookbook.pages.dev/api/audit
+        run: |
+          set -euo pipefail
+          response=$(curl -fsS \
+            -H "Authorization: Bearer $AUDIT_SECRET" \
+            -H "Accept: application/json" \
+            "$AUDIT_URL")
+          echo "$response" | jq .
+          status=$(echo "$response" | jq -r '.status')
+          if [ "$status" != "pass" ]; then
+            echo "::error::Audit returned status=$status. Discord webhook (if configured) should already have alerted."
+            exit 1
+          fi
+          echo "::notice::Audit passed."

@@ -21,6 +21,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Heavy mode (?heavy=true) opts into the high-subrequest checks: per-image
+  // HEAD reachability and the chat-API self-call. Default (light) mode skips
+  // those so the daily cron stays well under Cloudflare Workers' 50-subrequest-
+  // per-invocation cap. Run heavy mode manually when investigating image rot
+  // or chat regressions.
+  const heavy = req.nextUrl.searchParams.get("heavy") === "true";
+
   const start = Date.now();
   const checks: Record<string, CheckResult> = {};
 
@@ -92,55 +99,68 @@ export async function GET(req: NextRequest) {
           failures: noImageRecipes?.map((r) => r.name) ?? [],
         };
 
-  // 5. Image URLs reachable (HEAD check with 5s timeout)
-  const { data: imageRecipes } = await supabase
-    .from("recipes")
-    .select("name, image_url")
-    .not("image_url", "is", null);
+  // 5. Image URLs reachable (HEAD check with 5s timeout) — heavy mode only.
+  // External image hosts (Cloudinary, Pexels) often redirect, and each
+  // redirect counts as a separate Cloudflare subrequest. Easy to blow past
+  // the 50-per-invocation cap on a non-trivial dataset.
+  if (heavy) {
+    const { data: imageRecipes } = await supabase
+      .from("recipes")
+      .select("name, image_url")
+      .not("image_url", "is", null);
 
-  if (imageRecipes && imageRecipes.length > 0) {
-    const imageResults = await Promise.allSettled(
-      imageRecipes.map(async (r) => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        try {
-          const res = await fetch(r.image_url, {
-            method: "HEAD",
-            signal: controller.signal,
-          });
-          clearTimeout(timeout);
-          if (!res.ok) return { name: r.name, error: `HTTP ${res.status}` };
-          return null;
-        } catch (e) {
-          clearTimeout(timeout);
-          return {
-            name: r.name,
-            error: e instanceof Error ? e.message : "fetch error",
-          };
-        }
-      }),
-    );
+    if (imageRecipes && imageRecipes.length > 0) {
+      const imageResults = await Promise.allSettled(
+        imageRecipes.map(async (r) => {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+          try {
+            const res = await fetch(r.image_url, {
+              method: "HEAD",
+              signal: controller.signal,
+              redirect: "manual",
+            });
+            clearTimeout(timeout);
+            // Treat 2xx and 3xx as reachable; only 4xx/5xx are failures.
+            if (res.status >= 400)
+              return { name: r.name, error: `HTTP ${res.status}` };
+            return null;
+          } catch (e) {
+            clearTimeout(timeout);
+            return {
+              name: r.name,
+              error: e instanceof Error ? e.message : "fetch error",
+            };
+          }
+        }),
+      );
 
-    const failures = imageResults
-      .map((r) =>
-        r.status === "fulfilled"
-          ? r.value
-          : { name: "unknown", error: "promise rejected" },
-      )
-      .filter(Boolean) as { name: string; error: string }[];
+      const failures = imageResults
+        .map((r) =>
+          r.status === "fulfilled"
+            ? r.value
+            : { name: "unknown", error: "promise rejected" },
+        )
+        .filter(Boolean) as { name: string; error: string }[];
 
-    checks.image_urls_reachable =
-      failures.length === 0
-        ? { status: "pass", count: imageRecipes.length }
-        : {
-            status: "fail",
-            count: imageRecipes.length,
-            failures: failures.map((f) => `${f.name}: ${f.error}`),
-          };
+      checks.image_urls_reachable =
+        failures.length === 0
+          ? { status: "pass", count: imageRecipes.length }
+          : {
+              status: "fail",
+              count: imageRecipes.length,
+              failures: failures.map((f) => `${f.name}: ${f.error}`),
+            };
+    } else {
+      checks.image_urls_reachable = {
+        status: "warn",
+        detail: "No image URLs to check",
+      };
+    }
   } else {
     checks.image_urls_reachable = {
-      status: "warn",
-      detail: "No image URLs to check",
+      status: "pass",
+      detail: "Skipped in light mode (use ?heavy=true to run)",
     };
   }
 
@@ -203,30 +223,40 @@ export async function GET(req: NextRequest) {
     };
   }
 
-  // 9. Chat API responds (verify Anthropic key works)
-  try {
-    const chatRes = await fetch(`${publicUrl}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "ping", history: [] }),
-    });
-    if (chatRes.status === 401) {
-      // Deployment protection — can't self-call, but API key presence was checked above
+  // 9. Chat API responds (verify Anthropic key works) — heavy mode only.
+  // Self-calling another route from inside a Worker invocation is a
+  // subrequest. Skip in cron mode; ANTHROPIC_API_KEY presence was already
+  // verified by the env_vars check above.
+  if (heavy) {
+    try {
+      const chatRes = await fetch(`${publicUrl}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "ping", history: [] }),
+      });
+      if (chatRes.status === 401) {
+        // Deployment protection — can't self-call, but API key presence was checked above
+        checks.chat_api = {
+          status: "pass",
+          detail: "Skipped (deployment protection)",
+        };
+      } else {
+        const chatData = await chatRes.json();
+        checks.chat_api =
+          chatRes.ok && chatData.response
+            ? { status: "pass" }
+            : { status: "fail", detail: `HTTP ${chatRes.status}` };
+      }
+    } catch (e) {
       checks.chat_api = {
-        status: "pass",
-        detail: "Skipped (deployment protection)",
+        status: "fail",
+        detail: e instanceof Error ? e.message : "fetch error",
       };
-    } else {
-      const chatData = await chatRes.json();
-      checks.chat_api =
-        chatRes.ok && chatData.response
-          ? { status: "pass" }
-          : { status: "fail", detail: `HTTP ${chatRes.status}` };
     }
-  } catch (e) {
+  } else {
     checks.chat_api = {
-      status: "fail",
-      detail: e instanceof Error ? e.message : "fetch error",
+      status: "pass",
+      detail: "Skipped in light mode (use ?heavy=true to run)",
     };
   }
 

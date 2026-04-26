@@ -1,139 +1,188 @@
-# Julie's Cookbook App
+# 🧬 ENGINEERING LAW: julies-cookbook
 
-## Project Overview
-Multi-user recipe cookbook web app. Each user has their own recipes, ingredients, and food logs. Features include recipe scraping, nutritional tracking, food logging, and an AI chat assistant. Registration is invite-only (family members).
+> **Read `flowstateai-claude-md-base` skill first.** This file is the project-specific layer.
+> **Owner:** Michael Haslim | **Client:** Internal (Julie + family) | **Last updated:** 2026-04-25
 
-## Tech Stack
-- **Framework:** Next.js 14 App Router (dynamic rendering via cookie-based auth)
-- **Database:** Supabase (PostgreSQL) — replaced Airtable as of March 2026
-- **Styling:** Tailwind CSS with Liquid Glass theme (cream `#FDFCFB`, sky-blue `#0ea5e9`, slate text, glassmorphic cards with backdrop-blur)
-- **Fonts:** Inter (display + body) via `next/font/google`
-- **Chat AI:** Claude Sonnet 4 (`claude-sonnet-4-20250514`)
-- **Images:** Cloudinary-hosted
-- **Hosting:** Vercel (auto-deploy from `main` branch)
-- **Repo:** github.com/Slimdragon007/julies-cookbook
+---
 
-## Supabase Schema
+## 🎯 1. PROJECT IDENTITY
 
-### recipes table
-Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), slug (TEXT UNIQUE), name, preparation, servings, cook_time_minutes, prep_time_minutes, source_url, cuisine_tag, dietary_tags (TEXT[]), julie_rating, image_url, manual_calorie_override, total_batch_weight_g, created_at
+**One-sentence purpose:** Multi-user recipe cookbook with nutritional tracking, food logging, and AI chat assistant. Invite-only family app.
 
-### ingredients table
-Columns: id (UUID PK), recipe_id (UUID FK → recipes.id ON DELETE CASCADE), name, quantity (DECIMAL), unit, category, calories (INT), protein_g (INT), carbs_g (INT), fat_g (INT)
+**Audience:** Slim, Julie, family members on invite
 
-### food_log table
-Columns: id (UUID PK), user_id (UUID FK → auth.users, per-user scoping), recipe_id (UUID FK → recipes.id), log_date (DATE), meal (TEXT: Breakfast/Lunch/Dinner/Snack), portion_g, portion_amount (DECIMAL), portion_unit (TEXT), calories, protein_g, carbs_g, fat_g, notes, created_at
+**Stage:** Production (Mar 2026 launch), active iteration
 
-### RLS Policies
-- Per-user CRUD on recipes and food_log (`auth.uid() = user_id`)
-- Per-user CRUD on ingredients (via recipe FK join to check ownership)
-- Service role full access on all three tables
+**Repo:** `github.com/Slimdragon007/julies-cookbook`
 
-## Environment Variables
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon/public key (client-side)
-- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (server-side only)
-- `ANTHROPIC_API_KEY` — For Claude chat API
-- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — Image uploads
-- `SCRAPINGBEE_API_KEY` — Optional: Cloudflare bypass for recipe scraper (free tier: 1000 calls/month)
-- `USDA_API_KEY` — USDA FoodData Central API key for accurate nutritional data (free: https://fdc.nal.usda.gov/api-key-signup)
-- `INVITE_CODE` — Server-side invite code for signup (no fallback — fails closed if missing)
+**Production URL:** [verify and fill in]
 
-All must be set in Vercel project settings for production.
+**Deploy target:** **Cloudflare Pages** (ADR-001 accepted 2026-04-25). GitHub Actions builds with `@cloudflare/next-on-pages` and deploys on push to `main`. `vercel.json` removed. See `@docs/adr/ADR-001-deploy-target.md` and `@docs/architecture/infra.md`.
 
-## Commands
-- `npm run dev` — start dev server on port 3000
-- `npm run build` — production build
-- `npm run lint` — ESLint check
-- `npm run test` — run unit tests (Vitest, 53 tests)
-- `npm run test:e2e` — run e2e tests (Playwright, 28 tests — needs dev server running)
-- `npm run test:watch` — Vitest in watch mode
-- `npm run scrape <url>` — CLI recipe scraper (writes to Supabase)
+---
 
-## Key Files
-- `src/lib/supabase/admin.ts` — Supabase admin client (service role key)
-- `src/lib/supabase/server.ts` — Supabase server client (anon key, cookie-based auth)
-- `src/lib/supabase/client.ts` — Supabase browser client (anon key)
-- `src/middleware.ts` — Supabase auth middleware (protects all routes except /login, /signup, /demo)
-- `src/lib/supabase/middleware.ts` — Auth middleware helper (redirects, session refresh)
-- `src/app/signup/page.tsx` — Invite-only sign-up page
-- `src/app/api/signup/route.ts` — Server-side signup with invite code validation
-- `src/lib/data.ts` — Data layer: getAllRecipes(), getRecipeById(), getRecipeContext(), getAllRecipeIds()
-- `src/lib/usda.ts` — USDA FoodData Central API: lookupNutrition(), calculateIngredientMacros()
-- `src/lib/unit-conversions.ts` — Portion unit conversion: toGrams(), PORTION_UNITS (servings/cups/oz/tbsp/tsp/g)
-- `src/lib/types.ts` — Recipe and Ingredient TypeScript interfaces
-- `src/app/recipe/[id]/page.tsx` — Recipe detail page (slug-based routing, dynamic rendering)
-- `src/app/log/page.tsx` — Food log page
-- `src/app/summary/page.tsx` — Weekly nutrition summary
-- `src/app/api/chat/route.ts` — Chat API endpoint using Claude
-- `src/app/api/log-meal/route.ts` — Food log API (GET + POST)
-- `src/app/api/scrape/route.ts` — Web scraper API (writes to Supabase)
-- `src/components/RecipeTabs.tsx` — Tab controller (Ingredients | Instructions | Nutrition)
-- `src/components/NutritionTab.tsx` — Nutrition tab with portion calculator
-- `src/components/FoodLogForm.tsx` — Food log form + today's entries
-- `src/components/WeeklySummary.tsx` — 7-day summary with averages
+## 🏗️ 2. STACK
 
-## Scripts
-- `scripts/scrape-recipe.mjs` — CLI recipe scraper (writes to Supabase)
-- `scripts/migrate-to-supabase.mjs` — One-time Airtable → Supabase migration
-- `scripts/audit.mjs` — Supabase data audit (recipes, ingredients, images, food log)
+| Layer     | Tool                | Version | Notes                                                                           |
+| --------- | ------------------- | ------- | ------------------------------------------------------------------------------- |
+| Framework | Next.js             | 14.2.35 | App Router, dynamic rendering via cookie auth                                   |
+| Database  | Supabase            | —       | Project: `cqfszhxuvvsgusvjdyqx`, us-east-1, replaced Airtable Mar 2026          |
+| Auth      | Supabase Auth       | —       | Email/password, middleware-enforced, invite-only signup                         |
+| Styling   | Tailwind            | 3.4     | Liquid Glass theme, Inter font, sky-blue accent (`#0ea5e9`)                     |
+| Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001) |
+| AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                             |
+| Storage   | Cloudinary          | —       | Image hosting                                                                   |
+| Tests     | Vitest + Playwright | —       | 53 unit + 28 e2e                                                                |
+| Hooks     | Husky               | —       | Pre-commit lint + tsc                                                           |
 
-## Testing
-- **Unit tests:** Vitest — `src/lib/__tests__/` (macros, fractions, unit-conversions, USDA API)
-- **E2E tests:** Playwright — `e2e/` (auth, demo, pages, nutrition unit picker, food log unit picker)
-- **Config:** `vitest.config.mts` (excludes e2e/), `playwright.config.ts` (chromium, port 3000)
-- **E2E test user:** `e2e-test@julies-cookbook.test` / `E2eTestPass2026!` (created via Supabase admin API)
-- **E2E test recipe:** `e2e-test-pasta` with 4 ingredients, batch weight 800g (seeded in Supabase)
-- **Pre-commit hooks:** Husky runs `next lint` + `tsc --noEmit` before every commit
+Full env var contract: see `@docs/REFERENCE.md`.
 
-## Key Architecture Decisions
+---
 
-### Slug-based routing
-Recipe URLs use slugs (e.g., `/recipe/best-goulash`) instead of UUIDs. `getRecipeById()` looks up by slug first, falls back to UUID for backwards compat.
+## 📜 3. PROJECT-SPECIFIC RULES
 
-### Portion calculator
-Supports multiple units: servings, cups, oz, tbsp, tsp, grams. Converts to grams via `src/lib/unit-conversions.ts` for macro math. Uses `total_batch_weight_g` for exact calculation: `(portion_g / total_batch_weight_g) * total_recipe_macros`. Falls back to per-serving estimate if batch weight is null. "Servings" unit works without batch weight via per-serving math.
+### Rule 1 — Nullish coalescing for numeric fields
 
-### Nutritional data accuracy
-Ingredient macros sourced from USDA FoodData Central API (exact per 100g values). Scraper pipeline: USDA API → Claude AI estimate → hardcoded lookup table → 0. Both scraper paths (CLI + web API) use the same USDA-first approach.
+Use `??`, not `||`. `0 || null` returns `null` (wrong). `0 ?? null` returns `0` (correct).
+Macros, calories, portion math all rely on this. Linter does not catch it.
 
-### Nullish coalescing
-Use `??` (not `||`) for numeric fields. `0 || null` returns `null` (wrong), `0 ?? null` returns `0` (correct).
+### Rule 2 — Slug-based recipe routing
 
-## Common Pitfalls
+URLs use slugs (`/recipe/best-goulash`), not UUIDs. `getRecipeById()` looks up by slug first, falls back to UUID for back-compat. Don't break the fallback.
 
-### 1. ESLint strict on unused vars
-Vercel builds fail on `@typescript-eslint/no-unused-vars` and `prefer-const` errors. Always check before pushing.
+### Rule 3 — USDA-first nutrition pipeline
 
-### 2. Google Fonts unreachable in sandboxed environments
-`next build` fails locally if `fonts.googleapis.com` is blocked. Builds work fine on Vercel.
+Ingredient macros come from USDA FoodData Central API. Fallback chain: USDA → Claude AI estimate → hardcoded lookup → 0. Never reverse the order.
 
-### 3. Dynamic rendering
-Pages render dynamically via cookie-based auth (`createSupabaseServer()` reads cookies, which opts into dynamic rendering automatically). No `force-dynamic` needed — the Next.js Router Cache handles client-side caching (30s).
+### Rule 4 — Dual scraper paths must stay synced _(temporary, see Pitfall 1)_
 
-### 4. Map iterator downlevelIteration
-`for...of` on `Map.entries()` fails TypeScript compilation. Use `map.forEach()` instead.
+`scripts/scrape-recipe.mjs` (CLI) and `src/app/api/scrape/route.ts` (web API) have independent USDA + macro estimation code. The `.mjs` cannot import TS modules. Until the shared-logic refactor lands, changes to scraping or nutrition logic **must apply to both paths.** This is a documented architectural defect, not a feature.
 
-### 5. Dual scraper paths must stay in sync
-Both `scripts/scrape-recipe.mjs` (CLI) and `src/app/api/scrape/route.ts` (web API) have independent USDA lookup + macro estimation code. The `.mjs` file cannot import TypeScript modules. Changes to scraping, nutrition, or ingredient normalization logic must be applied to BOTH paths.
+### Rule 5 — Single Supabase env-var naming scheme
 
-## Current State (as of March 28, 2026)
-- Multi-user with per-user recipes, ingredients, and food logs
-- Invite-only registration (INVITE_CODE env var, server-side validation)
-- Auth: Supabase email/password, middleware-enforced
-- Supabase project: cqfszhxuvvsgusvjdyqx (us-east-1)
-- UI: "Liquid Glass" theme — light bg (#FDFCFB), sky-blue accents, Inter font, glassmorphic cards
-- Desktop sidebar nav + mobile bottom nav (5 items) with elevated Add button
-- Tabs: Ingredients | Instructions | Nutrition with sky-blue pill-style tab switcher
-- Portion calculator with customizable units (servings, cups, oz, tbsp, tsp, grams)
-- USDA FoodData Central API for accurate nutritional data (replaces AI estimation)
-- Food log page (/log) with meal logging, daily totals, and user-friendly unit display
-- Weekly summary page (/summary) with 7-day averages
-- Chatbot working with per-user recipe context
-- 53 unit tests (Vitest) + 28 e2e tests (Playwright)
-- Husky pre-commit hooks (lint + type-check)
-- Data source: Supabase (Airtable permanently retired)
+One naming scheme only:
 
-## Notion
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only, lazy-evaluated via `getSupabaseServiceRoleKey()`)
+
+Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabase/env.ts`. **Do not introduce a second naming scheme.** The prior Marketplace fallback (`NEXT_PUBLIC_Juliescookbook_*`) was removed 2026-04-25 (TASK-004) as part of the Cloudflare migration. Any new fallback or alias requires an ADR per Law 4 — env-var contracts are parallelization-locked under Law 2.
+
+---
+
+## 🚧 4. KNOWN PITFALLS
+
+### Pitfall 1 — Dual scraper paths drift
+
+**Symptom:** Bug fixes applied to one scraper but not the other; CLI scrape and web scrape produce different ingredient data.
+**Cause:** `.mjs` file cannot import TypeScript shared modules.
+**Rule:** Until shared logic is extracted to a third module (tracked task), every scraper change touches both files in the same commit. PR rejected if only one is touched.
+
+### Pitfall 2 — ESLint strict failures break the deploy build
+
+**Symptom:** `npm run dev` works, deploy fails.
+**Cause:** `next build` (invoked by `@cloudflare/next-on-pages`) runs `next lint` in strict mode. `@typescript-eslint/no-unused-vars` and `prefer-const` are blocking.
+**Rule:** Run `npm run lint` before every push. Husky catches most of this; trust it.
+
+### Pitfall 3 — Google Fonts unreachable in sandboxed environments
+
+**Symptom:** `next build` fails locally with font fetch errors.
+**Cause:** `fonts.googleapis.com` blocked in some sandboxed envs.
+**Rule:** If local build fails on fonts, that's environment, not code. The CI build (Cloudflare Pages via GH Action) will succeed.
+
+### Pitfall 4 — Map iterator downlevelIteration
+
+**Symptom:** `for...of` on `Map.entries()` fails TypeScript compilation.
+**Rule:** Use `map.forEach()` instead.
+
+### Pitfall 5 — Same-day fix-after-feat clusters
+
+**Symptom:** 10+ commits on a single day with multiple `fix:` entries patching `feat:` entries from hours earlier (Mar 16, Mar 28 in repo history).
+**Cause:** No `task_plan.md` discipline, no PR review, work shipped directly to main.
+**Rule:** Tasks declared in `@task_plan.md` before execution. Fix-within-24h-of-feat triggers a doc update per Recursive Learning Loop (base handbook §5).
+
+### Pitfall 6 — Infra ping-pong
+
+**Symptom:** Repo had `vercel.json` AND `wrangler.toml` AND a Cloudflare GitHub Action AND CLAUDE.md said Vercel. Apr 21 had 6 commits in 43 minutes migrating to Cloudflare with no ADR.
+**Cause:** Infra change executed as exploration, not decision.
+**Status:** Resolved 2026-04-25 by ADR-001 (Cloudflare Pages chosen, `vercel.json` removed). Pitfall 6 stays in this list as institutional memory; the rule below remains active for future infra changes.
+**Rule:** Base handbook Law 4 applies. Any future deploy-target, vendor-swap, or build-pipeline change requires an ADR before code lands. No "quick experiments" on `main`.
+
+---
+
+## 📂 5. POINTER TABLE
+
+```
+@task_plan.md                  → current task state (architect-owned)
+@progress.md                   → completed work log (append-only)
+@docs/REFERENCE.md             → schema, env vars, file index, current state
+@docs/architecture/ui.md       → Liquid Glass design system, component patterns
+@docs/architecture/api.md      → API routes, scraper architecture, chat endpoint
+@docs/architecture/data.md     → Supabase schema, RLS, fallback chain
+@docs/architecture/infra.md    → Cloudflare Pages deploy state, GH Action CI/CD
+@docs/adr/ADR-001-deploy-target.md     → accepted (Cloudflare Pages)
+@docs/adr/ADR-002-dual-scraper-paths.md → pending, tracks Rule 4 / Pitfall 1 resolution
+```
+
+**Load triggers:**
+
+- UI work → `@docs/architecture/ui.md`
+- API or schema work → `@docs/architecture/api.md` + `@docs/architecture/data.md`
+- Scraper work → `@docs/architecture/api.md` + ADR-002
+- Infra or deploy → `@docs/architecture/infra.md` + ADR-001
+- Auth or middleware → `@docs/architecture/data.md` (RLS) + base handbook Law 2
+
+---
+
+## 🧪 6. DEFINITION OF DONE
+
+- [ ] 0 lint errors (`npm run lint`)
+- [ ] 0 TypeScript errors (`tsc --noEmit`)
+- [ ] Unit tests pass (`npm run test`, 53 tests)
+- [ ] E2E tests pass (`npm run test:e2e`, 28 tests, requires dev server)
+- [ ] Husky pre-commit passes
+- [ ] `@progress.md` appended with task summary
+- [ ] Affected `@docs/*.md` updated if reality changed
+- [ ] If scraper touched: BOTH `.mjs` and route.ts updated (Rule 4)
+- [ ] If infra touched: ADR written and committed before code
+
+---
+
+## 🛠️ 7. COMMANDS
+
+```bash
+npm run dev              # localhost:3000
+npm run build            # Next.js production build
+npm run build:cf         # Cloudflare next-on-pages build (canonical deploy build)
+npm run preview          # Local preview of the Cloudflare build via wrangler
+npm run lint             # ESLint
+npm run test             # Vitest, 53 tests
+npm run test:watch       # Vitest watch mode
+npm run test:e2e         # Playwright, 28 tests, needs dev server running
+npm run scrape <url>     # CLI recipe scraper, writes to Supabase
+```
+
+---
+
+## 📓 8. NOTION POINTERS (humans only)
+
+Agents do not read Notion as source of truth.
+
 - Project plan page: `31e16230-665c-8107-91e5-ee03d6cbd636`
 - Progress log: `31e16230-665c-8117-bf62-d04b14ed8c1e`
+
+---
+
+## 🚦 9. CURRENT STATE
+
+_(Last edit: 2026-04-25, audit-driven snapshot)_
+
+**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 53 unit tests + 28 E2E.
+
+**Mid-build / unresolved:** Dual scraper paths divergence risk (ADR-002 pending, TASK-002). `/api/audit` cron currently not running on any platform — was dead in `vercel.json` (no Vercel deploy bound), now needs Cloudflare wiring (TASK-003). Marketplace env-var fallback is dead code on Cloudflare, scheduled for removal (TASK-004). `@docs/` scaffold landed 2026-04-25 with stub architecture files; populate as work touches each surface.
+
+**Blocked:** Scraper changes require ADR-002 first. Any new infra change requires its own ADR per Law 4. UI work and isolated API work can proceed in worktrees.
+
+---
+
+_End of project handbook. Read `@task_plan.md` next._

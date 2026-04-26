@@ -81,3 +81,42 @@ Verify Cloudflare Pages dashboard env vars for `julies-cookbook` contain no Mark
 - No commit, no push.
 
 **Next:** TASK-002 (scraper ADR-002 + shared-module refactor) is the highest user-facing risk remaining. TASK-003 (cron restoration ADR-003) and TASK-005 (Vercel string residue) lower priority.
+
+## 2026-04-26 — Handbook-compliance pass: TASK-005, husky wiring, production URL, atomic recommit
+
+**Executor:** Claude Code (Opus 4.7)
+**Task:** Bring repo into compliance with the handbook installed on 2026-04-25 and push.
+**Changed:**
+
+- Flattened a misleading `CLAUDE.md → CLAUDE.md.pre-handbook` staged rename. The "backup" had been edited in place into a half-rewrite, so the rename target no longer held the original. Confirmed `CLAUDE.md.bak.20260425-170202` matches `HEAD:CLAUDE.md` byte-for-byte before discarding the half-rewrite. Re-staged as `modified: CLAUDE.md` so the contract install reads as a direct HEAD → trust-contract diff.
+- Split the original bundled commit into atomic chunks (per Law 3 ordering, code first, docs last): `chore: remove vercel.json`, `refactor(supabase): drop Marketplace fallback (TASK-004)`, `docs: install handbook + @docs/ scaffold`. Three more commits followed: `chore: gitignore env backups + .wrangler + CLAUDE.md.bak.*`, `refactor(audit): residual Vercel string cleanup (TASK-005)`, `build: wire up husky pre-commit gate`, plus this docs commit.
+- TASK-005 executed: three string/comment leftovers in `src/app/api/audit/route.ts` corrected (cron-secret comment, VERCEL_URL comment, Discord webhook footer → `julies-cookbook.pages.dev`). No behavior change.
+- Husky gate wired up: `husky` added to devDependencies, `prepare` script switched to modern `husky` invocation, `core.hooksPath` now `.husky/_`, `.husky/pre-commit` made executable. The handbook DoD §6 claim that "Husky runs lint + tsc" was previously fiction — now real and confirmed firing on the install commit.
+- `.gitignore` broadened (`.env*.local` → `.env*.local*`) plus added `.wrangler/`, `CLAUDE.md.bak.*`, `CLAUDE.md.pre-handbook` to prevent future leak / churn.
+- Production URL filled in (`https://julies-cookbook.pages.dev`, Cloudflare Pages default; custom domain TBD). Was `[verify and fill in]` placeholder in §1.
+- §9 Current State refreshed: TASK-001 / TASK-004 / TASK-005 / Husky moved to "Recently closed"; only TASK-002 (scraper ADR-002) and TASK-003 (cron ADR-003) remain mid-build.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean before each commit
+- `npx tsc --noEmit` → clean before each commit
+- `npm run test` → 46/53 pass (7 pre-existing skips, unchanged)
+- `npm run test:e2e` → not run (no behavior change; same call as TASK-004)
+- Husky pre-commit → confirmed firing on the husky-wiring commit and every commit after
+
+**Doc updates / rules tightened:**
+
+- §9 Current State date stamped 2026-04-26; "Last updated" trailer line synced to same date.
+- TASK-005 + Husky-wiring entries added to `task_plan.md` Done section.
+- No new rules added — Recursive Learning Loop §5 was triggered for the husky-wiring gap, but the rule already existed in handbook §6 (DoD); the work was making reality match the rule, not adding a new rule.
+
+**Not changed (intentional):**
+
+- TASK-002 / TASK-003 deferred — both require ADRs per Law 4, and the user has not authorized scraper or cron changes in this session.
+- `wrangler.toml` left alone — minimal Pages config, already correct.
+- `.husky/_/` directory has its own `.gitignore` (created by husky 9 init) and is correctly excluded from the commit.
+- `CLAUDE.md.bak.20260425-170202` left on disk (now ignored) as a defense-in-depth copy of the original CLAUDE.md.
+
+**Push:** Performed at end of this batch. CI build on push to `main` will run the Cloudflare Pages auto-deploy (per `.github/workflows/deploy.yml`). Defensive note from TASK-004's progress entry still applies: verify Cloudflare Pages dashboard env vars contain only the canonical `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` keys before relying on the deploy.
+
+**Next:** TASK-002 (scraper ADR-002) is the only remaining user-facing risk. TASK-003 (cron ADR-003) is platform-side. Architecture stubs (ui/api/data) populate-on-touch.

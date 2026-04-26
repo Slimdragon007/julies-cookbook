@@ -1,7 +1,7 @@
 # 🧬 ENGINEERING LAW: julies-cookbook
 
 > **Read `flowstateai-claude-md-base` skill first.** This file is the project-specific layer.
-> **Owner:** Michael Haslim | **Client:** Internal (Julie + family) | **Last updated:** 2026-04-25
+> **Owner:** Michael Haslim | **Client:** Internal (Julie + family) | **Last updated:** 2026-04-26
 
 ---
 
@@ -15,7 +15,7 @@
 
 **Repo:** `github.com/Slimdragon007/julies-cookbook`
 
-**Production URL:** [verify and fill in]
+**Production URL:** https://julies-cookbook.pages.dev (Cloudflare Pages default; custom domain TBD)
 
 **Deploy target:** **Cloudflare Pages** (ADR-001 accepted 2026-04-25). GitHub Actions builds with `@cloudflare/next-on-pages` and deploys on push to `main`. `vercel.json` removed. See `@docs/adr/ADR-001-deploy-target.md` and `@docs/architecture/infra.md`.
 
@@ -175,11 +175,13 @@ Agents do not read Notion as source of truth.
 
 ## 🚦 9. CURRENT STATE
 
-_(Last edit: 2026-04-25, audit-driven snapshot)_
+_(Last edit: 2026-04-26, post-handbook-install audit)_
 
-**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 53 unit tests + 28 E2E.
+**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 53 unit tests (46 pass / 7 pre-existing skips) + 28 E2E.
 
-**Mid-build / unresolved:** Dual scraper paths divergence risk (ADR-002 pending, TASK-002). `/api/audit` cron currently not running on any platform — was dead in `vercel.json` (no Vercel deploy bound), now needs Cloudflare wiring (TASK-003). Marketplace env-var fallback is dead code on Cloudflare, scheduled for removal (TASK-004). `@docs/` scaffold landed 2026-04-25 with stub architecture files; populate as work touches each surface.
+**Mid-build / unresolved:** Dual scraper paths divergence risk (ADR-002 pending, TASK-002). `/api/audit` cron not bound to a scheduler on Cloudflare yet (TASK-003, needs ADR-003). `@docs/architecture/{ui,api,data}.md` are still stubs; populate as work touches each surface.
+
+**Recently closed (2026-04-25 → 2026-04-26):** ADR-001 / TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback decommissioned, single Supabase naming scheme). TASK-005 (residual Vercel strings in audit route cleaned up). Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) wired up — handbook DoD §6 now matches reality.
 
 **Blocked:** Scraper changes require ADR-002 first. Any new infra change requires its own ADR per Law 4. UI work and isolated API work can proceed in worktrees.
 

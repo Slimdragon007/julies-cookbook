@@ -40,8 +40,6 @@ Build-time only (set as GitHub Actions secrets, injected during `npx @cloudflare
 
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — also need to be set as Cloudflare Pages runtime secrets for server-rendered routes that import `src/lib/supabase/env.ts`.
 
-Cloudflare Pages production also has a legacy `VERCEL` env var with no code reference. Marked for removal under TASK-006 (see `@task_plan.md`).
-
 ## File index
 
 TBD. Generate when first navigation aid is needed.

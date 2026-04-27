@@ -44,6 +44,8 @@ export async function uploadToCloudinary(
 
   for (const tryUrl of urlsToTry) {
     for (let attempt = 0; attempt < 2; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30_000);
       try {
         const timestamp = Math.floor(Date.now() / 1000).toString();
         const signParams: Record<string, string> = {
@@ -63,7 +65,7 @@ export async function uploadToCloudinary(
         fd.append("signature", signature);
         const cloudRes = await fetch(
           `https://api.cloudinary.com/v1_1/${env.cloudName}/image/upload`,
-          { method: "POST", body: fd },
+          { method: "POST", body: fd, signal: controller.signal },
         );
         if (cloudRes.ok) {
           const cloudData = (await cloudRes.json()) as { secure_url: string };
@@ -77,6 +79,8 @@ export async function uploadToCloudinary(
           `[scraper/cloudinary] upload attempt ${attempt + 1} failed for ${tryUrl}:`,
           err,
         );
+      } finally {
+        clearTimeout(timer);
       }
     }
   }

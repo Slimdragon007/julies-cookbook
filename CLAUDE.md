@@ -32,7 +32,7 @@
 | Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001) |
 | AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                             |
 | Storage   | Cloudinary          | —       | Image hosting                                                                   |
-| Tests     | Vitest + Playwright | —       | 90 unit (83 pass / 7 pre-existing skips) + 28 e2e                               |
+| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                               |
 | Hooks     | Husky               | —       | Pre-commit lint + tsc                                                           |
 
 Full env var contract: see `@docs/REFERENCE.md`.
@@ -135,7 +135,7 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 
 - [ ] 0 lint errors (`npm run lint`)
 - [ ] 0 TypeScript errors (`tsc --noEmit`)
-- [ ] Unit tests pass (`npm run test`, 90 tests)
+- [ ] Unit tests pass (`npm run test`, 93 tests)
 - [ ] E2E tests pass (`npm run test:e2e`, 28 tests, requires dev server)
 - [ ] Husky pre-commit passes
 - [ ] `@progress.md` appended with task summary

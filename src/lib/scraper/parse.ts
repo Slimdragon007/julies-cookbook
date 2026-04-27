@@ -158,10 +158,19 @@ export async function fetchPageWithFallback(
     return result;
   }
 
-  if (directRes.status === 403) {
-    result.errors.push(`Direct fetch returned 403 (blocked by ${domain})`);
-    tripCircuit(domain);
-    if (!sbKey) {
+  // Reject any non-OK direct response. Previously only 403 was treated as
+  // blocked; 404 (and 5xx after retry) fell through to text() and the resulting
+  // error page was sent to Anthropic for "extraction" — wasted token spend at
+  // best, hallucinated recipes from nav/footer text at worst.
+  if (!directRes.ok) {
+    result.errors.push(
+      `Direct fetch returned ${directRes.status} for ${domain}`,
+    );
+    if (directRes.status === 403) tripCircuit(domain);
+
+    // ScrapingBee is only worth trying for 403 (anti-bot blocks). 404 / 5xx
+    // are real failures the proxy can't fix; mark blocked and bail.
+    if (directRes.status !== 403 || !sbKey) {
       result.method = "blocked";
       return result;
     }

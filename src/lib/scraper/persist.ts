@@ -119,6 +119,20 @@ export async function persistRecipe(
     .single();
 
   if (recipeError || !recipeRecord) {
+    // 23505 is Postgres' unique_violation — usually means a concurrent insert
+    // beat us between the dup check and this insert (TOCTOU). Convert to the
+    // typed DuplicateRecipeError so callers can map it to the same 409 they
+    // already do for the up-front dup check. Requires a UNIQUE constraint on
+    // (user_id, source_url) and/or (user_id, name) for this to fire — see
+    // follow-up DB-constraint task.
+    if (recipeError && (recipeError as { code?: string }).code === "23505") {
+      throw new DuplicateRecipeError(
+        `"${recipe.name}" already exists (concurrent write detected)`,
+        "",
+        recipe.name,
+        "name",
+      );
+    }
     throw new Error(
       `Failed to save recipe: ${recipeError?.message ?? "unknown error"}`,
     );
@@ -144,7 +158,17 @@ export async function persistRecipe(
 
     if (ingError) {
       // Roll back recipe if ingredient insert fails — keeps the DB consistent.
-      await supabase.from("recipes").delete().eq("id", recipeId);
+      // If the rollback itself fails, surface both errors so the operator can
+      // reconcile the orphan recipe row manually.
+      const { error: rollbackError } = await supabase
+        .from("recipes")
+        .delete()
+        .eq("id", recipeId);
+      if (rollbackError) {
+        throw new Error(
+          `Failed to save ingredients: ${ingError.message}; rollback also failed for recipe ${recipeId}: ${rollbackError.message}`,
+        );
+      }
       throw new Error(`Failed to save ingredients: ${ingError.message}`);
     }
     ingredientCount = rows.length;

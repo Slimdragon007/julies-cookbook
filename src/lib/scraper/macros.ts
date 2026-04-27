@@ -11,10 +11,13 @@ export interface EstimatedMacros {
   f: number;
 }
 
+// Returns null when no conversion rule is registered. Callers must treat null
+// as "macros unknown" rather than silently scaling by 1, which previously
+// produced wildly wrong totals (e.g. 8 oz milk against a per-cup ref).
 export function getUnitMultiplier(
   recipeUnit: string | null,
   refUnit: string,
-): number {
+): number | null {
   const u = recipeUnit?.replace("/", "") || "";
   if (u === refUnit) return 1;
   if (u === "tsp" && refUnit === "tbsp") return 1 / 3;
@@ -23,10 +26,9 @@ export function getUnitMultiplier(
   if (u === "tbsp" && refUnit === "cup") return 1 / 16;
   if (u === "cup" && refUnit === "tsp") return 48;
   if (u === "tsp" && refUnit === "cup") return 1 / 48;
-  if (u === "oz" && refUnit === "14oz") return 1 / 14;
-  if (u === "oz" && refUnit === "28oz") return 1 / 28;
-  if (u === "oz" && refUnit === "8oz") return 1 / 8;
-  return 1;
+  const cannedMatch = u === "oz" ? refUnit.match(/^(\d+)oz$/) : null;
+  if (cannedMatch) return 1 / Number(cannedMatch[1]);
+  return null;
 }
 
 export function estimateMacros(
@@ -36,8 +38,9 @@ export function estimateMacros(
 ): EstimatedMacros | null {
   const ref = FALLBACK_MACROS[name];
   if (!ref) return null;
-  const q = qty ?? 1;
   const multiplier = getUnitMultiplier(unit, ref.per);
+  if (multiplier === null) return null;
+  const q = qty ?? 1;
   const scale = q * multiplier;
   return {
     cal: Math.round(ref.cal * scale),

@@ -21,6 +21,12 @@ describe("slugify", () => {
   it("collapses runs of separators", () => {
     expect(slugify("a   b___c")).toBe("a-b-c");
   });
+
+  it("falls back to 'recipe' for input with no alphanumerics", () => {
+    expect(slugify("!!!")).toBe("recipe");
+    expect(slugify("---")).toBe("recipe");
+    expect(slugify("¿¡")).toBe("recipe");
+  });
 });
 
 describe("normalizeName", () => {
@@ -121,6 +127,12 @@ describe("mapCuisine", () => {
     expect(mapCuisine("Middle Eastern")).toBe("Mediterranean");
     expect(mapCuisine("Japanese")).toBe("Asian");
     expect(mapCuisine("Mexican")).toBe("Other");
+  });
+
+  it("is case-insensitive for aliases (defensive against LLM case drift)", () => {
+    expect(mapCuisine("japanese")).toBe("Asian");
+    expect(mapCuisine("CHINESE")).toBe("Asian");
+    expect(mapCuisine("middle eastern")).toBe("Mediterranean");
   });
 
   it("returns null for unknown cuisines", () => {

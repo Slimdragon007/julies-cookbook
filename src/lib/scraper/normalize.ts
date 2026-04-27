@@ -17,10 +17,15 @@ import {
 } from "./contracts";
 
 export function slugify(name: string): string {
-  return name
+  // Falls back to "recipe" when the input has no alphanumeric characters
+  // (e.g. "!!!", "¿¡"). An empty slug breaks slug-based routing in
+  // `getRecipeById`, so we guarantee a non-empty result here. The persistence
+  // layer can append suffixes if uniqueness is needed.
+  const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+  return slug || "recipe";
 }
 
 export function normalizeName(name: string): string {
@@ -85,5 +90,5 @@ export function mapCuisine(
   if ((VALID_CUISINES as readonly string[]).includes(rawCuisine)) {
     return rawCuisine as Cuisine;
   }
-  return CUISINE_MAP[rawCuisine] ?? null;
+  return CUISINE_MAP[rawCuisine.toLowerCase()] ?? null;
 }

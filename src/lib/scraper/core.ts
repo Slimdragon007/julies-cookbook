@@ -209,10 +209,13 @@ export async function scrapeRecipe(
     }
   }
 
-  // Cloudinary upload (only if env provided AND we have an image)
+  // Cloudinary upload (only if env provided AND we have an image).
+  // Namespace public_id by user when scoped, so two users with the same recipe
+  // name don't overwrite each other's assets in the shared bucket.
   let finalImageUrl: string | null = null;
   if (imageUrl && opts.cloudinary) {
-    const publicId = slugify(recipe.name);
+    const slug = slugify(recipe.name);
+    const publicId = opts.userScope ? `${opts.userScope.userId}/${slug}` : slug;
     finalImageUrl = await uploadToCloudinary(
       imageUrl,
       publicId,

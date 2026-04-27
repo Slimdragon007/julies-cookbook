@@ -23,14 +23,23 @@ describe("getUnitMultiplier", () => {
     expect(getUnitMultiplier("/oz", "8oz")).toBeCloseTo(1 / 8);
   });
 
-  it("returns 1 fallback for unknown conversions", () => {
-    expect(getUnitMultiplier("/lb", "cup")).toBe(1);
+  it("returns null for unregistered conversions (avoids wildly wrong macro estimates)", () => {
+    expect(getUnitMultiplier("/lb", "cup")).toBeNull();
+    expect(getUnitMultiplier("/oz", "cup")).toBeNull();
+    expect(getUnitMultiplier("/g", "tbsp")).toBeNull();
   });
 });
 
 describe("estimateMacros", () => {
   it("returns null for unknown ingredient", () => {
     expect(estimateMacros("dragonfruit", 1, "/each")).toBeNull();
+  });
+
+  it("returns null when ingredient is known but unit conversion is not", () => {
+    // milk's ref is per-cup; estimating from a /lb recipe quantity has no
+    // sensible conversion, so callers must treat macros as unknown rather
+    // than silently using qty * 1 * per-cup-values.
+    expect(estimateMacros("milk", 1, "/lb")).toBeNull();
   });
 
   it("scales canonical recipe quantities (2 tbsp olive oil)", () => {

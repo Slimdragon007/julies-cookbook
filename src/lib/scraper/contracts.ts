@@ -71,16 +71,18 @@ export const UNIT_MAP: Record<string, CookingUnit> = {
   teaspoons: "/tsp",
 };
 
+// Keys are lowercased so callers can normalize raw input before lookup
+// (defensive against LLM case drift). See `mapCuisine` in normalize.ts.
 export const CUISINE_MAP: Record<string, Cuisine> = {
-  "Middle Eastern": "Mediterranean",
-  French: "Other",
-  Mexican: "Other",
-  Indian: "Other",
-  Japanese: "Asian",
-  Chinese: "Asian",
-  Thai: "Asian",
-  Korean: "Asian",
-  Vietnamese: "Asian",
+  "middle eastern": "Mediterranean",
+  french: "Other",
+  mexican: "Other",
+  indian: "Other",
+  japanese: "Asian",
+  chinese: "Asian",
+  thai: "Asian",
+  korean: "Asian",
+  vietnamese: "Asian",
 };
 
 export const CANONICAL_NAMES: Record<string, string> = {

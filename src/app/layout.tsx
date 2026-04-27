@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const inter = Inter({
@@ -43,12 +42,13 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${inter.variable} font-body antialiased text-slate-800 bg-[#FAF8F4]`}>
+      <body
+        className={`${inter.variable} font-body antialiased text-slate-800 bg-[#FAF8F4]`}
+      >
         <div className="ambient-bg">
           <div className="grid-overlay" />
         </div>
         {children}
-        <Analytics />
         <ServiceWorkerRegistration />
       </body>
     </html>

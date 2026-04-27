@@ -35,9 +35,8 @@ yarn-error.log*
 CLAUDE.md.bak.*
 CLAUDE.md.pre-handbook
 
-# vercel build output + local state — ignore everything except project.json
-.vercel/*
-!.vercel/project.json
+# next-on-pages build output (uses Vercel Build Output API as its intermediate format)
+.vercel/
 
 # typescript
 *.tsbuildinfo

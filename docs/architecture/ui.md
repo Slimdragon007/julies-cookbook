@@ -93,6 +93,16 @@ The step parser strips leading `1.`, `1)`, `1-` numerals from each line so sourc
 - Auth runs in middleware (`src/middleware.ts`); cookie reads force dynamic rendering. The audit endpoint is the only route that explicitly sets `dynamic = "force-dynamic"`; the rest inherit dynamism from cookie use.
 - Layout: `src/app/(main)/layout.tsx` mounts the `ambient-bg` background and `MainNav`. Public routes (`/login`, `/signup`) live outside the `(main)` group and don't get the background or nav.
 
+## Net-new surfaces: use the frontend-design skill
+
+Established surfaces (recipes, food log, profile, chat, summary, grocery list) are part of the existing app fabric and **must stay on the Liquid Glass system documented above** — visual consistency for the family using the app daily matters more than expressive variety.
+
+For genuinely **net-new** surfaces — a marketing landing page, an onboarding flow, a stats / insights view, a share-out / printable recipe card, a public recipe gallery, etc. — invoke the `frontend-design` skill instead of cloning glass-card patterns. The skill picks a bold per-context aesthetic (typography, palette, motion language) appropriate to the surface's purpose and audience. Do not default to Inter, do not default to amber/gold, do not default to `glass` cards.
+
+The split rule: if a future user of the app would expect this screen to "feel like the cookbook," it's Liquid Glass. If they'd expect it to feel like a different artifact (a landing page, a print-out, an onboarding moment, a share card), it gets its own creative direction.
+
+Slim's directive 2026-04-27: net-new surfaces use the frontend-design skill; existing surfaces stay Liquid Glass.
+
 ## Conventions
 
 - **Border radius vocabulary:** small chips `rounded-full`, controls `rounded-xl` / `rounded-2xl`, cards `rounded-3xl`, large content panels `rounded-[3rem]`. The escalation telegraphs surface importance.
@@ -109,5 +119,6 @@ Any of the following triggers a docs refresh per Recursive Learning Loop §5:
 - A new shared component pattern is introduced (something other components will copy).
 - The palette tokens in `globals.css:5-11` change.
 - A routing convention shifts (e.g. dropping the edge runtime, adding a new route group).
+- The net-new-vs-established split rule (above) is challenged or refined.
 
 Append-rather-than-rewrite where possible; the current shape reflects post-TASK-007 reality.

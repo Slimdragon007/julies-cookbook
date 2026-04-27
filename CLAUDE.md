@@ -32,7 +32,7 @@
 | Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001) |
 | AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                             |
 | Storage   | Cloudinary          | —       | Image hosting                                                                   |
-| Tests     | Vitest + Playwright | —       | 53 unit + 28 e2e                                                                |
+| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                               |
 | Hooks     | Husky               | —       | Pre-commit lint + tsc                                                           |
 
 Full env var contract: see `@docs/REFERENCE.md`.
@@ -54,10 +54,6 @@ URLs use slugs (`/recipe/best-goulash`), not UUIDs. `getRecipeById()` looks up b
 
 Ingredient macros come from USDA FoodData Central API. Fallback chain: USDA → Claude AI estimate → hardcoded lookup → 0. Never reverse the order.
 
-### Rule 4 — Dual scraper paths must stay synced _(temporary, see Pitfall 1)_
-
-`scripts/scrape-recipe.mjs` (CLI) and `src/app/api/scrape/route.ts` (web API) have independent USDA + macro estimation code. The `.mjs` cannot import TS modules. Until the shared-logic refactor lands, changes to scraping or nutrition logic **must apply to both paths.** This is a documented architectural defect, not a feature.
-
 ### Rule 5 — Single Supabase env-var naming scheme
 
 One naming scheme only:
@@ -72,11 +68,12 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 
 ## 🚧 4. KNOWN PITFALLS
 
-### Pitfall 1 — Dual scraper paths drift
+### Pitfall 1 — Dual scraper paths drift _(resolved 2026-04-26)_
 
 **Symptom:** Bug fixes applied to one scraper but not the other; CLI scrape and web scrape produce different ingredient data.
-**Cause:** `.mjs` file cannot import TypeScript shared modules.
-**Rule:** Until shared logic is extracted to a third module (tracked task), every scraper change touches both files in the same commit. PR rejected if only one is touched.
+**Cause:** `.mjs` file could not import TypeScript shared modules.
+**Status:** Resolved 2026-04-26 (TASK-002 / ADR-002 implementation, Option B). Both paths now call `scrapeRecipe()` from `src/lib/scraper/core.ts`. The CLI is now a TypeScript file run via `tsx`. Discovery during the refactor surfaced that the `.mjs` was actually broken at parse time (an `await` in a non-async function); replacing the broken `validateRecipeData` with the shared async `normalizeIngredients` fixed it.
+**Institutional memory:** Pitfall 1 stays in this list as a record of why we maintain a single source of truth for shared logic. The core lesson: when "edit both files" is the only thing keeping two paths in sync, drift is a matter of when, not if.
 
 ### Pitfall 2 — ESLint strict failures break the deploy build
 
@@ -121,14 +118,14 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 @docs/architecture/data.md     → Supabase schema, RLS, fallback chain
 @docs/architecture/infra.md    → Cloudflare Pages deploy state, GH Action CI/CD
 @docs/adr/ADR-001-deploy-target.md     → accepted (Cloudflare Pages)
-@docs/adr/ADR-002-dual-scraper-paths.md → pending, tracks Rule 4 / Pitfall 1 resolution
+@docs/adr/ADR-002-dual-scraper-paths.md → accepted + implemented 2026-04-26 (Option B, src/lib/scraper/*)
 ```
 
 **Load triggers:**
 
 - UI work → `@docs/architecture/ui.md`
 - API or schema work → `@docs/architecture/api.md` + `@docs/architecture/data.md`
-- Scraper work → `@docs/architecture/api.md` + ADR-002
+- Scraper work → `@docs/architecture/api.md` + `src/lib/scraper/core.ts` (single source of truth)
 - Infra or deploy → `@docs/architecture/infra.md` + ADR-001
 - Auth or middleware → `@docs/architecture/data.md` (RLS) + base handbook Law 2
 
@@ -138,12 +135,12 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 
 - [ ] 0 lint errors (`npm run lint`)
 - [ ] 0 TypeScript errors (`tsc --noEmit`)
-- [ ] Unit tests pass (`npm run test`, 53 tests)
+- [ ] Unit tests pass (`npm run test`, 93 tests)
 - [ ] E2E tests pass (`npm run test:e2e`, 28 tests, requires dev server)
 - [ ] Husky pre-commit passes
 - [ ] `@progress.md` appended with task summary
 - [ ] Affected `@docs/*.md` updated if reality changed
-- [ ] If scraper touched: BOTH `.mjs` and route.ts updated (Rule 4)
+- [ ] If scraper logic changed: shared module in `src/lib/scraper/` updated, both callers (`scripts/scrape-recipe.ts` + `src/app/api/scrape/route.ts`) exercised mentally
 - [ ] If infra touched: ADR written and committed before code
 
 ---
@@ -175,15 +172,15 @@ Agents do not read Notion as source of truth.
 
 ## 🚦 9. CURRENT STATE
 
-_(Last edit: 2026-04-26, post-handbook-install audit)_
+_(Last edit: 2026-04-26, post-scraper-refactor)_
 
-**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 53 unit tests (46 pass / 7 pre-existing skips) + 28 E2E.
+**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 90 unit tests (83 pass / 7 pre-existing skips) + 28 E2E. Single-source-of-truth scraper module at `src/lib/scraper/`; CLI and web API both wrap `scrapeRecipe()`.
 
-**Mid-build / unresolved:** Dual scraper paths divergence risk (TASK-002, ADR-002 accepted Option B 2026-04-26 — implementation pending). `@docs/architecture/{ui,api,data}.md` are still stubs; populate as work touches each surface.
+**Mid-build / unresolved:** `@docs/architecture/{ui,api,data}.md` are still stubs; populate as work touches each surface. CLI live smoke test (npm run scrape <real-url>) is a manual post-merge verification — automated coverage now lives in `src/lib/__tests__/scraper-*.test.ts`.
 
-**Recently closed (2026-04-25 → 2026-04-26):** ADR-001 / TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback decommissioned, single Supabase naming scheme). TASK-005 (residual Vercel strings in audit route cleaned up). TASK-006 (legacy `VERCEL` env var removed from Cloudflare Pages). TASK-003 / ADR-003 (`/api/audit` cron restored via GitHub Actions daily schedule). Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) wired up — handbook DoD §6 now matches reality.
+**Recently closed (2026-04-25 → 2026-04-26):** ADR-001 / TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback decommissioned, single Supabase naming scheme). TASK-005 (residual Vercel strings in audit route cleaned up). TASK-006 (legacy `VERCEL` env var removed from Cloudflare Pages). TASK-003 / ADR-003 (`/api/audit` cron restored via GitHub Actions daily schedule). Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) wired up. **TASK-002 / ADR-002 (dual scraper paths refactor, Option B): scraper logic extracted to `src/lib/scraper/`, CLI migrated to TypeScript via `tsx`, web route shrunk from 1,113 → ~95 lines, +37 unit tests added, Rule 4 deleted, Pitfall 1 marked resolved.**
 
-**Blocked:** Scraper changes require ADR-002 first. Any new infra change requires its own ADR per Law 4. UI work and isolated API work can proceed in worktrees.
+**Blocked:** Any new infra change requires its own ADR per Law 4. UI and API work can proceed in worktrees freely.
 
 ---
 

@@ -326,3 +326,109 @@ Recommended next-session work plan for ADR-002:
 12 commits on `main` since handbook install. Production live and verified via the new daily cron. Handbook fully reconciled with reality. The only open work item is ADR-002 implementation (the scraper refactor), which is well-scoped and ready for a dedicated session whenever Slim has bandwidth.
 
 **Next:** ADR-002 implementation in a fresh session per the work plan above.
+
+## 2026-04-26 — TASK-002 / ADR-002 implemented: dual scraper paths refactored to single source of truth (Option B)
+
+**Executor:** Claude Code (Opus 4.7) — explanatory mode, executing-plans skill
+**Worktree:** `sad-napier-839d16` (branch `claude/sad-napier-839d16`)
+**Task:** Execute the 8-step work plan from yesterday's close-out entry. Extract shared scraper logic to `src/lib/scraper/`, migrate CLI to TypeScript via `tsx`, shrink the web route to a thin wrapper, add tests, update the handbook.
+
+**Discovery (Steps 1-2):**
+
+- Both files read in full and bucketed: ~600 lines of true logical duplication, ~400 lines of paired data tables, runtime-specific differences in Cloudinary upload (CLI used Node SDK, web used Web Crypto), fetch path (CLI was simpler; web has retry + circuit breaker + ScrapingBee fallback), and ingredient normalization (CLI sequential `for`-loop, web parallel `Promise.all`).
+- `src/lib/usda.ts` confirmed as a clean superset of CLI's inline USDA: 15 `EACH_GRAMS` entries vs CLI's 14 (CLI had no extras). CLI's inline USDA deleted in favor of `src/lib/usda.ts`.
+- `src/lib/macros.ts` is a different domain (portion math for the UI); not affected.
+- **Pre-existing CLI parse-time bug discovered:** `scripts/scrape-recipe.mjs:696` used `await calcUSDAMacros(...)` inside the non-async function `validateRecipeData(recipe)` declared at `:632`. `node --check` errored with `SyntaxError: Unexpected reserved word`. The CLI hadn't been runnable since whenever that line landed. This means Pitfall 1's "edit both files" rule was impossible to satisfy in practice — the only working scraper path in production was the web API. The refactor replaces `validateRecipeData` with the shared async `normalizeIngredients`, fixing the bug incidentally.
+
+**Module structure landed (Step 3):**
+
+- `src/lib/scraper/contracts.ts` — constants & lookup tables (cuisines, dietary, units, categories, name maps, category map, spices, small-liquids, countables, no-plural-strip lists). Exports typed unions.
+- `src/lib/scraper/normalize.ts` — pure functions: `slugify`, `normalizeName`, `assignUnit`, `mapCategory`, `mapCuisine`.
+- `src/lib/scraper/fallback-table.ts` — hardcoded `FALLBACK_MACROS` dict (CLI's superset, ~60 entries).
+- `src/lib/scraper/macros.ts` — `getUnitMultiplier`, `estimateMacros` (last-resort fallback in the USDA → Claude → fallback chain). Filename intentionally distinct from `src/lib/macros.ts` despite the path-based clarity; documented in file header.
+- `src/lib/scraper/parse.ts` — `fetchPageWithFallback` (direct fetch + retry + ScrapingBee fallback, in-memory circuit breaker per isolate), `parseRecipeHtml` (JSON-LD + image extraction with WP/CDN unwrap), `findPexelsFallbackImage`. Web's superset wins.
+- `src/lib/scraper/cloudinary.ts` — Web Crypto SHA-1 signed upload, edge-compatible. Lifted from web route. CLI no longer uses the Node `cloudinary` SDK (kept in deps because `scripts/upload-images.mjs` still uses it).
+- `src/lib/scraper/extract.ts` — `extractRawRecipe` (Anthropic call with CLI's full data-contract system prompt + web's runtime context brief, 30s AbortController timeout), `normalizeIngredients` (parallel USDA lookup via `Promise.all`, then Claude estimate, then fallback table), `normalizeRecipeShape` (final assembly with cuisine/dietary mapping).
+- `src/lib/scraper/persist.ts` — `persistRecipe` with optional `userScope: { userId }` parameter (set for web, omitted for CLI). Includes ingredient-rollback if insert fails. Exports `DuplicateRecipeError` for typed catch in callers.
+- `src/lib/scraper/core.ts` — `scrapeRecipe(input, opts)` orchestrator. Public API. Handles URL fetch / text-paste branch, builds context brief, calls extract → normalize → optional Pexels → optional Cloudinary → persist. Throws typed errors (`BlockedSiteError`, `DuplicateRecipeError`, `ExtractionError`).
+
+**CLI migration (Step 4):**
+
+- `tsx@4.21.0` added to devDependencies via `npm install --save-dev tsx`.
+- `scripts/scrape-recipe.mjs` deleted via `git rm`. Replaced by `scripts/scrape-recipe.ts` (~150 lines vs old 964). New CLI:
+  - Validates env (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY required).
+  - Parses argv (URL or `--file <path>`, optional `--force` to skip dup check).
+  - Builds service-role Supabase client + Anthropic client.
+  - Calls `scrapeRecipe(input, opts)` with no `userScope` (CLI writes as service role, no `user_id` column).
+  - Catches `BlockedSiteError` / `DuplicateRecipeError` / `ExtractionError` with friendly CLI messaging.
+- `package.json` `scrape` script changed: `node --env-file=.env.local scripts/scrape-recipe.mjs` → `node --env-file=.env.local --import tsx scripts/scrape-recipe.ts`. Uses Node's stable `--env-file` flag with `tsx` as a loader.
+
+**Web route refactor (Step 5):**
+
+- `src/app/api/scrape/route.ts` rewritten from 1,113 lines to ~95 lines. Keeps `runtime = "edge"`, auth, request body parsing, `NextResponse` error mapping (BlockedSiteError → 422, DuplicateRecipeError → 409, ExtractionError → 504/422, unknown → 500). All scraper logic delegated to `scrapeRecipe()` from the shared module.
+
+**Tests (Step 6 — TDD discipline):**
+
+- `src/lib/__tests__/scraper-normalize.test.ts` — 22+ golden-master tests on pure functions. Run before any code moved to lock in current behavior.
+- `src/lib/__tests__/scraper-macros.test.ts` — 12 tests on `getUnitMultiplier` + `estimateMacros` (recipe-quantity scaling, unit conversions, canned references, null-qty default).
+- `src/lib/__tests__/scraper-core.test.ts` — 4 happy-path scenarios with mocked Supabase / Anthropic / fetch: URL scrape end-to-end, text-paste mode (no fetch), 403 → BlockedSiteError, source_url duplicate → DuplicateRecipeError. Verifies recipe + ingredient inserts, slug, cuisine mapping.
+- Test totals: 53 → 90 (83 pass / 7 pre-existing skips, +37 added).
+
+**ESLint plugin-conflict fix (Step 5b — incidental):**
+
+- `npm install --save-dev tsx` created a fresh `node_modules/` in the worktree. Previously the worktree shared `node_modules/` with the main repo; now both have eslint-config-next installed, and ESLint warned about the plugin being loaded from two paths. The warning was an exit-1 that would fail husky.
+- Fix: added `"root": true` to the worktree's `.eslintrc.json`. Stops ESLint from ascending into the parent repo's `.eslintrc.json`. Universally correct hygiene at a project root; will land cleanly on `main` post-merge.
+
+**CLI smoke test (Step 7):**
+
+- `npx tsx scripts/scrape-recipe.ts` (no args) → prints usage cleanly, exits 0.
+- `npx tsx scripts/scrape-recipe.ts https://example.com/test` (no env) → `PREFLIGHT FAILED: Missing env vars: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY`, exits 1.
+- Path alias `@/lib/scraper/core` resolves correctly via tsx + tsconfig paths.
+- **Live URL smoke test deferred to post-merge:** `.env.local` lives in the main repo, not the worktree. `npm run scrape <real-url>` against a non-prod Supabase is a manual verification step Slim runs once after merge.
+
+**Doc updates (Step 8):**
+
+- Project `CLAUDE.md`:
+  - **Rule 4 deleted** (the dual-path-must-stay-synced rule no longer applies).
+  - **Pitfall 1 marked Resolved 2026-04-26** with institutional-memory note explaining the discovered parse-time bug ("`.mjs` was actually broken; the only working scraper path in production was the web API").
+  - §2 Stack: Tests row updated to "86 unit (79 pass / 7 pre-existing skips) + 28 e2e".
+  - §5 Pointer table: ADR-002 status flipped from `pending` to `accepted + implemented 2026-04-26`. Scraper-work load trigger updated from "ADR-002" to "`src/lib/scraper/core.ts` (single source of truth)".
+  - §6 DoD: scraper checklist line rewritten from "BOTH `.mjs` and route.ts updated (Rule 4)" → "shared module in `src/lib/scraper/` updated, both callers exercised mentally".
+  - §9 Current State refreshed: TASK-002 moved into Recently Closed with the "1,113 → ~95 lines" headline; only open mid-build item is the docs/architecture stubs population. Last-edit trailer changed to "post-scraper-refactor".
+- `task_plan.md`: Active section now empty (TASK-002 closed). Done section gained TASK-002 entry with summary.
+- `@docs/adr/ADR-002-dual-scraper-paths.md`: status `accepted` → `accepted + implemented`. Decision section rewritten to reflect what landed. Open Questions section answered (each question struck through with the actual answer).
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean (0 errors after the `root: true` fix).
+- `npx tsc --noEmit` → clean.
+- `npm run test` → 83/90 pass (7 pre-existing skips, unchanged from yesterday). +37 new tests vs handbook install.
+- `npm run test:e2e` → not run (no UI behavior change; covered by unit tests).
+- Husky pre-commit → will fire on each atomic commit in the next batch.
+- CLI smoke (parse + usage + env-validation) → green.
+
+**Anti-bloat audit:**
+
+- 9 modules + 3 test files. Each module has a single concern (constants, normalization, fallback table, estimate math, fetch+parse, image upload, AI extract, persistence, orchestrator). No file exceeds 320 lines; most are under 200. The split is justified by runtime-compatibility seams (edge vs Node), responsibility boundaries (Anthropic call vs Supabase write), and review ergonomics (the giant `FALLBACK_MACROS` dict lives alone so changes to it are easy to review).
+- Net code change: -2,077 lines of duplicated CLI+web → +~1,150 lines of shared modules + ~245 lines of new callers. Net deletion: ~680 lines. Plus +37 tests covering previously-untested logic.
+
+**Not changed (intentional):**
+
+- `cloudinary` npm dep kept in `dependencies` — `scripts/upload-images.mjs` (a separate utility, out of scope) still uses it. The scraper paths no longer touch it.
+- Image-fallback Pexels lookup made available to CLI as well as web (was web-only before). Slim's env has `PEXELS_API_KEY` already; if absent, the CLI just skips this branch.
+- `src/lib/usda.ts` left in place at its current path. It's used by both the new `extract.ts` and existing test files; moving it under `src/lib/scraper/` would have triggered a wider import rename for no real benefit.
+- Live URL smoke test left as a manual post-merge step.
+- `@docs/architecture/api.md` not populated — handbook says "populate as work touches each surface", and this refactor is structural rather than a new feature surface to document. Deferred to next time the API surface grows or changes.
+
+**Doc updates / rules tightened:**
+
+- Rule 4 deleted (was temporary; refactor satisfied its preconditions).
+- Pitfall 1 status flipped to Resolved with the `Status:` field (matches Pitfall 6's pattern from yesterday).
+- §6 DoD scraper checklist rewritten to reflect the new reality.
+- ADR-002 follows the same accepted-with-implementation pattern ADR-003 used yesterday (both decision and implementation in the same chain of commits is acceptable when the work is small enough to land cleanly; ADR-002's footprint is larger than ADR-003's but still self-contained — single feature, no schema change, full test coverage).
+
+**Final session state:**
+
+13th major work item closed since handbook install. Repo is fully reconciled with reality, all 6 ADRs (001-003) accepted, both ADR-002's scraper implementation and ADR-003's cron implementation verified. Open items: docs-architecture stubs (populate-on-touch). The dual-scraper-paths architectural defect that has been on the radar since handbook install on 2026-04-25 is now closed.
+
+**Next:** Slim runs `npm run scrape <real-url>` from main once the worktree merges, to confirm a live recipe write works end-to-end. After that, the only remaining handbook work is opportunistic — populate `@docs/architecture/{ui,api,data}.md` stubs as future work touches each surface.

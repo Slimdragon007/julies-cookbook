@@ -1,7 +1,7 @@
 # ADR-002: Resolve dual scraper paths
 
 **Date:** 2026-04-26
-**Status:** accepted (2026-04-26, Slim chose Option B — recommended). Implementation deferred to dedicated session — see `@progress.md`.
+**Status:** accepted + implemented 2026-04-26 (Option B — TypeScript CLI via `tsx`, shared `src/lib/scraper/` module). See `@progress.md` close-out entry for the implementation summary.
 **Decider:** Slim
 
 ## Context
@@ -70,7 +70,7 @@ Delete `src/app/api/scrape/route.ts`. Recipes are scraped locally by Slim and co
 
 ## Decision
 
-Pending. Recommended: **Option B (TypeScript CLI via `tsx`)**. Highest type safety, aligned with the rest of the codebase, low build complexity, minor runtime overhead acceptable for a CLI that's run on demand. Option A is the cheaper alternative if `tsx` is rejected.
+**Option B accepted and implemented 2026-04-26.** Highest type safety, aligned with the rest of the codebase, low build complexity, minor runtime overhead acceptable for a CLI that's run on demand. Module extraction landed at `src/lib/scraper/{contracts,normalize,fallback-table,macros,parse,cloudinary,extract,persist,core}.ts`. CLI migrated from `scripts/scrape-recipe.mjs` (964 lines, broken at parse time — see Open Questions resolution below) to `scripts/scrape-recipe.ts` (~150 lines). Web route at `src/app/api/scrape/route.ts` shrunk from 1,113 lines to ~95 lines.
 
 Options D and E are listed for completeness — both would be product decisions, not architectural ones.
 
@@ -107,8 +107,10 @@ If D or E:
 - Web route behavior is unchanged from the user's perspective — same request shape, same response, same Supabase writes.
 - No database schema change, no migration to roll back.
 
-## Open questions before acceptance
+## Open questions before acceptance _(resolved during implementation 2026-04-26)_
 
-1. Slim picks A vs B vs C vs (D or E as product decisions).
-2. Is `src/lib/usda.ts` already shared, or does the CLI have its own copy? (Verify before extraction list is final.)
-3. Does the scraper currently have **any** tests? If not, the refactor PR adds at least one happy-path test before merge.
+1. ~~Slim picks A vs B vs C vs (D or E as product decisions).~~ → Option B chosen.
+2. ~~Is `src/lib/usda.ts` already shared, or does the CLI have its own copy?~~ → CLI had its own copy; it has been deleted in favor of `src/lib/usda.ts` (which was already used by the web route). `src/lib/usda.ts` was a clean superset (15 `EACH_GRAMS` entries vs CLI's 14).
+3. ~~Does the scraper currently have any tests?~~ → No. The refactor adds **37 unit tests**: `scraper-normalize.test.ts` (golden-master tests on `slugify`/`normalizeName`/`assignUnit`/`mapCategory`/`mapCuisine`), `scraper-macros.test.ts` (estimate fallback math), `scraper-core.test.ts` (happy-path + ScrapingBee fallback + duplicate detection with mocked Supabase/Anthropic/fetch).
+
+**Pre-existing bug discovered during implementation:** `scripts/scrape-recipe.mjs` was unparseable — line 696 used `await` inside the non-async `validateRecipeData` declared at line 632. `node --check` errored with `SyntaxError: Unexpected reserved word`. The CLI hadn't been runnable since whenever that change landed; the only working scraper path in production was the web API. This strengthens the rationale for the refactor: the dual-path "drift" had silently degraded into a single-path system, and Pitfall 1's daily rule (touch both files) had been impossible to satisfy. The refactor replaces the broken `validateRecipeData` with the shared async `normalizeIngredients` (parallel USDA lookup via `Promise.all`).

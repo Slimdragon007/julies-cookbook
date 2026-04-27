@@ -4,11 +4,7 @@
 
 ## Active
 
-### TASK-002 — Resolve dual scraper paths (ADR-002)
-
-**Owner:** unassigned
-**Status:** awaiting implementation
-**Notes:** ADR-002 accepted 2026-04-26 with Option B (TypeScript CLI via `tsx`). Implementation deferred to a dedicated session — 2,077 lines of mostly-duplicated logic, zero existing tests, family-critical scraper. Discovery confirmed CLI has its own inline USDA implementation (does not import `src/lib/usda.ts`). Work plan in `@progress.md` 2026-04-26 close-out entry. See `@docs/adr/ADR-002-dual-scraper-paths.md`.
+_(none — TASK-002 closed; see Done.)_
 
 ## Backlog
 
@@ -17,6 +13,7 @@
 
 ## Done
 
+- **TASK-002 — Resolve dual scraper paths (ADR-002).** Done 2026-04-26 (Option B — TypeScript CLI via `tsx`). Shared scraper logic extracted to `src/lib/scraper/{contracts,normalize,fallback-table,macros,parse,cloudinary,extract,persist,core}.ts`. CLI migrated from `scripts/scrape-recipe.mjs` (964 lines, broken at parse time — pre-existing `await`-in-non-async-fn bug) to `scripts/scrape-recipe.ts` (~150 lines, runs via `tsx`). Web route shrunk from 1,113 → ~95 lines. 37 new unit tests landed (golden-master pure-function tests + happy-path orchestrator tests with mocked Supabase/Anthropic/fetch). Project CLAUDE.md: Rule 4 deleted, Pitfall 1 marked resolved. ADR-002 status: accepted + implemented. See `@progress.md`.
 - **TASK-001 — Resolve deploy target (ADR-001).** Done 2026-04-25. Decision: Cloudflare Pages. `vercel.json` removed via `git rm`. Project CLAUDE.md and `@docs/architecture/infra.md` updated. Pitfall 6 marked resolved with institutional-memory note. See `@progress.md`.
 - **TASK-004 — Remove dead Marketplace env-var fallback.** Done 2026-04-25. Refactored `src/lib/supabase/env.ts` (single naming scheme, kept lazy service-role accessor) and `src/app/api/audit/route.ts` (env check uses plain string list). Rule 5 rewritten in project CLAUDE.md. `@docs/REFERENCE.md` env section populated with the full runtime env-var list. Lint clean, tsc clean, 46/53 unit tests pass (7 pre-existing skips). E2E not run (needs dev server). Spawned TASK-005 for residual Vercel string cleanup found during the audit. See `@progress.md`.
 - **TASK-005 — Residual Vercel string cleanup.** Done 2026-04-26. Three string/comment leftovers in `src/app/api/audit/route.ts` corrected: cron-secret comment de-Vercel'd, VERCEL_URL comment generalized to "runtime URL", Discord webhook footer updated to `julies-cookbook.pages.dev/api/audit`. Bundled per the original "next audit-route touch" guidance. Lint clean, tsc clean, 46/53 vitest pass. See `@progress.md`.

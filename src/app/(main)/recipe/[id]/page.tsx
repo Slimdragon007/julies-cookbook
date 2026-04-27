@@ -8,7 +8,8 @@ import Image from "next/image";
 import RecipeTabs from "@/components/RecipeTabs";
 import RecipeActions from "@/components/RecipeActions";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { ChevronLeft, Clock, Flame, Users, Sparkles } from "lucide-react";
+import { sumIngredientMacros, perServingMacros } from "@/lib/macros";
+import { ChevronLeft, Clock, Flame, Users, Sparkles, Zap } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -17,10 +18,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const recipe = await getRecipeById(id, user?.id);
   return {
-    title: recipe ? `${recipe.name} — Julie's Cookbook` : "Recipe — Julie's Cookbook",
+    title: recipe
+      ? `${recipe.name} — Julie's Cookbook`
+      : "Recipe — Julie's Cookbook",
   };
 }
 
@@ -31,10 +36,20 @@ export default async function RecipePage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const recipe = await getRecipeById(id, user?.id);
 
   if (!recipe) notFound();
+
+  const perServingCalories =
+    recipe.servings && recipe.servings > 0
+      ? perServingMacros(
+          sumIngredientMacros(recipe.ingredients),
+          recipe.servings,
+        ).calories
+      : null;
 
   return (
     <div className="min-h-screen relative selection:bg-amber-100 selection:text-amber-900">
@@ -46,7 +61,7 @@ export default async function RecipePage({
 
       <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:min-h-screen relative z-10">
         {/* Image section */}
-        <div className="relative h-[50vh] lg:h-screen lg:sticky lg:top-0 w-full overflow-hidden">
+        <div className="relative aspect-[4/3] lg:aspect-auto lg:h-screen lg:sticky lg:top-0 w-full overflow-hidden">
           {recipe.imageUrl ? (
             <Image
               src={recipe.imageUrl}
@@ -107,18 +122,53 @@ export default async function RecipePage({
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
             {[
-              { icon: Clock, label: "Prep Time", value: recipe.prepTime ? `${recipe.prepTime} min` : "N/A", color: "text-amber-600", bg: "bg-amber-50" },
-              { icon: Flame, label: "Cook Time", value: recipe.cookTime ? `${recipe.cookTime} min` : "N/A", color: "text-orange-500", bg: "bg-orange-50" },
-              { icon: Users, label: "Servings", value: recipe.servings ? `${recipe.servings}` : "N/A", color: "text-emerald-500", bg: "bg-emerald-50" },
+              {
+                icon: Clock,
+                label: "Prep Time",
+                value: recipe.prepTime ? `${recipe.prepTime} min` : "N/A",
+                color: "text-amber-600",
+                bg: "bg-amber-50",
+              },
+              {
+                icon: Flame,
+                label: "Cook Time",
+                value: recipe.cookTime ? `${recipe.cookTime} min` : "N/A",
+                color: "text-orange-500",
+                bg: "bg-orange-50",
+              },
+              {
+                icon: Users,
+                label: "Servings",
+                value: recipe.servings ? `${recipe.servings}` : "N/A",
+                color: "text-emerald-500",
+                bg: "bg-emerald-50",
+              },
+              {
+                icon: Zap,
+                label: "Calories",
+                value:
+                  perServingCalories != null ? `${perServingCalories}` : "N/A",
+                color: "text-rose-500",
+                bg: "bg-rose-50",
+              },
             ].map(({ icon: Icon, label, value, color, bg }) => (
-              <div key={label} className="glass p-4 rounded-3xl flex flex-col items-center text-center transition-transform hover:scale-[1.02]">
-                <div className={`w-10 h-10 ${bg} rounded-2xl flex items-center justify-center mb-2 shadow-sm`}>
+              <div
+                key={label}
+                className="glass p-4 rounded-3xl flex flex-col items-center text-center transition-transform hover:scale-[1.02]"
+              >
+                <div
+                  className={`w-10 h-10 ${bg} rounded-2xl flex items-center justify-center mb-2 shadow-sm`}
+                >
                   <Icon className={`w-5 h-5 ${color}`} />
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1 leading-none">{label}</p>
-                <p className="text-sm font-bold text-slate-700 leading-none">{value}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1 leading-none">
+                  {label}
+                </p>
+                <p className="text-sm font-bold text-slate-700 leading-none">
+                  {value}
+                </p>
               </div>
             ))}
           </div>
@@ -127,28 +177,35 @@ export default async function RecipePage({
           {(recipe.dietaryTags.length > 0 || recipe.julieRating) && (
             <div className="flex flex-wrap items-center gap-2 mb-8">
               {recipe.dietaryTags.map((tag) => (
-                <span key={tag} className="bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-200">
+                <span
+                  key={tag}
+                  className="bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-200"
+                >
                   {tag}
                 </span>
               ))}
               {recipe.julieRating && (
                 <span className="ml-auto text-amber-600 text-sm font-bold">
                   {"★".repeat(recipe.julieRating)}
-                  <span className="text-slate-200">{"★".repeat(5 - recipe.julieRating)}</span>
+                  <span className="text-slate-200">
+                    {"★".repeat(5 - recipe.julieRating)}
+                  </span>
                 </span>
               )}
             </div>
           )}
 
           {/* Edit/Delete actions */}
-          <RecipeActions recipe={{
-            id: recipe.id,
-            name: recipe.name,
-            servings: recipe.servings,
-            prepTime: recipe.prepTime,
-            cookTime: recipe.cookTime,
-            cuisineTag: recipe.cuisineTag,
-          }} />
+          <RecipeActions
+            recipe={{
+              id: recipe.id,
+              name: recipe.name,
+              servings: recipe.servings,
+              prepTime: recipe.prepTime,
+              cookTime: recipe.cookTime,
+              cuisineTag: recipe.cuisineTag,
+            }}
+          />
 
           {/* Tabbed content */}
           <RecipeTabs

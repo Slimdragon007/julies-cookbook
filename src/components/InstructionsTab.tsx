@@ -14,9 +14,7 @@ export default function InstructionsTab({ preparation }: Props) {
 
   if (steps.length === 0) {
     return (
-      <p className="text-slate-500 font-medium">
-        No instructions available.
-      </p>
+      <p className="text-slate-500 font-medium">No instructions available.</p>
     );
   }
 
@@ -30,7 +28,7 @@ export default function InstructionsTab({ preparation }: Props) {
               {i + 1}
             </div>
             <div className="pt-1.5 flex-1 glass p-5 rounded-3xl">
-              <p className="text-slate-600 leading-relaxed text-[15px] font-medium">
+              <p className="text-slate-600 leading-relaxed text-base font-medium">
                 {step}
               </p>
             </div>

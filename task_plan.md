@@ -4,7 +4,7 @@
 
 ## Active
 
-_(none — TASK-002 closed; see Done.)_
+_(none — TASK-007 closed; see Done.)_
 
 ## Backlog
 
@@ -13,6 +13,7 @@ _(none — TASK-002 closed; see Done.)_
 
 ## Done
 
+- **TASK-007 — Recipe detail tab redesign close-out (Notion Fix Queue, mockup approved 2026-03-10).** Done 2026-04-27. Audit found the structural refactor (RecipeTabs + IngredientsTab + InstructionsTab + NutritionTab) had already shipped in a prior session. Three remaining spec deltas closed: (a) body typography 15px → 16px (`text-base`) in IngredientsTab + InstructionsTab; (b) mobile hero `h-[50vh]` → `aspect-[4/3]` (desktop `lg:h-screen` preserved); (c) stats row 3-cell → 4-cell with per-serving Calories (computed server-side via `perServingMacros(sumIngredientMacros(...), servings)`, `Zap` icon, rose-50 swatch). Lint clean, tsc clean, 86/93 vitest pass (7 pre-existing skips). E2E not run (visual-only change, requires dev server). See `@progress.md`.
 - **TASK-002 — Resolve dual scraper paths (ADR-002).** Done 2026-04-26 (Option B — TypeScript CLI via `tsx`). Shared scraper logic extracted to `src/lib/scraper/{contracts,normalize,fallback-table,macros,parse,cloudinary,extract,persist,core}.ts`. CLI migrated from `scripts/scrape-recipe.mjs` (964 lines, broken at parse time — pre-existing `await`-in-non-async-fn bug) to `scripts/scrape-recipe.ts` (~150 lines, runs via `tsx`). Web route shrunk from 1,113 → ~95 lines. 37 new unit tests landed (golden-master pure-function tests + happy-path orchestrator tests with mocked Supabase/Anthropic/fetch). Project CLAUDE.md: Rule 4 deleted, Pitfall 1 marked resolved. ADR-002 status: accepted + implemented. See `@progress.md`.
 - **TASK-001 — Resolve deploy target (ADR-001).** Done 2026-04-25. Decision: Cloudflare Pages. `vercel.json` removed via `git rm`. Project CLAUDE.md and `@docs/architecture/infra.md` updated. Pitfall 6 marked resolved with institutional-memory note. See `@progress.md`.
 - **TASK-004 — Remove dead Marketplace env-var fallback.** Done 2026-04-25. Refactored `src/lib/supabase/env.ts` (single naming scheme, kept lazy service-role accessor) and `src/app/api/audit/route.ts` (env check uses plain string list). Rule 5 rewritten in project CLAUDE.md. `@docs/REFERENCE.md` env section populated with the full runtime env-var list. Lint clean, tsc clean, 46/53 unit tests pass (7 pre-existing skips). E2E not run (needs dev server). Spawned TASK-005 for residual Vercel string cleanup found during the audit. See `@progress.md`.

@@ -28,7 +28,7 @@
 | Framework | Next.js             | 14.2.35 | App Router, dynamic rendering via cookie auth                                   |
 | Database  | Supabase            | —       | Project: `cqfszhxuvvsgusvjdyqx`, us-east-1, replaced Airtable Mar 2026          |
 | Auth      | Supabase Auth       | —       | Email/password, middleware-enforced, invite-only signup                         |
-| Styling   | Tailwind            | 3.4     | Liquid Glass theme, Inter font, sky-blue accent (`#0ea5e9`)                     |
+| Styling   | Tailwind            | 3.4     | Liquid Glass theme (warm-tinted), Inter font, warm-gold accent (`#C4952E`)      |
 | Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001) |
 | AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                             |
 | Storage   | Cloudinary          | —       | Image hosting                                                                   |

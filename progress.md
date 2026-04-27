@@ -485,3 +485,41 @@ Recommended next-session work plan for ADR-002:
 - None. Recursive Learning Loop §5 was checked: the only "surprise" was finding the structural refactor already shipped, which is exactly what audit-first is supposed to surface — not a new failure mode. Pitfall 5 already covers "declare task before code"; the audit-first reflex is downstream of that.
 
 **Next:** Merge `claude/eager-mclaren-f0a742` to main. Visual QA in the deployed Cloudflare Pages preview / production should confirm the 4:3 mobile hero, 4-cell stats with Calories, and 16px tab body text. Architecture stubs (`ui.md`, `api.md`, `data.md`) remain populate-on-touch.
+
+## 2026-04-27 — Populate `@docs/architecture/ui.md`; fix accent-color drift in CLAUDE.md
+
+**Executor:** Claude Code (Opus 4.7) — explanatory mode
+**Branch:** `main` (direct commit on origin; small docs-only delta, no PR)
+**Task:** Populate the UI architecture doc per the populate-on-touch directive (TASK-007 just touched the recipe-detail UI surface). Discovered handbook drift along the way and fixed it in the same commit.
+
+**Discovery:**
+
+- Project `CLAUDE.md` §2 Stack table claimed "sky-blue accent (`#0ea5e9`)". Reality (verified in `src/app/globals.css:5-11` and `src/app/layout.tsx` viewport `themeColor`): warm-gold `#C4952E`, no blue in the palette at all. The codebase is consistently warm-toned (cream / gold / brown). The wrong accent claim would have misled any future agent designing a new component.
+- All page + API routes carry `export const runtime = "edge"` (verified by grep across `src/app/`). This is a Cloudflare Pages adapter requirement, not a stylistic choice. Worth elevating into the doc so future agents don't reach for the Node runtime.
+- Four custom CSS utilities live in `globals.css`: `.glass`, `.glass-strong`, `.glass-input`, `.ambient-bg` (plus `.no-scrollbar`). These are the only non-Tailwind classes in the project. Should be the canonical entry point for any future component, not raw `backdrop-blur` + `bg-white/N`.
+
+**Changed:**
+
+- `docs/architecture/ui.md`: rewritten from stub to real ~120-line document. Sections: Liquid Glass palette (with hex table), custom CSS utilities table, seven component patterns extracted from current code (server-shell + client-leaf, stat-row, sticky tab bar, mobile/desktop hero split, numbered-step list, servings scaler, type scale), routing conventions (slug routing, edge runtime, middleware auth + cookie-driven dynamism), and a "When to update" trigger list tied to Recursive Learning Loop §5.
+- `CLAUDE.md` §2 Stack: `sky-blue accent (#0ea5e9)` → `warm-gold accent (#C4952E)`. Added "(warm-tinted)" qualifier to Liquid Glass theme. Single-line correction.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → not run (docs-only change, no .ts/.tsx touched). Pre-commit hook will run it anyway as a safety net.
+- `npx tsc --noEmit` → not run (same).
+- `npm run test` → not run (same).
+- Husky pre-commit → will fire on commit and pass (no code changes to fail on).
+
+**Doc updates / rules tightened:**
+
+- `ui.md` is now the single source of truth for the design system. CLAUDE.md §5 pointer table already directs UI work here; no pointer table change needed.
+- CLAUDE.md accent-color fix is a Recursive Learning Loop §5 closure: discovered drift between handbook and reality during a docs population task, fixed inline.
+- No new rules. The existing "Status" header at the top of `ui.md` documents how the doc decays and what triggers re-population.
+
+**Not changed (intentional):**
+
+- `@docs/architecture/api.md` and `@docs/architecture/data.md` left as stubs. Populate-on-touch threshold not yet met for those surfaces in this session.
+- `@docs/REFERENCE.md` env section already real (TASK-004); other sections still stub. Not in scope.
+- Did not document every component individually (`ChatDrawer`, `RecipeCard`, `WeeklySummary`, `MainNav`, etc.) — `ui.md` documents _patterns_, not a component inventory. A reader who knows the patterns can read any component cold.
+
+**Next:** Commit + push. Architecture stubs `api.md` and `data.md` remain populate-on-touch.

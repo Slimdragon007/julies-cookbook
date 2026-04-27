@@ -2,6 +2,30 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-27 — TASK-008 — Self-serve password reset
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+**Task:** Close the password-recovery gap surfaced when Julie's login broke and the only fix path was admin SQL (`auth.users` UPDATE via crypt()).
+**Changed:**
+
+- `src/app/login/page.tsx` — added "Forgot?" link in the password row (right-aligned, amber-700, matches existing label scale).
+- `src/app/auth/reset/page.tsx` (new) — collects email, calls `supabase.auth.resetPasswordForEmail(email, { redirectTo: ${origin}/auth/update-password })`, shows generic "check your email" success state (no account-existence leakage).
+- `src/app/auth/update-password/page.tsx` (new) — listens for `PASSWORD_RECOVERY`/`SIGNED_IN` auth events plus a `getSession()` fallback to detect the recovery session attached via URL hash, then `supabase.auth.updateUser({ password })`. Shows "link expired" state when no session is present.
+- Middleware untouched — `isAuthCallback = pathname.startsWith("/auth/")` already allowlists both new routes (`src/lib/supabase/middleware.ts:36`).
+
+**Out-of-band manual step (post-merge):**
+
+Add `https://julies-cookbook.pages.dev/auth/update-password` to **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**. Without this, Supabase will refuse the `redirectTo` parameter and recovery emails will land on the default `Site URL` instead. Dashboard-only config; no Management API for it.
+
+**Verification:**
+
+- `npm run lint` clean.
+- `npx tsc --noEmit` clean.
+- Vitest not re-run — no logic touched in covered modules.
+- E2E not run — visual + auth-flow change requires Supabase email round-trip, not part of automated suite.
+
+**Why not a route handler / `/auth/confirm` callback:** the simpler implicit-flow approach works because `createBrowserClient` defaults to `detectSessionInUrl: true`. The recovery link's hash fragment is consumed automatically on `/auth/update-password` mount. A `verifyOtp` callback route is the documented "PKCE flow" alternative — heavier, and only necessary if we ever want server-side recovery handling. For a family app this is fine and matches how the rest of the auth stack already works (browser-side sign-in via `signInWithPassword`).
+
 ## 2026-04-25 — Repo initialized to FlowstateAI handbook standard
 
 **Executor:** Claude Code (Opus 4.7)

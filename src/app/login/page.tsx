@@ -28,7 +28,7 @@ export default function LoginPage() {
       setError(
         authError.message === "Invalid login credentials"
           ? "Incorrect email or password. Please try again."
-          : "Something went wrong. Please try again."
+          : "Something went wrong. Please try again.",
       );
       setLoading(false);
       return;
@@ -44,10 +44,14 @@ export default function LoginPage() {
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-amber-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
         <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-amber-100/15 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(rgba(196, 149, 46, 0.2) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(196, 149, 46, 0.2) 1.5px, transparent 1.5px)',
-          backgroundSize: '80px 80px'
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(196, 149, 46, 0.2) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(196, 149, 46, 0.2) 1.5px, transparent 1.5px)",
+            backgroundSize: "80px 80px",
+          }}
+        />
       </div>
 
       <div className="w-full max-w-md mx-auto flex flex-col items-center relative z-10">
@@ -60,9 +64,12 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-black text-slate-800 mb-3 tracking-tight">Julie&apos;s Cookbook</h1>
+          <h1 className="text-4xl font-black text-slate-800 mb-3 tracking-tight">
+            Julie&apos;s Cookbook
+          </h1>
           <p className="text-slate-500 font-medium max-w-xs mx-auto leading-relaxed">
-            A meditative space to organize your recipes and simplify your kitchen workflow.
+            A meditative space to organize your recipes and simplify your
+            kitchen workflow.
           </p>
         </div>
 
@@ -72,7 +79,10 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1" htmlFor="email">
+              <label
+                className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1"
+                htmlFor="email"
+              >
                 <Mail className="w-3 h-3" />
                 Email Address
               </label>
@@ -90,10 +100,19 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center pr-1">
-                <label className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1" htmlFor="password">
+                <label
+                  className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1"
+                  htmlFor="password"
+                >
                   <Lock className="w-3 h-3" />
                   Password
                 </label>
+                <Link
+                  href="/auth/reset"
+                  className="text-[11px] font-bold text-amber-700 hover:underline"
+                >
+                  Forgot?
+                </Link>
               </div>
               <input
                 id="password"
@@ -133,7 +152,9 @@ export default function LoginPage() {
         <div className="mt-10 flex flex-col items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="h-px w-8 bg-slate-200" />
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">New to Cookbook?</span>
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+              New to Cookbook?
+            </span>
             <div className="h-px w-8 bg-slate-200" />
           </div>
 
@@ -142,13 +163,20 @@ export default function LoginPage() {
             className="group flex items-center gap-4 px-6 py-3 rounded-2xl glass hover:bg-white/60 transition-all"
           >
             <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
-              <svg className="w-3.5 h-3.5 ml-0.5 fill-current" viewBox="0 0 24 24">
+              <svg
+                className="w-3.5 h-3.5 ml-0.5 fill-current"
+                viewBox="0 0 24 24"
+              >
                 <path d="M8 5v14l11-7z" />
               </svg>
             </div>
             <div className="text-left">
-              <p className="text-[13px] font-bold text-slate-800 leading-none mb-0.5">See How It Works</p>
-              <p className="text-[11px] font-medium text-slate-400 leading-none">Interactive demo — no account needed</p>
+              <p className="text-[13px] font-bold text-slate-800 leading-none mb-0.5">
+                See How It Works
+              </p>
+              <p className="text-[11px] font-medium text-slate-400 leading-none">
+                Interactive demo — no account needed
+              </p>
             </div>
           </Link>
 

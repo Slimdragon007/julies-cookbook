@@ -432,3 +432,56 @@ Recommended next-session work plan for ADR-002:
 13th major work item closed since handbook install. Repo is fully reconciled with reality, all 6 ADRs (001-003) accepted, both ADR-002's scraper implementation and ADR-003's cron implementation verified. Open items: docs-architecture stubs (populate-on-touch). The dual-scraper-paths architectural defect that has been on the radar since handbook install on 2026-04-25 is now closed.
 
 **Next:** Slim runs `npm run scrape <real-url>` from main once the worktree merges, to confirm a live recipe write works end-to-end. After that, the only remaining handbook work is opportunistic — populate `@docs/architecture/{ui,api,data}.md` stubs as future work touches each surface.
+
+## 2026-04-27 — TASK-007 complete: Recipe detail tab redesign close-out
+
+**Executor:** Claude Code (Opus 4.7) — explanatory mode
+**Worktree:** `eager-mclaren-f0a742` (branch `claude/eager-mclaren-f0a742`)
+**Task:** Build the recipe detail tab redesign per the Notion Fix Queue brief (mockup approved 2026-03-10).
+
+**Discovery:**
+
+- Brief described the work as "Refactor IngredientsSection.tsx into RecipeTabs.tsx + IngredientsTab.tsx + InstructionsTab.tsx + NutritionTab.tsx." Reality: that structural refactor had already shipped in a prior session. `IngredientsSection.tsx` does not exist; all four target components are in `src/components/`. The recipe page (`src/app/(main)/recipe/[id]/page.tsx`) already wires `RecipeTabs` and the tabs already render correctly with sticky bar, glass styling, and serving-scale propagation.
+- Audit against the brief identified three remaining unmet spec items, all small. No structural change, no schema change, no infra change → no ADR required (Law 4 not triggered). Pitfall 5 satisfied by declaring TASK-007 in `task_plan.md` before code edits.
+
+**Changed:**
+
+- `src/components/IngredientsTab.tsx`: ingredient row body text `text-[15px]` → `text-base` (16px). Brief explicitly called for the typography bump.
+- `src/components/InstructionsTab.tsx`: numbered-step body text `text-[15px]` → `text-base` (16px). Same rationale.
+- `src/app/(main)/recipe/[id]/page.tsx`:
+  - Imported `sumIngredientMacros` + `perServingMacros` from `@/lib/macros` and the `Zap` icon from `lucide-react`.
+  - Added a one-shot server-side `perServingCalories` calculation (returns `null` when servings missing or zero, so the cell falls back to "N/A" cleanly without a divide-by-zero).
+  - Hero image: `h-[50vh]` → `aspect-[4/3] lg:aspect-auto lg:h-screen`. Mobile gets the 4:3 ratio the brief specified; desktop's full-height sticky panel is preserved.
+  - Stats row: `grid-cols-3` → `grid-cols-2 sm:grid-cols-4`, added Calories cell (rose-50 swatch, `Zap` icon). At narrow viewports the row reflows to 2×2; at `sm:` and up it's a single 4-cell horizontal strip per the mockup.
+
+**Doc updates:**
+
+- `task_plan.md`: TASK-007 added then closed in same session (declared-before-execute kept Pitfall 5 satisfied even though the work was small).
+- `@docs/architecture/ui.md` left as a stub. The change was a small visual delta to existing components — populate-on-touch threshold is "first reusable component is added or refactored," and the components already existed pre-refactor. No new pattern to document yet.
+- Project `CLAUDE.md` not updated. No new rule emerged; no Pitfall to record (the brief-vs-reality drift was caught by audit-first discipline, which is already implicitly enforced by Law 3 / Pitfall 5).
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean (0 warnings, 0 errors)
+- `npx tsc --noEmit` → clean (0 errors)
+- `npm run test` → 86/93 pass (7 pre-existing skips, unchanged)
+- `npm run test:e2e` → not run. The change is visual-only on a route already covered by existing e2e flows; running Playwright against the worktree requires `.env.local` plumbing that lives in the main repo (per `feedback_local_build_env.md`). Slim can re-run e2e from main post-merge if desired.
+- Husky pre-commit → fired and passed on the commit.
+
+**Anti-bloat audit:**
+
+- Net diff: 4 files changed, ~20 lines of semantic change (the rest is Prettier reformatting the inline stats array). No new component, no new abstraction, no helper extracted — the calorie calc is one expression on the page because it's used exactly once.
+- The Calories cell uses the same row-config object pattern as the existing three cells; no new conditional branches, no new prop threading. Reuse, not refactor.
+
+**Not changed (intentional):**
+
+- `RecipeTabs.tsx`, `NutritionTab.tsx` untouched. Both already met the brief.
+- Hero image preserved its existing object-cover + gradient overlay + mobile title overlay. Only the box dimensions changed.
+- Calories shown as a server-rendered per-serving total — no client-side recalculation when the user scales servings on the Ingredients tab. The stats row is a "recipe identity" strip per the mockup, not a live derivation. NutritionTab remains the source of truth for scaled per-serving / portion math.
+- No client component boundary added to the page. The calc happens in the existing server component, so no `"use client"` cost.
+
+**Doc updates / rules tightened:**
+
+- None. Recursive Learning Loop §5 was checked: the only "surprise" was finding the structural refactor already shipped, which is exactly what audit-first is supposed to surface — not a new failure mode. Pitfall 5 already covers "declare task before code"; the audit-first reflex is downstream of that.
+
+**Next:** Merge `claude/eager-mclaren-f0a742` to main. Visual QA in the deployed Cloudflare Pages preview / production should confirm the 4:3 mobile hero, 4-cell stats with Calories, and 16px tab body text. Architecture stubs (`ui.md`, `api.md`, `data.md`) remain populate-on-touch.

@@ -11,7 +11,12 @@ interface Props {
   onServingsChange: (s: number) => void;
 }
 
-export default function IngredientsTab({ ingredients, defaultServings, servings, onServingsChange }: Props) {
+export default function IngredientsTab({
+  ingredients,
+  defaultServings,
+  servings,
+  onServingsChange,
+}: Props) {
   const baseServings = defaultServings || 1;
   const scale = servings / baseServings;
 
@@ -63,13 +68,11 @@ export default function IngredientsTab({ ingredients, defaultServings, servings,
             <div className="w-6 h-6 rounded-full border-2 border-amber-200 flex items-center justify-center group-hover:border-amber-300 transition-colors">
               <div className="w-2.5 h-2.5 rounded-full bg-amber-200 group-hover:bg-amber-600 transition-all scale-0 group-hover:scale-100" />
             </div>
-            <span className="text-slate-700 font-semibold text-[15px]">
+            <span className="text-slate-700 font-semibold text-base">
               {ing.quantity != null && (
                 <span className="font-bold">{fmt(ing.quantity)} </span>
               )}
-              {ing.unit && (
-                <span className="text-slate-500">{ing.unit} </span>
-              )}
+              {ing.unit && <span className="text-slate-500">{ing.unit} </span>}
               {ing.name}
             </span>
           </div>

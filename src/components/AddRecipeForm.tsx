@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, Sparkles, Plus, Type, Zap, ScanLine, CheckCircle2, Loader2, ShoppingBasket } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Link2,
+  Sparkles,
+  Plus,
+  Type,
+  Zap,
+  ScanLine,
+  CheckCircle2,
+  Loader2,
+  ShoppingBasket,
+} from "lucide-react";
 import clsx from "clsx";
 
 interface ScrapeResult {
@@ -33,6 +44,7 @@ const TEXT_STEPS = [
 ];
 
 export default function AddRecipeForm() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("link");
   const [url, setUrl] = useState("");
   const [pasteText, setPasteText] = useState("");
@@ -77,15 +89,20 @@ export default function AddRecipeForm() {
       if (!res.ok) {
         setStatus("error");
         setError(
-          res.status === 409 ? data.error :
-          res.status === 422 ? "Couldn't find a recipe on that page. Try pasting the recipe text instead." :
-          "Something went wrong. Please try again."
+          res.status === 409
+            ? data.error
+            : res.status === 422
+              ? "Couldn't find a recipe on that page. Try pasting the recipe text instead."
+              : "Something went wrong. Please try again.",
         );
         return;
       }
 
       setResult(data);
       setStatus(data.recipe?.hasImage ? "success" : "partial");
+      // Bust the Next.js router cache so the gallery re-fetches on next nav.
+      // Pairs with the SW change (TASK-009) that stopped caching HTML pages.
+      router.refresh();
     } catch {
       clearInterval(interval);
       setStatus("error");
@@ -110,7 +127,10 @@ export default function AddRecipeForm() {
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: pasteText.trim(), sourceUrl: blockedUrl || undefined }),
+        body: JSON.stringify({
+          text: pasteText.trim(),
+          sourceUrl: blockedUrl || undefined,
+        }),
       });
 
       clearInterval(interval);
@@ -119,14 +139,16 @@ export default function AddRecipeForm() {
       if (!res.ok) {
         setStatus("error");
         setError(
-          res.status === 409 ? data.error :
-          "Couldn't extract the recipe. Try cleaning up the text and submitting again."
+          res.status === 409
+            ? data.error
+            : "Couldn't extract the recipe. Try cleaning up the text and submitting again.",
         );
         return;
       }
 
       setResult(data);
       setStatus(data.recipe?.hasImage ? "success" : "partial");
+      router.refresh();
     } catch {
       clearInterval(interval);
       setStatus("error");
@@ -149,14 +171,22 @@ export default function AddRecipeForm() {
     return (
       <div className="min-h-screen pt-20 lg:pt-10 pb-32">
         <div className="max-w-2xl mx-auto px-4 text-center py-12">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${status === "success" ? "bg-emerald-50 border border-emerald-100" : "bg-amber-50 border border-amber-100"}`}>
-            <CheckCircle2 className={`w-10 h-10 ${status === "success" ? "text-emerald-500" : "text-amber-500"}`} />
+          <div
+            className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${status === "success" ? "bg-emerald-50 border border-emerald-100" : "bg-amber-50 border border-amber-100"}`}
+          >
+            <CheckCircle2
+              className={`w-10 h-10 ${status === "success" ? "text-emerald-500" : "text-amber-500"}`}
+            />
           </div>
 
-          <h3 className="text-2xl font-bold text-slate-800 mb-3">{result.recipe.name}</h3>
+          <h3 className="text-2xl font-bold text-slate-800 mb-3">
+            {result.recipe.name}
+          </h3>
 
           <div className="flex justify-center gap-4 text-sm text-slate-500 font-semibold mb-4">
-            {result.recipe.servings && <span>{result.recipe.servings} servings</span>}
+            {result.recipe.servings && (
+              <span>{result.recipe.servings} servings</span>
+            )}
             <span>{result.recipe.ingredientCount} ingredients</span>
             {result.recipe.hasImage ? (
               <span className="text-emerald-600">Photo added</span>
@@ -202,9 +232,12 @@ export default function AddRecipeForm() {
           <div className="inline-flex items-center justify-center w-16 h-16 glass rounded-3xl shadow-sm mb-6">
             <Plus className="w-8 h-8 text-amber-600" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">Expand Your Collection</h1>
+          <h1 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">
+            Expand Your Collection
+          </h1>
           <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-            Paste a recipe URL or copy-paste the recipe text to add it to your cookbook.
+            Paste a recipe URL or copy-paste the recipe text to add it to your
+            cookbook.
           </p>
         </div>
 
@@ -221,20 +254,30 @@ export default function AddRecipeForm() {
               }}
             />
             <button
-              onClick={() => { setActiveTab("link"); if (status === "error") setStatus("idle"); }}
+              onClick={() => {
+                setActiveTab("link");
+                if (status === "error") setStatus("idle");
+              }}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
-                activeTab === "link" ? "text-amber-700" : "text-slate-400 hover:text-slate-600"
+                activeTab === "link"
+                  ? "text-amber-700"
+                  : "text-slate-400 hover:text-slate-600",
               )}
             >
               <Link2 className="w-4 h-4" />
               Paste Link
             </button>
             <button
-              onClick={() => { setActiveTab("text"); if (status === "error") setStatus("idle"); }}
+              onClick={() => {
+                setActiveTab("text");
+                if (status === "error") setStatus("idle");
+              }}
               className={clsx(
                 "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
-                activeTab === "text" ? "text-amber-700" : "text-slate-400 hover:text-slate-600"
+                activeTab === "text"
+                  ? "text-amber-700"
+                  : "text-slate-400 hover:text-slate-600",
               )}
             >
               <Type className="w-4 h-4" />
@@ -267,7 +310,7 @@ export default function AddRecipeForm() {
                       key={i}
                       className={clsx(
                         "w-2.5 h-2.5 rounded-full transition-colors",
-                        i <= step ? "bg-amber-600" : "bg-slate-200"
+                        i <= step ? "bg-amber-600" : "bg-slate-200",
                       )}
                     />
                   ))}
@@ -286,10 +329,16 @@ export default function AddRecipeForm() {
                     <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
                       <Zap className="w-4 h-4 text-amber-600" />
                     </div>
-                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Smart Import</span>
+                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
+                      Smart Import
+                    </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Paste a Link</h2>
-                  <p className="text-slate-500 font-medium text-sm">We&apos;ll automatically strip out the ads and long stories.</p>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                    Paste a Link
+                  </h2>
+                  <p className="text-slate-500 font-medium text-sm">
+                    We&apos;ll automatically strip out the ads and long stories.
+                  </p>
                 </div>
 
                 <div className="mb-8">
@@ -325,17 +374,25 @@ export default function AddRecipeForm() {
                     <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center">
                       <ScanLine className="w-4 h-4 text-orange-500" />
                     </div>
-                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Text Input</span>
+                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+                      Text Input
+                    </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">Paste Recipe Text</h2>
-                  <p className="text-slate-500 font-medium text-sm">Copy the recipe from any page and paste it below.</p>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">
+                    Paste Recipe Text
+                  </h2>
+                  <p className="text-slate-500 font-medium text-sm">
+                    Copy the recipe from any page and paste it below.
+                  </p>
                 </div>
 
                 <div className="mb-6">
                   <textarea
                     value={pasteText}
                     onChange={(e) => setPasteText(e.target.value)}
-                    placeholder={"Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"}
+                    placeholder={
+                      "Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"
+                    }
                     rows={8}
                     className="w-full glass-input text-slate-800 px-6 py-4 rounded-2xl text-[15px] font-medium placeholder:text-slate-300 shadow-sm resize-y min-h-[200px]"
                     required
@@ -384,14 +441,20 @@ export default function AddRecipeForm() {
               <Sparkles className="w-5 h-5 text-amber-500" />
             </div>
             <h4 className="font-bold text-slate-800 mb-1">Ad-Free Content</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">We extract only the core recipe data, leaving behind the clutter and long intros.</p>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              We extract only the core recipe data, leaving behind the clutter
+              and long intros.
+            </p>
           </div>
           <div className="p-6 glass rounded-[2rem]">
             <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
               <ShoppingBasket className="w-5 h-5 text-amber-500" />
             </div>
             <h4 className="font-bold text-slate-800 mb-1">Auto-List Sync</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">Ingredients are automatically formatted so you can add them to your grocery list with one tap.</p>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              Ingredients are automatically formatted so you can add them to
+              your grocery list with one tap.
+            </p>
           </div>
         </div>
       </div>

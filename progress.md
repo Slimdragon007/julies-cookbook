@@ -2,6 +2,53 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-28 — TASK-009 — Service worker no longer hides newly-added recipes from gallery
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+**Task:** Julie added a honey-mustard recipe via URL on 2026-04-27 evening. The Add Recipe UI showed "saved" with the image + ingredient count, but the recipe never appeared in her gallery — silent-success bug, worst kind for trust.
+
+**Investigation (Phase 1, evidence before fixes):**
+
+- Direct DB audit against production via service-role REST: recipe `16ff2de0-a2f8-4780-95cd-4a1ce878b1ee` exists with `name="Honey Mustard Chicken Recipe"`, `slug="honey-mustard-chicken-recipe"`, `user_id=eaed7fdf-c703-474b-93f9-e68b4d14de68` (Julie's account, confirmed by Slim), `source_url="https://joyfoodsunshine.com/honey-mustard-chicken/"`, real Cloudinary image, 9 ingredients, `created_at=2026-04-28T04:06:58Z` (= 2026-04-27 9:06 PM PT, matching Julie's timeframe).
+- Per-user recipe counts: Julie 25, two other users 4 + 1. Gallery query (`getAllRecipes`) filters by `user_id` correctly. Persist code (`src/lib/scraper/persist.ts`) sets `user_id` from authed `auth.getUser()` in `/api/scrape` route — also correct.
+- Conclusion before touching code: **persist worked, the bug is between server and Julie's screen.**
+
+**Root cause:** `public/sw.js` cached all HTML pages with `staleWhileRevalidate` (line 50–51 of the pre-fix file) and **zero `caches.delete()` calls existed anywhere in the React app to bust the cached gallery after a successful save** (verified via grep across `src/` + `public/`). Julie's flow yesterday:
+
+1. Open gallery → SW serves cached HTML (without honey mustard) immediately.
+2. Add Recipe → API succeeds, recipe + image saved to DB.
+3. Navigate back to gallery → SW _still_ returns cached HTML; new recipe is missing.
+4. SW silently revalidates the cache in the background, but the screen Julie was looking at never re-rendered. She'd need to navigate away and back AGAIN (after revalidation completed) to see it.
+
+**Changed:**
+
+- `public/sw.js` —
+  - `CACHE_NAME` bumped `cookbook-v2` → `cookbook-v3` so the existing `activate` handler (lines 11–22, untouched) evicts the stale v2 cache for every existing client on first activation after deploy.
+  - HTML / page navigations now pass through to the network (no SW intercept). Static assets (`/_next/static/.+\.(js|css|woff2?)`) and Cloudinary images keep their existing cache-first strategies — the perf win on repeat loads is preserved; only stale HTML is gone.
+  - Removed the now-unused `staleWhileRevalidate` helper.
+- `src/components/AddRecipeForm.tsx` — imported `useRouter` from `next/navigation`, added `router.refresh()` after both `setStatus("success" | "partial")` calls (URL-submit handler at `:88`, text-submit handler at `:129`). Pairs with the SW change so the Next.js router cache also evicts on a successful save, ensuring the gallery's RSC payload re-fetches on next nav even within the same client navigation.
+
+**Trade-offs flagged at fix time:**
+
+- Lost: SW-served offline page-shell for HTML routes. PWA still works for assets and images. Acceptable trade for Julie — staleness silently hiding her new recipes is much worse than losing offline read-only access. If we ever want offline back, the right pattern is a registered cache-bust call in mutation success handlers, not a re-introduction of SWR.
+- Existing v2 caches on already-installed PWAs need one app load on the new deploy to evict (the `activate` handler runs once per SW version change). After that, behavior is correct.
+
+**Verified:**
+
+- `next lint --quiet` — clean.
+- `tsc --noEmit` — clean.
+- Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) ran on commit and passed.
+- Production DB query confirmed the recipe row + image + ingredients are intact and correctly user-scoped — no data fix required, code change alone resolves Julie's view.
+
+**Verification still owed:**
+
+- Julie does an Incognito / Private-tab visit to confirm the recipe appears (would have already worked without the fix — incognito has no SW). Then a normal-tab visit after the deploy lands to confirm v2 → v3 eviction takes hold.
+
+**Notes on adjacent cleanup that landed on the same day:**
+
+- Vercel disconnected from `Slimdragon007/julies-cookbook` (browser-only oversight from TASK-001 close-out, finally severed today via `vercel git disconnect`). Logged separately on Notion Project Plan Fix Queue + Session Log child page.
+- PR #12 (TASK-008 UNIQUE constraints) merged this morning after a rebase against PR #13's password-reset commits. Live on `main` now.
+
 ## 2026-04-27 — TASK-008 — Self-serve password reset
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

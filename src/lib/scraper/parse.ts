@@ -70,17 +70,49 @@ async function fetchWithRetry(
   throw lastError || new Error("Fetch failed");
 }
 
+// Tiered ScrapingBee call. Standard tier (render_js only) is ~5 credits;
+// premium adds premium_proxy at ~30 credits. Try standard first, escalate
+// to premium on failure — most blocks resolve at the cheap tier, so this
+// stretches the credit budget ~5x without sacrificing the hard-case ceiling.
 async function fetchScrapingBee(
   url: string,
   apiKey: string,
+  tier: "standard" | "premium",
 ): Promise<Response> {
-  const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams({
+  const params: Record<string, string> = {
     api_key: apiKey,
     url,
     render_js: "true",
-    premium_proxy: "true",
-  })}`;
+  };
+  if (tier === "premium") params.premium_proxy = "true";
+  const sbUrl = `https://app.scrapingbee.com/api/v1?${new URLSearchParams(params)}`;
   return fetchWithTimeout(sbUrl, {}, 30000);
+}
+
+// Run standard tier first; if it fails (network error or non-OK response),
+// fall back to premium. Returns the successful response, or the last error /
+// non-OK response observed if both tiers failed.
+async function fetchScrapingBeeWithEscalation(
+  url: string,
+  apiKey: string,
+  result: FetchResult,
+): Promise<Response | null> {
+  for (const tier of ["standard", "premium"] as const) {
+    try {
+      result.fetchAttempts++;
+      const res = await fetchScrapingBee(url, apiKey, tier);
+      if (res.ok) {
+        result.scrapingBeeTier = tier;
+        return res;
+      }
+      result.errors.push(`ScrapingBee (${tier}) returned ${res.status}`);
+    } catch (err) {
+      result.errors.push(
+        `ScrapingBee (${tier}) failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+  return null;
 }
 
 const DIRECT_HEADERS = {
@@ -97,6 +129,9 @@ export interface FetchResult {
   fetchAttempts: number;
   circuitBreakerTripped: boolean;
   domain: string;
+  // Set when method === "scrapingbee" — which tier ultimately succeeded.
+  // Useful for credit-spend observability if we ever want to track it.
+  scrapingBeeTier?: "standard" | "premium";
 }
 
 export async function fetchPageWithFallback(
@@ -121,24 +156,14 @@ export async function fetchPageWithFallback(
       result.method = "blocked";
       return result;
     }
-    try {
-      result.method = "scrapingbee";
-      result.fetchAttempts++;
-      const sbRes = await fetchScrapingBee(url, sbKey);
-      if (!sbRes.ok) {
-        result.method = "blocked";
-        result.errors.push(`ScrapingBee returned ${sbRes.status}`);
-        return result;
-      }
-      result.html = await sbRes.text();
-      return result;
-    } catch (err) {
+    result.method = "scrapingbee";
+    const sbRes = await fetchScrapingBeeWithEscalation(url, sbKey, result);
+    if (!sbRes) {
       result.method = "blocked";
-      result.errors.push(
-        `ScrapingBee fetch failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
       return result;
     }
+    result.html = await sbRes.text();
+    return result;
   }
 
   let directRes: Response;
@@ -174,24 +199,14 @@ export async function fetchPageWithFallback(
       result.method = "blocked";
       return result;
     }
-    try {
-      result.method = "scrapingbee";
-      result.fetchAttempts++;
-      const sbRes = await fetchScrapingBee(url, sbKey);
-      if (!sbRes.ok) {
-        result.method = "blocked";
-        result.errors.push(`ScrapingBee returned ${sbRes.status}`);
-        return result;
-      }
-      result.html = await sbRes.text();
-      return result;
-    } catch (err) {
+    result.method = "scrapingbee";
+    const sbRes = await fetchScrapingBeeWithEscalation(url, sbKey, result);
+    if (!sbRes) {
       result.method = "blocked";
-      result.errors.push(
-        `ScrapingBee fetch failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
       return result;
     }
+    result.html = await sbRes.text();
+    return result;
   }
 
   result.method = "direct";

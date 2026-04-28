@@ -131,6 +131,31 @@
 - Vercel disconnected from `Slimdragon007/julies-cookbook` (browser-only oversight from TASK-001 close-out, finally severed today via `vercel git disconnect`). Logged separately on Notion Project Plan Fix Queue + Session Log child page.
 - PR #12 (TASK-008 UNIQUE constraints) merged this morning after a rebase against PR #13's password-reset commits. Live on `main` now.
 
+## 2026-04-27 — TASK-010a — ScrapingBee tier escalation
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+**Task:** Stretch the ScrapingBee credit budget by trying the cheap tier (~5 credits) before the expensive one (~30 credits). Previously every SB call used `render_js + premium_proxy`, exhausting a 1000-credit free tier in ~33 scrapes.
+
+**Changed:**
+
+- `src/lib/scraper/parse.ts`:
+  - `fetchScrapingBee(url, apiKey, tier)` — now takes an explicit tier; "standard" = `render_js` only, "premium" = adds `premium_proxy: true`.
+  - New `fetchScrapingBeeWithEscalation(url, apiKey, result)` — runs standard first, escalates to premium on non-OK response or thrown error, mutating `result.errors` and `result.fetchAttempts` along the way. Returns the successful Response or null if both tiers failed.
+  - `fetchPageWithFallback` — both SB invocation sites (circuit-breaker-open branch + 403-on-direct branch) replaced with calls to the escalation helper. Net code is ~10 lines shorter.
+  - `FetchResult` interface gained optional `scrapingBeeTier?: "standard" | "premium"` for observability if we ever wire credit-spend tracking.
+- `src/lib/__tests__/scraper-parse.test.ts` (new) — 3 tests using `globalThis.fetch = vi.fn(...)` mocking pattern from `scraper-core.test.ts`. Each test uses a unique domain to avoid in-memory circuit-breaker state leaking across runs.
+
+**Verification:**
+
+- `npm run lint` clean.
+- `npx tsc --noEmit` clean.
+- Full vitest: 102 pass / 7 pre-existing skips (all 3 new tests pass).
+- E2E not run — change is internal to the fetch fallback chain; no UI surface or contract changed.
+
+**Why escalate instead of just always using standard:** premium*proxy is genuinely required for some sites (residential IPs vs. datacenter, real anti-bot detection). Dropping it entirely would \_increase* total SB-blocked failures even though each individual call costs less. Tiered escalation keeps the hard-case ceiling while spending less on the easy cases.
+
+**Effect:** Most blocks resolve at the cheap tier, so effective credit budget multiplies ~5x. Hard sites that needed premium before still get it on the second attempt — slower by one extra request, but no functional regression.
+
 ## 2026-04-27 — TASK-008 — Self-serve password reset
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

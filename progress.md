@@ -547,3 +547,65 @@ Recommended next-session work plan for ADR-002:
 - Did not document every component individually (`ChatDrawer`, `RecipeCard`, `WeeklySummary`, `MainNav`, etc.) — `ui.md` documents _patterns_, not a component inventory. A reader who knows the patterns can read any component cold.
 
 **Next:** Commit + push. Architecture stubs `api.md` and `data.md` remain populate-on-touch.
+
+## 2026-04-27 — TASK-008 / ADR-004 implemented: recipes UNIQUE constraints + `.single()` error propagation (Issue #8)
+
+**Executor:** Claude Code (Opus 4.7) — explanatory mode
+**Worktree:** `task-008` (branch `claude/task-008-unique-constraints`)
+**Task:** Close GitHub Issue #8 — TOCTOU race in `persistRecipe`, silent error swallow in `getRecipeByIdOrSlug`, missing DB UNIQUE constraints. Stand up the migration-tracking convention along the way.
+
+**Discovery (the part that changed the plan):**
+
+- Issue #8 said "stand up Supabase migration infrastructure" assuming no migrations had ever run. Reality: **two migrations already applied to production** (`20260328025710_create_cookbook_tables`, `20260329033633_add_portion_unit_columns_to_food_log`) but **zero `.sql` files in the repo**. Schema history was invisible from the codebase. ADR-004 reframes the problem from "first migration ever" to "first repo-tracked migration."
+- `recipes.slug` already had a global UNIQUE constraint (`recipes_slug_key`). Bad multi-user behavior — user A's "Goulash" would block user B's "Goulash". Fix: swap for per-user `(user_id, slug)`.
+- 4 'preloaded' rows shared `(user_id, source_url)` for one user. Plus the persist code writes `'manual entry'` literally. Both are sentinel strings encoding "no source URL"; they should be `NULL`. A naive `CREATE UNIQUE INDEX` would have failed mid-deploy on these 4 rows.
+- With `(user_id, name)` UNIQUE in place, slug collisions within a user become impossible (same name → same slugify output → name UNIQUE fires first). So no retry-on-slug-collision logic is needed in `persist.ts` — Issue #8's third bullet evaporated under analysis.
+
+**Changed:**
+
+- `docs/adr/ADR-004-migration-tooling.md` (new) — accepts Option A (Supabase CLI directory layout), explains the pre-history gap, sets the apply path. Status: accepted + implemented.
+- `supabase/migrations/README.md` (new) — convention, apply path, definition-of-done addition for schema-touching tasks. Documents the two pre-history migrations as known-but-not-backfilled.
+- `supabase/migrations/20260427120000_recipe_uniqueness.sql` (new) — the migration. `BEGIN/COMMIT`-wrapped, `IF NOT EXISTS` everywhere, idempotent UPDATE. Four steps: normalize sentinels → NULL, drop global slug UNIQUE, add per-user `(user_id, slug)` UNIQUE, add per-user `(user_id, source_url)` partial UNIQUE, add per-user `(user_id, name)` UNIQUE.
+- `src/lib/scraper/persist.ts` — converts `'manual entry'` sourceUrl → `null` on the way to insert. Inline comment points at the migration so future readers understand the relationship.
+- `src/lib/data.ts` — `getRecipeById` two-step lookup now inspects each `.single()`'s `error.code`. PGRST116 ("zero rows") falls through to the next lookup as before. Any other error throws with a contextual message instead of silently coalescing to a 404.
+- `src/lib/__tests__/scraper-persist.test.ts` (new) — 3 tests: 23505 from insert → DuplicateRecipeError (the TOCTOU concurrent-write path the migration unlocks), 'manual entry' sourceUrl → null persisted, real URL preserved unchanged.
+- `task_plan.md` — TASK-008 → Active during work, → Done at end with implementation summary.
+
+**Production application:**
+
+- Applied via Supabase MCP `apply_migration` against project `cqfszhxuvvsgusvjdyqx`. Verified post-apply via `pg_indexes` query: `recipes_user_name_uniq`, `recipes_user_slug_uniq`, `recipes_user_source_url_uniq` all present with the expected definitions; old `recipes_slug_key` gone.
+- Sentinel cleanup verified: 0 rows with `source_url IN ('manual entry', 'preloaded')` remaining post-migration; 5 rows with `source_url IS NULL` (4 normalized from 'preloaded' + 1 was already 'manual entry').
+- No application-side downtime. The constraint additions are non-blocking on a 27-row table.
+
+**Gates (Definition of Done):**
+
+- `npm run lint` → clean
+- `npx tsc --noEmit` → clean
+- `npm run test` → 102/109 pass (+3 new persist tests; 7 pre-existing skips, unchanged)
+- `npm run test:e2e` → not run (no UI behavior change; data layer covered by unit tests)
+- Husky pre-commit → fires on commit
+- Production schema verification → all 3 new constraints present, 0 sentinel rows remaining
+
+**Doc updates / rules tightened:**
+
+- ADR-004 lands as the second accepted-with-implementation ADR (after ADR-003). Following the same pattern: small enough scope to land decision + implementation in one chain, with Slim's blanket authorization given upfront.
+- `supabase/migrations/README.md` adds a "definition of done for schema-touching tasks" checklist. This is a project-level rule that didn't previously exist; it should be folded into project `CLAUDE.md` §6 next time §6 is touched (deferred — not bundling a CLAUDE.md edit into this commit batch since the rule is already documented at the touchpoint).
+- Issue #8's "concurrent-insert test" requirement satisfied by the 23505 → DuplicateRecipeError test in `scraper-persist.test.ts`.
+
+**Anti-bloat audit:**
+
+- Migration is 4 statements + sentinel UPDATE. No speculative columns, no "while we're here" cleanup. Just the constraints Issue #8 asked for.
+- `persist.ts` change is one line plus an inline comment. No new helper extracted; "manual entry" check is used exactly once.
+- `data.ts` change adds ~10 lines of error-propagation. The two-step lookup structure preserved verbatim; only the error handling is touched.
+- `scraper-persist.test.ts` is 3 focused tests, not a comprehensive persist test suite. Each test corresponds to an explicit Issue #8 acceptance criterion or the new 'manual entry' behavior.
+- ADR-004 deliberately recommends Option A over heavier options (Drizzle Kit, Prisma) for a 27-recipe family app with one developer.
+
+**Not changed (intentional):**
+
+- The two pre-history migrations are not backfilled into `supabase/migrations/`. Reconstruction risk is high (no original SQL), value is low (production is the only environment). ADR-004 documents the choice and notes a future trigger ("if a staging env appears").
+- No retry-on-slug-collision logic in `persist.ts` — `(user_id, name)` UNIQUE makes it impossible. Issue #8's "Decide on slug uniqueness" bullet resolved by analysis, not code.
+- `CLAUDE.md` not edited this commit. The "schema-touching task = migration committed + applied" rule lives in `supabase/migrations/README.md` for now.
+- `@docs/architecture/data.md` still a stub. This refactor is contained enough that populate-on-touch hasn't really kicked in — the data-layer functions are unchanged in shape, only their error handling tightened.
+- No CI workflow change. Drift detection between repo migrations and remote stays manual; ADR-004 names this as an explicit accepted gap.
+
+**Next:** PR review → merge → Issue #8 closes. After this lands, the only outstanding handbook items are the populate-on-touch architecture stubs (`api.md`, `data.md`) and the schema/file-index sections of `@docs/REFERENCE.md`.

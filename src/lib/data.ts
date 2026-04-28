@@ -45,7 +45,10 @@ function mapIngredient(row: SupabaseIngredient): Ingredient {
   };
 }
 
-function mapRecipe(row: SupabaseRecipe, ingredients: Ingredient[] = []): Recipe {
+function mapRecipe(
+  row: SupabaseRecipe,
+  ingredients: Ingredient[] = [],
+): Recipe {
   const totals = ingredients.reduce(
     (acc, ing) => ({
       cal: acc.cal + (ing.calories ?? 0),
@@ -53,7 +56,7 @@ function mapRecipe(row: SupabaseRecipe, ingredients: Ingredient[] = []): Recipe 
       carbs: acc.carbs + (ing.carbs ?? 0),
       fat: acc.fat + (ing.fat ?? 0),
     }),
-    { cal: 0, protein: 0, carbs: 0, fat: 0 }
+    { cal: 0, protein: 0, carbs: 0, fat: 0 },
   );
 
   const servings = row.servings || 1;
@@ -81,7 +84,10 @@ function mapRecipe(row: SupabaseRecipe, ingredients: Ingredient[] = []): Recipe 
   };
 }
 
-export async function getAllRecipes(includeIngredients = false, userId?: string): Promise<Recipe[]> {
+export async function getAllRecipes(
+  includeIngredients = false,
+  userId?: string,
+): Promise<Recipe[]> {
   if (!userId) return [];
 
   if (!includeIngredients) {
@@ -107,34 +113,64 @@ export async function getAllRecipes(includeIngredients = false, userId?: string)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (recipes as any[]).map((r) => {
-    const ings = (r.ingredients || []).map((row: SupabaseIngredient) => mapIngredient(row));
+    const ings = (r.ingredients || []).map((row: SupabaseIngredient) =>
+      mapIngredient(row),
+    );
     return mapRecipe(r as SupabaseRecipe, ings);
   });
 }
 
-export async function getRecipeById(idOrSlug: string, userId?: string): Promise<Recipe | null> {
+export async function getRecipeById(
+  idOrSlug: string,
+  userId?: string,
+): Promise<Recipe | null> {
   if (!userId) return null;
 
-  // Single query: fetch recipe + ingredients together via join
+  // Two-step lookup: slug first (the canonical URL form), UUID as back-compat
+  // for old bookmarks. PostgREST returns PGRST116 from `.single()` when zero
+  // rows match — that's a real "not found" and means we should try the next
+  // lookup. Any other error code is a genuine DB failure (RLS misconfig,
+  // duplicate-row when `.single()` expected exactly one, connection issue, …)
+  // and must surface, not silently 404.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let recipe: any = null;
 
-  const { data: bySlug } = await supabase
-    .from("recipes").select("*, ingredients(*)").eq("slug", idOrSlug).eq("user_id", userId).single();
+  const slugResult = await supabase
+    .from("recipes")
+    .select("*, ingredients(*)")
+    .eq("slug", idOrSlug)
+    .eq("user_id", userId)
+    .single();
 
-  if (bySlug) {
-    recipe = bySlug;
+  if (slugResult.error && slugResult.error.code !== "PGRST116") {
+    throw new Error(
+      `Failed to fetch recipe by slug "${idOrSlug}": ${slugResult.error.message}`,
+    );
+  }
+
+  if (slugResult.data) {
+    recipe = slugResult.data;
   } else {
-    // Fallback: try by UUID (for backwards compat)
-    const { data: byId } = await supabase
-      .from("recipes").select("*, ingredients(*)").eq("id", idOrSlug).eq("user_id", userId).single();
-    recipe = byId;
+    const idResult = await supabase
+      .from("recipes")
+      .select("*, ingredients(*)")
+      .eq("id", idOrSlug)
+      .eq("user_id", userId)
+      .single();
+
+    if (idResult.error && idResult.error.code !== "PGRST116") {
+      throw new Error(
+        `Failed to fetch recipe by id "${idOrSlug}": ${idResult.error.message}`,
+      );
+    }
+
+    recipe = idResult.data;
   }
 
   if (!recipe) return null;
 
   const mappedIngredients = (recipe.ingredients || []).map(
-    (row: SupabaseIngredient) => mapIngredient(row)
+    (row: SupabaseIngredient) => mapIngredient(row),
   );
 
   return mapRecipe(recipe as SupabaseRecipe, mappedIngredients);
@@ -180,7 +216,7 @@ export async function getRecipeContext(userId: string): Promise<string> {
           carbs: acc.carbs + (ing.carbs || 0),
           fat: acc.fat + (ing.fat || 0),
         }),
-        { cal: 0, protein: 0, carbs: 0, fat: 0 }
+        { cal: 0, protein: 0, carbs: 0, fat: 0 },
       );
 
       const servings = r.servings || 1;
@@ -195,7 +231,8 @@ export async function getRecipeContext(userId: string): Promise<string> {
 
       let line = `## ${r.name}`;
       if (r.cuisineTag) line += `\nCuisine: ${r.cuisineTag}`;
-      if (r.dietaryTags.length) line += `\nDietary: ${r.dietaryTags.join(", ")}`;
+      if (r.dietaryTags.length)
+        line += `\nDietary: ${r.dietaryTags.join(", ")}`;
       line += `\nServings: ${servings}`;
       if (r.prepTime) line += `\nPrep: ${r.prepTime} min`;
       if (r.cookTime) line += `\nCook: ${r.cookTime} min`;
@@ -204,9 +241,11 @@ export async function getRecipeContext(userId: string): Promise<string> {
       line += `\nTotal recipe: ${Math.round(totals.cal)} cal, ${Math.round(totals.protein)}g protein, ${Math.round(totals.carbs)}g carbs, ${Math.round(totals.fat)}g fat`;
 
       if (r.ingredients.length > 0) {
-        line += `\nIngredients: ${r.ingredients.map((i) => {
-          return `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name}`.trim();
-        }).join(", ")}`;
+        line += `\nIngredients: ${r.ingredients
+          .map((i) => {
+            return `${i.quantity ?? ""} ${i.unit ?? ""} ${i.name}`.trim();
+          })
+          .join(", ")}`;
       }
 
       return line;

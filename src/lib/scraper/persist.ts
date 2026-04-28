@@ -98,11 +98,16 @@ export async function persistRecipe(
   }
 
   const slug = slugify(recipe.name);
+  // Normalize the "manual entry" sentinel to NULL so the partial UNIQUE index
+  // on (user_id, source_url) doesn't treat every text-paste recipe as a
+  // would-be collision against itself. See migration
+  // 20260427120000_recipe_uniqueness.sql.
+  const persistedSourceUrl = sourceUrl === "manual entry" ? null : sourceUrl;
   const recipeRow: Record<string, unknown> = {
     slug,
     name: recipe.name,
     preparation: recipe.preparation,
-    source_url: sourceUrl,
+    source_url: persistedSourceUrl,
     servings: recipe.servings,
     cook_time_minutes: recipe.cookTime,
     prep_time_minutes: recipe.prepTime,

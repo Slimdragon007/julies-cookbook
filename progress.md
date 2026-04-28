@@ -2,6 +2,50 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-28 — TASK-011 / TASK-012 — Recipe images persist on scrape; targeted responsive cleanup
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+
+**Task:** Two production issues reported by Slim, downstream of PR #17's model-string fix. (1) New recipes scraped after PR #17 saved with `image_url = NULL` — gallery + detail showed the `Sparkles` placeholder for every fresh recipe. (2) Layout reportedly didn't reformat correctly when resizing on phone + tablet.
+
+**Investigation (Phase 1):**
+
+- Traced the scraper image pipeline end-to-end: `parseRecipeHtml` → JSON-LD/og:image extraction (works) → optional Pexels fallback (works) → optional Cloudinary upload (broke here) → `persistRecipe` writes `image_url` to Supabase.
+- Found the bug at `src/lib/scraper/core.ts:215-224`:
+  ```ts
+  let finalImageUrl: string | null = null;
+  if (imageUrl && opts.cloudinary) {
+    finalImageUrl = await uploadToCloudinary(...); // returns null on failure
+  }
+  // ...
+  imageUrl: finalImageUrl,  // ← source URL silently discarded
+  ```
+  Two failure modes both wrote `NULL` to `image_url`: (a) `opts.cloudinary` null because env vars not readable at runtime, (b) `uploadToCloudinary` returned `null` on HTTP error. Even a perfectly good source URL or Pexels fallback URL was lost before the DB write.
+- Cross-checked: `next.config.mjs` `remotePatterns` only whitelisted `res.cloudinary.com` and `images.unsplash.com` — so even if we did persist source URLs, `<Image>` would silently reject any other host.
+- Responsive: read the actual layout code. Most breakpoints are correct (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`, sidebar↔mobile-bar swap at `lg:`, viewport meta correct). Two real issues did surface: (a) recipe detail pages tried to be full-bleed (`lg:h-screen lg:sticky`, `lg:grid-cols-[1.2fr_1fr]`) but were trapped inside the layout's `max-w-5xl mx-auto` wrapper, breaking the design at all desktop widths; (b) the bottom mobile nav used `min-w-[56px]` × 5 items which can overflow at <320px. Plus `globals.css` has `body { overflow: auto }` while `html { overflow: hidden }`, which means horizontal overflow gets silently clipped instead of scrolled — making any flex-child overflow look like "things not formatting correctly".
+
+**Changed:**
+
+- `src/lib/scraper/core.ts` — initialize `finalImageUrl = imageUrl` so the source URL is the default. Cloudinary upload still preferred when env is configured and upload succeeds. Both failure modes (env missing, upload returns null) now log a `console.warn` to surface in CF logs and append a non-fatal note to `ctx.errors`. Closes the silent-data-loss path.
+- `src/lib/__tests__/scraper-core.test.ts` — three new tests pinning the truth table: Cloudinary env null → source URL persists, Cloudinary 200 → Cloudinary URL persists, Cloudinary 500 → source URL persists. 7/7 in this file, 105/112 across the full suite (7 pre-existing skips).
+- `next.config.mjs` — replaced the two-host allowlist with a single `{ protocol: 'https', hostname: '**' }` entry. Cloudinary remains the optimization path when configured; this is the rendering safety net for source URLs and Pexels fallbacks.
+- `src/components/MainNav.tsx` —
+  - `/recipe/*` paths now opt out of the `max-w-5xl mx-auto` content wrapper (new `fullBleed` flag, reuses the existing `hideNav` predicate) so the recipe detail page can actually be full-bleed as designed. The mobile top + bottom bars were already hidden on these routes; this completes the pattern.
+  - Added `min-w-0` to the `<main>` flex child so any inadvertent flex-child overflow in nested content doesn't get silently clipped by the global `body { overflow: auto }` + `html { overflow: hidden }` rule.
+  - Bottom-nav items: replaced `min-w-[56px]` + `justify-around` with `flex-1 min-w-0` + flat `flex` distribution, so the 5 tabs share width evenly down to <320px without overflow.
+
+**Verification:**
+
+- `npm run lint` — 0 warnings/errors.
+- `npx tsc --noEmit` — clean.
+- `npm run test` — 105 pass, 7 pre-existing skips, 0 fail.
+- E2E not run (visual + scraper changes; requires a real Cloudflare Pages deploy + a real recipe URL to fully cover the image path live).
+
+**Caveats / follow-ups:**
+
+- This fix is defensive — it ensures images persist and render even if Cloudinary is misconfigured at runtime. It does **not** diagnose whether the Cloudinary env vars on Cloudflare Pages are actually being read by the edge runtime. If Slim wants the optimized Cloudinary path back, post-deploy: scrape one recipe and check Supabase to see if `image_url` starts with `res.cloudinary.com` (Cloudinary working) or the source domain (Cloudinary skipped — env or upload-fail issue still latent). The new `console.warn` calls will tell which.
+- Responsive pass was deliberately conservative. If Slim still sees specific widths/pages that misbehave after this lands, file a follow-up TASK with the exact viewport width and page so the fix is targeted, not speculative.
+
 ## 2026-04-28 — TASK-010 — Scraper "pacing" error: bump deprecated Claude model + reset env example
 
 **Executor:** Claude Code (Opus 4.7, 1M context)
@@ -38,7 +82,7 @@
 **Notes flagged at fix time:**
 
 - Did not invent any "rate-limit detection" middleware in the scraper route — would have been speculative without an actual error to handle. If "pacing" recurs we should beef up the catch in `route.ts:76` to recognize Anthropic's `APIError` shape and return a typed 429 instead of a generic 500, so the React layer can show a useful message. Out of scope for today's fire.
-- Did not touch the `claude-haiku-4-5-20251001` model (not used in this codebase). If we ever want a cheaper/faster path for ingredient normalization, that's a sensible follow-up.
+- # Did not touch the `claude-haiku-4-5-20251001` model (not used in this codebase). If we ever want a cheaper/faster path for ingredient normalization, that's a sensible follow-up.
 
 ## 2026-04-28 — TASK-009 — Service worker no longer hides newly-added recipes from gallery
 

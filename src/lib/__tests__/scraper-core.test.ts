@@ -219,6 +219,95 @@ describe("scrapeRecipe", () => {
     ).rejects.toBeInstanceOf(BlockedSiteError);
   });
 
+  it("persists source image_url when Cloudinary env is not configured", async () => {
+    const supabase = makeSupabase({});
+    const anthropic = makeAnthropic(SAMPLE_RECIPE_JSON);
+
+    const result = await scrapeRecipe(
+      { kind: "url", url: "https://example.com/goulash" },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        supabase: supabase as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        anthropic: anthropic as any,
+        cloudinary: null,
+      },
+    );
+
+    expect(result.imageUrl).toBe("https://example.com/goulash.jpg");
+    const recipeInsert = supabase._insertedRows.find(
+      (r) => r.table === "recipes",
+    );
+    expect(recipeInsert?.rows[0]).toMatchObject({
+      image_url: "https://example.com/goulash.jpg",
+    });
+  });
+
+  it("persists Cloudinary URL when upload succeeds", async () => {
+    const supabase = makeSupabase({});
+    const anthropic = makeAnthropic(SAMPLE_RECIPE_JSON);
+
+    const baseFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("api.cloudinary.com")) {
+        return new Response(
+          JSON.stringify({ secure_url: "https://res.cloudinary.com/x/y.jpg" }),
+          { status: 200 },
+        );
+      }
+      return baseFetch(input);
+    }) as typeof globalThis.fetch;
+
+    const result = await scrapeRecipe(
+      { kind: "url", url: "https://example.com/goulash" },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        supabase: supabase as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        anthropic: anthropic as any,
+        cloudinary: {
+          cloudName: "x",
+          apiKey: "k",
+          apiSecret: "s",
+        },
+      },
+    );
+
+    expect(result.imageUrl).toBe("https://res.cloudinary.com/x/y.jpg");
+  });
+
+  it("falls back to source image_url when Cloudinary upload returns null", async () => {
+    const supabase = makeSupabase({});
+    const anthropic = makeAnthropic(SAMPLE_RECIPE_JSON);
+
+    const baseFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("api.cloudinary.com")) {
+        return new Response("Internal error", { status: 500 });
+      }
+      return baseFetch(input);
+    }) as typeof globalThis.fetch;
+
+    const result = await scrapeRecipe(
+      { kind: "url", url: "https://example.com/goulash" },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        supabase: supabase as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        anthropic: anthropic as any,
+        cloudinary: {
+          cloudName: "x",
+          apiKey: "k",
+          apiSecret: "s",
+        },
+      },
+    );
+
+    expect(result.imageUrl).toBe("https://example.com/goulash.jpg");
+  });
+
   it("throws DuplicateRecipeError on existing source_url", async () => {
     const supabase = makeSupabase({
       recipesSelect: {

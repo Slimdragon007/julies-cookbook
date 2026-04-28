@@ -131,6 +131,38 @@
 - Vercel disconnected from `Slimdragon007/julies-cookbook` (browser-only oversight from TASK-001 close-out, finally severed today via `vercel git disconnect`). Logged separately on Notion Project Plan Fix Queue + Session Log child page.
 - PR #12 (TASK-008 UNIQUE constraints) merged this morning after a rebase against PR #13's password-reset commits. Live on `main` now.
 
+## 2026-04-27 — TASK-010b — Manual photo upload from recipe page
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+**Task:** Give users an escape hatch from the auto-scrape photo chain. When the scraper produces nothing usable (or the wrong image), the user replaces it with their own photo.
+
+**Changed:**
+
+- `src/lib/scraper/cloudinary.ts` — added `uploadFileToCloudinary(file: Blob, publicId, env)`. Same Web-Crypto-SHA-1 signing as the existing URL-based upload, but POSTs raw bytes via multipart `FormData` instead of a URL string. Single attempt, 30s timeout.
+- `src/app/api/recipe/photo/route.ts` (new, edge runtime) — POST handler that:
+  - Auth-checks via `createSupabaseServer().auth.getUser()`
+  - Bails early with 503 if Cloudinary env vars missing
+  - Reads `recipeId` + `file` from `request.formData()`
+  - Validates: file present, `instanceof Blob`, size ≤ 15MB, MIME type in JPEG/PNG/WebP/HEIC/HEIF allowlist
+  - Verifies `recipes.user_id === user.id` before any mutation
+  - Uploads at `${user.id}/${slug}` namespace (matches existing scrape path)
+  - Updates `recipes.image_url` via service-role client; uses `.eq("user_id", user.id)` belt-and-suspenders despite ownership already verified
+- `src/components/RecipeActions.tsx` — added "Replace photo" button alongside Edit/Delete. Hidden `<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">` triggered via `useRef`. Inline `uploading` and `uploadError` states; `router.refresh()` on success pulls the new `image_url` from the server component.
+- `src/lib/__tests__/scraper-cloudinary.test.ts` (new) — 3 tests for `uploadFileToCloudinary`: success returns `secure_url`; non-OK Cloudinary response → null; thrown fetch → null. Both error paths verified to log via `console.error` spy.
+
+**TypeScript fix:** `File instanceof` check failed type-check in edge runtime (`File` global not in `@cloudflare/workers-types`). Fixed by checking `Blob` only, with a comment noting `File extends Blob` in both browsers and edge.
+
+**Verification:**
+
+- `npm run lint` clean.
+- `npx tsc --noEmit` clean.
+- Full vitest: 105 pass / 7 pre-existing skips (3 new tests pass).
+- E2E not run — UI change requires dev server + Cloudinary credentials; manually testable post-deploy.
+
+**Why a separate `/api/recipe/photo` route instead of extending PATCH `/api/recipe`:** mixing JSON and multipart on the same handler is awkward (Content-Type branching, awkward body parsing). Photo upload also has different validation needs (size, MIME type) and observability concerns (which Cloudinary calls are succeeding). Cleaner as its own route.
+
+**Why not pre-resize on the client:** Cloudflare's 100MB body limit gives 6× headroom over the 15MB server-side cap. Phone photos at default settings are 3-8MB. Cloudinary auto-optimizes on read. Adding a client-side resizer would be ~50 lines and complicate the upload flow without clear benefit. Skip until we see evidence anyone hits the limit.
+
 ## 2026-04-27 — TASK-010a — ScrapingBee tier escalation
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

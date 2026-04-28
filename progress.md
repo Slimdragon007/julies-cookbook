@@ -2,6 +2,44 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-28 — TASK-010 — Scraper "pacing" error: bump deprecated Claude model + reset env example
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+**Task:** Slim reports the live `/add-recipe` flow is failing with what sounds like a rate-limit / "pacing" message. He recently rotated the Anthropic API key. Symptom is opaque to the React layer (frontend only sees a generic "Something went wrong"), so we have to reason from code.
+
+**Investigation (Phase 1, evidence first):**
+
+- `/api/scrape` route exists, post-ADR-002 single-source-of-truth wiring intact (`src/app/api/scrape/route.ts:1` → `scrapeRecipe()` from `src/lib/scraper/core`). Edge runtime, auth-gated by `supabase.auth.getUser()`. No regressions visible in the recent commit history (last scraper-touching change was 0c414f1 on Apr 26 — CodeRabbit polish on the refactor; TASK-009 was service worker only; TASK-008 was DB constraints).
+- Cloudflare Pages secrets: `wrangler pages secret list --project-name=julies-cookbook` confirms all 14 keys present (ANTHROPIC_API_KEY, all three CLOUDINARY, SCRAPINGBEE, INVITE_CODE, both Supabase publics + service role, USDA, PEXELS, AUDIT_SECRET, DISCORD_WEBHOOK_URL, APP_URL).
+- Live audit (`GET /api/audit?token=…`) returns `status:"pass"` — env vars OK, 30 recipes, 303 ingredients. The site is up; this is not a deployment failure.
+- Local CLI (`npx tsx scripts/scrape-recipe.ts <url>`) hard-fails preflight: parent `.env.local` is missing ANTHROPIC, CLOUDINARY, SCRAPINGBEE, USDA, PEXELS. And `.env.local.example` was years stale (still listed AIRTABLE_API_KEY / AIRTABLE_BASE_ID from before the Mar 2026 Supabase migration). That's a separate, real, reproducible bug — fixed below.
+- Anthropic model: both `/api/scrape` (`extract.ts:174`) and `/api/chat` (`route.ts:76`) were pinned to `claude-sonnet-4-20250514` — the original Sonnet 4 from May 2025, ~11 months old at the time of this task and inside Anthropic's standard 12-month deprecation window. Current Sonnet generation per Anthropic platform notes is `claude-sonnet-4-6`. A deprecated/retired model returns errors that surface upstream as opaque "rate limit / pacing" banners, which matches Slim's symptom shape much better than a real Cloudflare subrequest-budget hit (recipe scrape is ≤ ~25 subrequests vs. 1000 paid limit).
+- `scripts/rescrape-all.mjs` was also still pinned to the same deprecated model (admin path, separate from `src/lib/scraper/core`).
+
+**Changed (3 atomic commits):**
+
+1. `docs(env): rewrite .env.local.example with real env-var contract` (commit `e9abccc`) — replaced the AIRTABLE keys with the actual runtime contract per `docs/REFERENCE.md`, plus a header reminding any setup-er that `.env.local` lives in the repo PARENT dir per per-user memory (not inside individual worktrees).
+2. `fix(ai): bump Claude model from sonnet-4-20250514 to sonnet-4-6` (commit `9523afb`) — both `src/lib/scraper/extract.ts:174` and `src/app/api/chat/route.ts:76`.
+3. `fix(scripts): bump rescrape-all model to sonnet-4-6 to match runtime` (commit `a8148b0`) — `scripts/rescrape-all.mjs:327`. Husky's prettier reformatted the rest of the file on the way through; the model bump is the only intentional change.
+
+**Verified:**
+
+- `next lint --quiet` — clean across all three commits.
+- `tsc --noEmit` — clean.
+- `vitest` — 102/109 (7 pre-existing skips), no model-string assertions in the test suite.
+- Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) ran on each commit and passed.
+
+**Verification still owed by Slim post-deploy:**
+
+- After GH Action lands the deploy on `main`, retry `/add-recipe` against a known-good URL (e.g. `https://www.loveandlemons.com/homemade-pasta-recipe/`).
+- If "pacing" persists with the new model, the next-most-likely cause is the rotated Anthropic API key — check the Anthropic Console for the new key's billing status and rate limits (a fresh key on a $5 free credit can hit per-org spend caps fast on a 4096-max-tokens system prompt).
+- If the CLI is desired for local testing, populate the new `.env.local.example` keys into the parent `.env.local` (Cloudflare doesn't expose secret values via wrangler — values must come from the original API consoles).
+
+**Notes flagged at fix time:**
+
+- Did not invent any "rate-limit detection" middleware in the scraper route — would have been speculative without an actual error to handle. If "pacing" recurs we should beef up the catch in `route.ts:76` to recognize Anthropic's `APIError` shape and return a typed 429 instead of a generic 500, so the React layer can show a useful message. Out of scope for today's fire.
+- Did not touch the `claude-haiku-4-5-20251001` model (not used in this codebase). If we ever want a cheaper/faster path for ingredient normalization, that's a sensible follow-up.
+
 ## 2026-04-28 — TASK-009 — Service worker no longer hides newly-added recipes from gallery
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

@@ -26,20 +26,66 @@ const anthropic = new Anthropic({
 const RECIPES_TABLE = "tblcDuujfu1rokjSU";
 const INGREDIENTS_TABLE = "tblbly81hGxUaEgM2";
 
-const VALID_CUISINES = ["American", "Moroccan", "Italian", "Asian", "Mediterranean", "Other"];
-const VALID_DIETARY = ["Vegetarian", "Gluten-Free", "Dairy-Free", "High Protein", "Comfort Food"];
-const VALID_COOKING_UNITS = ["/tsp", "/tbsp", "/cup", "/oz", "/lb", "/each", "/can"];
-const VALID_CATEGORIES = ["Produce", "Meat", "Fish", "Dairy", "Spice", "Pantry", "Grocery", "Bakery", "Other"];
+const VALID_CUISINES = [
+  "American",
+  "Moroccan",
+  "Italian",
+  "Asian",
+  "Mediterranean",
+  "Other",
+];
+const VALID_DIETARY = [
+  "Vegetarian",
+  "Gluten-Free",
+  "Dairy-Free",
+  "High Protein",
+  "Comfort Food",
+];
+const VALID_COOKING_UNITS = [
+  "/tsp",
+  "/tbsp",
+  "/cup",
+  "/oz",
+  "/lb",
+  "/each",
+  "/can",
+];
+const VALID_CATEGORIES = [
+  "Produce",
+  "Meat",
+  "Fish",
+  "Dairy",
+  "Spice",
+  "Pantry",
+  "Grocery",
+  "Bakery",
+  "Other",
+];
 
 const UNIT_MAP = {
-  cups: "/cup", cup: "/cup",
-  oz: "/oz", ounce: "/oz", ounces: "/oz",
-  lb: "/lb", lbs: "/lb", pound: "/lb", pounds: "/lb",
-  can: "/can", cans: "/can",
-  each: "/each", whole: "/each", piece: "/each", pieces: "/each",
-  cloves: "/each", clove: "/each",
-  tbsp: "/tbsp", tablespoon: "/tbsp", tablespoons: "/tbsp",
-  tsp: "/tsp", teaspoon: "/tsp", teaspoons: "/tsp",
+  cups: "/cup",
+  cup: "/cup",
+  oz: "/oz",
+  ounce: "/oz",
+  ounces: "/oz",
+  lb: "/lb",
+  lbs: "/lb",
+  pound: "/lb",
+  pounds: "/lb",
+  can: "/can",
+  cans: "/can",
+  each: "/each",
+  whole: "/each",
+  piece: "/each",
+  pieces: "/each",
+  cloves: "/each",
+  clove: "/each",
+  tbsp: "/tbsp",
+  tablespoon: "/tbsp",
+  tablespoons: "/tbsp",
+  tsp: "/tsp",
+  teaspoon: "/tsp",
+  teaspoons: "/tsp",
 };
 
 // ============================================================
@@ -48,24 +94,47 @@ const UNIT_MAP = {
 const CANONICAL_NAMES = {
   "extra-virgin olive oil": "olive oil",
   "extra virgin olive oil": "olive oil",
-  "evoo": "olive oil",
-  "large eggs": "egg", "large egg": "egg", "eggs": "egg",
-  "carrots": "carrot", "onions": "onion", "potatoes": "potato",
-  "sweet potatoes": "sweet potato", "bell peppers": "bell pepper",
-  "red bell peppers": "red bell pepper", "strawberries": "strawberry",
-  "blueberries": "blueberry", "lentils": "lentil", "chickpeas": "chickpea",
-  "tomatoes": "tomato", "green onions": "green onion",
-  "cloves garlic": "garlic", "garlic cloves": "garlic",
-  "chicken breasts": "chicken breast", "chicken thighs": "chicken thigh",
-  "hamburger buns": "hamburger bun", "dried apricots": "dried apricot",
-  "golden raisins": "golden raisin", "slivered almonds": "slivered almond",
+  evoo: "olive oil",
+  "large eggs": "egg",
+  "large egg": "egg",
+  eggs: "egg",
+  carrots: "carrot",
+  onions: "onion",
+  potatoes: "potato",
+  "sweet potatoes": "sweet potato",
+  "bell peppers": "bell pepper",
+  "red bell peppers": "red bell pepper",
+  strawberries: "strawberry",
+  blueberries: "blueberry",
+  lentils: "lentil",
+  chickpeas: "chickpea",
+  tomatoes: "tomato",
+  "green onions": "green onion",
+  "cloves garlic": "garlic",
+  "garlic cloves": "garlic",
+  "chicken breasts": "chicken breast",
+  "chicken thighs": "chicken thigh",
+  "hamburger buns": "hamburger bun",
+  "dried apricots": "dried apricot",
+  "golden raisins": "golden raisin",
+  "slivered almonds": "slivered almond",
 };
 
 const KEEP_WITH_ADJECTIVE = [
-  "sweet potato", "fresh parsley", "fresh ginger", "dried apricot",
-  "dried thyme", "red bell pepper", "red pepper flakes", "red wine vinegar",
-  "brown sugar", "brown rice", "sharp cheddar", "colby jack cheese",
-  "diced tomatoes", "crushed tomatoes",
+  "sweet potato",
+  "fresh parsley",
+  "fresh ginger",
+  "dried apricot",
+  "dried thyme",
+  "red bell pepper",
+  "red pepper flakes",
+  "red wine vinegar",
+  "brown sugar",
+  "brown rice",
+  "sharp cheddar",
+  "colby jack cheese",
+  "diced tomatoes",
+  "crushed tomatoes",
 ];
 
 function normalizeName(name) {
@@ -75,12 +144,26 @@ function normalizeName(name) {
   for (const adj of ["large", "medium", "small"]) {
     if (n.startsWith(adj + " ")) n = n.slice(adj.length + 1);
   }
-  const noStrip = ["peas", "collard greens", "diced tomatoes", "crushed tomatoes",
-    "red pepper flakes", "golden raisins", "slivered almonds"];
-  if (!noStrip.includes(n) && n.endsWith("s") && !n.endsWith("ss") && !n.endsWith("us")) {
-    const singular = n.endsWith("ies") ? n.slice(0, -3) + "y"
-      : n.endsWith("es") ? n.slice(0, -2)
-      : n.slice(0, -1);
+  const noStrip = [
+    "peas",
+    "collard greens",
+    "diced tomatoes",
+    "crushed tomatoes",
+    "red pepper flakes",
+    "golden raisins",
+    "slivered almonds",
+  ];
+  if (
+    !noStrip.includes(n) &&
+    n.endsWith("s") &&
+    !n.endsWith("ss") &&
+    !n.endsWith("us")
+  ) {
+    const singular = n.endsWith("ies")
+      ? n.slice(0, -3) + "y"
+      : n.endsWith("es")
+        ? n.slice(0, -2)
+        : n.slice(0, -1);
     if (singular.length > 2) n = singular;
   }
   if (CANONICAL_NAMES[n]) return CANONICAL_NAMES[n];
@@ -88,80 +171,174 @@ function normalizeName(name) {
 }
 
 const CATEGORY_MAP = {
-  "onion": "Produce", "garlic": "Produce", "carrot": "Produce",
-  "bell pepper": "Produce", "red bell pepper": "Produce", "zucchini": "Produce",
-  "sweet potato": "Produce", "lemon": "Produce", "blueberry": "Produce",
-  "strawberry": "Produce", "collard greens": "Produce", "broccoli": "Produce",
-  "green onion": "Produce", "fresh parsley": "Produce", "fresh ginger": "Produce",
-  "dried apricot": "Produce", "potato": "Produce", "tomato": "Produce",
+  onion: "Produce",
+  garlic: "Produce",
+  carrot: "Produce",
+  "bell pepper": "Produce",
+  "red bell pepper": "Produce",
+  zucchini: "Produce",
+  "sweet potato": "Produce",
+  lemon: "Produce",
+  blueberry: "Produce",
+  strawberry: "Produce",
+  "collard greens": "Produce",
+  broccoli: "Produce",
+  "green onion": "Produce",
+  "fresh parsley": "Produce",
+  "fresh ginger": "Produce",
+  "dried apricot": "Produce",
+  potato: "Produce",
+  tomato: "Produce",
   "russet potato": "Produce",
-  "ground beef": "Meat", "chicken breast": "Meat", "chicken thigh": "Meat",
-  "egg": "Dairy", "butter": "Dairy", "milk": "Dairy", "heavy cream": "Dairy",
-  "evaporated milk": "Dairy", "feta cheese": "Dairy", "cheddar cheese": "Dairy",
-  "sharp cheddar": "Dairy", "colby jack cheese": "Dairy", "vanilla ice cream": "Dairy",
+  "ground beef": "Meat",
+  "chicken breast": "Meat",
+  "chicken thigh": "Meat",
+  egg: "Dairy",
+  butter: "Dairy",
+  milk: "Dairy",
+  "heavy cream": "Dairy",
+  "evaporated milk": "Dairy",
+  "feta cheese": "Dairy",
+  "cheddar cheese": "Dairy",
+  "sharp cheddar": "Dairy",
+  "colby jack cheese": "Dairy",
+  "vanilla ice cream": "Dairy",
   "parmesan cheese": "Dairy",
-  "salt": "Spice", "black pepper": "Spice", "cumin": "Spice", "paprika": "Spice",
-  "italian seasoning": "Spice", "dried thyme": "Spice", "curry powder": "Spice",
-  "red pepper flakes": "Spice", "sea salt": "Spice", "montreal steak seasoning": "Spice",
+  salt: "Spice",
+  "black pepper": "Spice",
+  cumin: "Spice",
+  paprika: "Spice",
+  "italian seasoning": "Spice",
+  "dried thyme": "Spice",
+  "curry powder": "Spice",
+  "red pepper flakes": "Spice",
+  "sea salt": "Spice",
+  "montreal steak seasoning": "Spice",
   "baking powder": "Spice",
-  "olive oil": "Pantry", "soy sauce": "Pantry", "honey": "Pantry",
-  "maple syrup": "Pantry", "vinegar": "Pantry", "red wine vinegar": "Pantry",
-  "rice vinegar": "Pantry", "tomato paste": "Pantry", "dijon mustard": "Pantry",
-  "bbq sauce": "Pantry", "tamari": "Pantry", "chili garlic sauce": "Pantry",
-  "toasted sesame oil": "Pantry", "cornstarch": "Pantry", "brown sugar": "Pantry",
-  "sugar": "Pantry", "icing sugar": "Pantry", "chocolate sauce": "Pantry",
-  "lemon juice": "Pantry", "peanut butter": "Pantry", "vanilla extract": "Pantry",
-  "ketchup": "Pantry",
-  "all-purpose flour": "Grocery", "white rice": "Grocery", "brown rice": "Grocery",
-  "elbow macaroni": "Grocery", "cavatappi pasta": "Grocery", "couscous": "Grocery",
-  "lentil": "Grocery", "chickpea": "Grocery", "golden raisin": "Grocery",
-  "slivered almond": "Grocery", "diced tomatoes": "Grocery",
-  "crushed tomatoes": "Grocery", "tomato sauce": "Grocery",
-  "vegetable broth": "Grocery", "chicken broth": "Grocery", "beef broth": "Grocery",
-  "water": "Grocery", "extra-firm tofu": "Grocery", "peas": "Grocery",
-  "spaghetti": "Grocery", "hamburger bun": "Bakery",
+  "olive oil": "Pantry",
+  "soy sauce": "Pantry",
+  honey: "Pantry",
+  "maple syrup": "Pantry",
+  vinegar: "Pantry",
+  "red wine vinegar": "Pantry",
+  "rice vinegar": "Pantry",
+  "tomato paste": "Pantry",
+  "dijon mustard": "Pantry",
+  "bbq sauce": "Pantry",
+  tamari: "Pantry",
+  "chili garlic sauce": "Pantry",
+  "toasted sesame oil": "Pantry",
+  cornstarch: "Pantry",
+  "brown sugar": "Pantry",
+  sugar: "Pantry",
+  "icing sugar": "Pantry",
+  "chocolate sauce": "Pantry",
+  "lemon juice": "Pantry",
+  "peanut butter": "Pantry",
+  "vanilla extract": "Pantry",
+  ketchup: "Pantry",
+  "all-purpose flour": "Grocery",
+  "white rice": "Grocery",
+  "brown rice": "Grocery",
+  "elbow macaroni": "Grocery",
+  "cavatappi pasta": "Grocery",
+  couscous: "Grocery",
+  lentil: "Grocery",
+  chickpea: "Grocery",
+  "golden raisin": "Grocery",
+  "slivered almond": "Grocery",
+  "diced tomatoes": "Grocery",
+  "crushed tomatoes": "Grocery",
+  "tomato sauce": "Grocery",
+  "vegetable broth": "Grocery",
+  "chicken broth": "Grocery",
+  "beef broth": "Grocery",
+  water: "Grocery",
+  "extra-firm tofu": "Grocery",
+  peas: "Grocery",
+  spaghetti: "Grocery",
+  "hamburger bun": "Bakery",
 };
 
 const SPICES = [
-  "salt", "black pepper", "cumin", "paprika", "italian seasoning",
-  "dried thyme", "curry powder", "red pepper flakes", "baking powder",
-  "sea salt", "montreal steak seasoning",
+  "salt",
+  "black pepper",
+  "cumin",
+  "paprika",
+  "italian seasoning",
+  "dried thyme",
+  "curry powder",
+  "red pepper flakes",
+  "baking powder",
+  "sea salt",
+  "montreal steak seasoning",
 ];
 const SMALL_LIQUIDS = [
-  "olive oil", "soy sauce", "honey", "maple syrup", "vinegar",
-  "red wine vinegar", "rice vinegar", "tomato paste", "dijon mustard",
-  "lemon juice", "cornstarch", "brown sugar", "sugar", "fresh ginger",
-  "bbq sauce", "tamari", "chili garlic sauce", "toasted sesame oil",
-  "vanilla extract", "ketchup", "chocolate sauce", "icing sugar",
+  "olive oil",
+  "soy sauce",
+  "honey",
+  "maple syrup",
+  "vinegar",
+  "red wine vinegar",
+  "rice vinegar",
+  "tomato paste",
+  "dijon mustard",
+  "lemon juice",
+  "cornstarch",
+  "brown sugar",
+  "sugar",
+  "fresh ginger",
+  "bbq sauce",
+  "tamari",
+  "chili garlic sauce",
+  "toasted sesame oil",
+  "vanilla extract",
+  "ketchup",
+  "chocolate sauce",
+  "icing sugar",
 ];
 
 function assignUnit(name, qty, rawUnit) {
-  const mapped = rawUnit ? (UNIT_MAP[rawUnit.toLowerCase()] || null) : null;
+  const mapped = rawUnit ? UNIT_MAP[rawUnit.toLowerCase()] || null : null;
   if (mapped && VALID_COOKING_UNITS.includes(mapped)) return mapped;
   if (SPICES.includes(name) && (qty ?? 1) <= 3) return "/tsp";
   if (SMALL_LIQUIDS.includes(name) && (qty ?? 1) <= 3) return "/tbsp";
-  const countable = ["egg", "onion", "garlic", "bell pepper", "red bell pepper",
-    "carrot", "zucchini", "lemon", "hamburger bun", "potato", "tomato",
-    "sweet potato", "dried apricot", "strawberry", "green onion"];
+  const countable = [
+    "egg",
+    "onion",
+    "garlic",
+    "bell pepper",
+    "red bell pepper",
+    "carrot",
+    "zucchini",
+    "lemon",
+    "hamburger bun",
+    "potato",
+    "tomato",
+    "sweet potato",
+    "dried apricot",
+    "strawberry",
+    "green onion",
+  ];
   if (countable.includes(name)) return "/each";
   return "/tsp";
 }
 
 const MACROS = {
   "olive oil": { per: "tbsp", cal: 119, p: 0, c: 0, f: 14 },
-  "butter": { per: "tbsp", cal: 102, p: 0, c: 0, f: 12 },
+  butter: { per: "tbsp", cal: 102, p: 0, c: 0, f: 12 },
   "toasted sesame oil": { per: "tbsp", cal: 120, p: 0, c: 0, f: 14 },
   "ground beef": { per: "lb", cal: 1152, p: 77, c: 0, f: 92 },
   "chicken breast": { per: "lb", cal: 748, p: 139, c: 0, f: 16 },
   "chicken thigh": { per: "lb", cal: 1085, p: 109, c: 0, f: 69 },
-  "egg": { per: "each", cal: 72, p: 6, c: 0, f: 5 },
+  egg: { per: "each", cal: 72, p: 6, c: 0, f: 5 },
   "all-purpose flour": { per: "cup", cal: 455, p: 13, c: 95, f: 1 },
   "white rice": { per: "cup", cal: 675, p: 13, c: 148, f: 1 },
   "brown rice": { per: "cup", cal: 685, p: 14, c: 143, f: 5 },
   "elbow macaroni": { per: "cup", cal: 389, p: 13, c: 78, f: 2 },
-  "couscous": { per: "cup", cal: 650, p: 22, c: 134, f: 1 },
-  "lentil": { per: "cup", cal: 678, p: 50, c: 115, f: 2 },
-  "milk": { per: "cup", cal: 149, p: 8, c: 12, f: 8 },
+  couscous: { per: "cup", cal: 650, p: 22, c: 134, f: 1 },
+  lentil: { per: "cup", cal: 678, p: 50, c: 115, f: 2 },
+  milk: { per: "cup", cal: 149, p: 8, c: 12, f: 8 },
   "heavy cream": { per: "cup", cal: 821, p: 5, c: 7, f: 88 },
   "cheddar cheese": { per: "cup", cal: 455, p: 28, c: 1, f: 37 },
   "feta cheese": { per: "cup", cal: 396, p: 22, c: 6, f: 32 },
@@ -169,41 +346,41 @@ const MACROS = {
   "diced tomatoes": { per: "14oz", cal: 70, p: 4, c: 14, f: 0 },
   "crushed tomatoes": { per: "28oz", cal: 140, p: 7, c: 28, f: 0 },
   "tomato sauce": { per: "8oz", cal: 60, p: 2, c: 12, f: 0 },
-  "chickpea": { per: "can", cal: 360, p: 19, c: 58, f: 6 },
-  "salt": { per: "tsp", cal: 0, p: 0, c: 0, f: 0 },
+  chickpea: { per: "can", cal: 360, p: 19, c: 58, f: 6 },
+  salt: { per: "tsp", cal: 0, p: 0, c: 0, f: 0 },
   "black pepper": { per: "tsp", cal: 6, p: 0, c: 2, f: 0 },
-  "cumin": { per: "tsp", cal: 8, p: 0, c: 1, f: 0 },
-  "paprika": { per: "tsp", cal: 6, p: 0, c: 1, f: 0 },
+  cumin: { per: "tsp", cal: 8, p: 0, c: 1, f: 0 },
+  paprika: { per: "tsp", cal: 6, p: 0, c: 1, f: 0 },
   "italian seasoning": { per: "tsp", cal: 5, p: 0, c: 1, f: 0 },
   "dried thyme": { per: "tsp", cal: 5, p: 0, c: 1, f: 0 },
   "curry powder": { per: "tsp", cal: 7, p: 0, c: 1, f: 0 },
   "red pepper flakes": { per: "tsp", cal: 6, p: 0, c: 1, f: 0 },
   "baking powder": { per: "tsp", cal: 2, p: 0, c: 1, f: 0 },
   "soy sauce": { per: "tbsp", cal: 9, p: 1, c: 1, f: 0 },
-  "honey": { per: "tbsp", cal: 64, p: 0, c: 17, f: 0 },
+  honey: { per: "tbsp", cal: 64, p: 0, c: 17, f: 0 },
   "maple syrup": { per: "tbsp", cal: 52, p: 0, c: 13, f: 0 },
-  "vinegar": { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
+  vinegar: { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
   "red wine vinegar": { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
   "rice vinegar": { per: "tbsp", cal: 3, p: 0, c: 0, f: 0 },
   "tomato paste": { per: "tbsp", cal: 13, p: 1, c: 3, f: 0 },
   "dijon mustard": { per: "tbsp", cal: 15, p: 1, c: 1, f: 1 },
   "lemon juice": { per: "tbsp", cal: 4, p: 0, c: 1, f: 0 },
-  "cornstarch": { per: "tbsp", cal: 30, p: 0, c: 7, f: 0 },
+  cornstarch: { per: "tbsp", cal: 30, p: 0, c: 7, f: 0 },
   "brown sugar": { per: "tbsp", cal: 52, p: 0, c: 13, f: 0 },
-  "sugar": { per: "tbsp", cal: 48, p: 0, c: 12, f: 0 },
+  sugar: { per: "tbsp", cal: 48, p: 0, c: 12, f: 0 },
   "vanilla extract": { per: "tsp", cal: 12, p: 0, c: 1, f: 0 },
-  "onion": { per: "each", cal: 44, p: 1, c: 10, f: 0 },
-  "garlic": { per: "each", cal: 4, p: 0, c: 1, f: 0 },
-  "carrot": { per: "each", cal: 25, p: 1, c: 6, f: 0 },
+  onion: { per: "each", cal: 44, p: 1, c: 10, f: 0 },
+  garlic: { per: "each", cal: 4, p: 0, c: 1, f: 0 },
+  carrot: { per: "each", cal: 25, p: 1, c: 6, f: 0 },
   "bell pepper": { per: "each", cal: 30, p: 1, c: 7, f: 0 },
   "red bell pepper": { per: "each", cal: 30, p: 1, c: 7, f: 0 },
-  "zucchini": { per: "each", cal: 33, p: 2, c: 6, f: 1 },
+  zucchini: { per: "each", cal: 33, p: 2, c: 6, f: 1 },
   "sweet potato": { per: "lb", cal: 390, p: 7, c: 90, f: 1 },
-  "lemon": { per: "each", cal: 17, p: 1, c: 5, f: 0 },
-  "blueberry": { per: "cup", cal: 84, p: 1, c: 21, f: 0 },
-  "strawberry": { per: "each", cal: 4, p: 0, c: 1, f: 0 },
-  "broccoli": { per: "cup", cal: 31, p: 3, c: 6, f: 0 },
-  "water": { per: "cup", cal: 0, p: 0, c: 0, f: 0 },
+  lemon: { per: "each", cal: 17, p: 1, c: 5, f: 0 },
+  blueberry: { per: "cup", cal: 84, p: 1, c: 21, f: 0 },
+  strawberry: { per: "each", cal: 4, p: 0, c: 1, f: 0 },
+  broccoli: { per: "cup", cal: 31, p: 3, c: 6, f: 0 },
+  water: { per: "cup", cal: 0, p: 0, c: 0, f: 0 },
   "vegetable broth": { per: "cup", cal: 12, p: 1, c: 2, f: 0 },
   "chicken broth": { per: "cup", cal: 15, p: 3, c: 1, f: 0 },
   "beef broth": { per: "cup", cal: 17, p: 3, c: 1, f: 0 },
@@ -213,7 +390,7 @@ const MACROS = {
   "sharp cheddar": { per: "cup", cal: 455, p: 28, c: 1, f: 37 },
   "colby jack cheese": { per: "cup", cal: 445, p: 27, c: 1, f: 36 },
   "cavatappi pasta": { per: "lb", cal: 1600, p: 56, c: 320, f: 7 },
-  "spaghetti": { per: "oz", cal: 105, p: 4, c: 21, f: 0.5 },
+  spaghetti: { per: "oz", cal: 105, p: 4, c: 21, f: 0.5 },
   "collard greens": { per: "cup", cal: 11, p: 1, c: 2, f: 0 },
   "icing sugar": { per: "tbsp", cal: 30, p: 0, c: 8, f: 0 },
   "chocolate sauce": { per: "tbsp", cal: 50, p: 0, c: 12, f: 1 },
@@ -298,7 +475,10 @@ async function scrapePage(url) {
       const data = JSON.parse($(el).html());
       const items = Array.isArray(data) ? data : data["@graph"] || [data];
       for (const item of items) {
-        if (item["@type"] === "Recipe" || (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))) {
+        if (
+          item["@type"] === "Recipe" ||
+          (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))
+        ) {
           jsonLd = item;
         }
       }
@@ -324,7 +504,7 @@ async function scrapePage(url) {
 // ============================================================
 async function extractIngredients(content, sourceUrl, recipeName) {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 4096,
     system: `You are a recipe data extraction assistant. Extract ONLY the ingredient list from this recipe.
 
@@ -403,14 +583,17 @@ ${content}`,
     ],
   });
 
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const jsonStr = jsonMatch ? jsonMatch[1].trim() : text.trim();
 
   try {
     return JSON.parse(jsonStr);
   } catch {
-    console.error(`   EXTRACT FAILED: Claude returned invalid JSON for "${recipeName}"`);
+    console.error(
+      `   EXTRACT FAILED: Claude returned invalid JSON for "${recipeName}"`,
+    );
     console.error(`   Raw: ${text.slice(0, 300)}`);
     return null;
   }
@@ -420,47 +603,58 @@ ${content}`,
 // NORMALIZE INGREDIENTS
 // ============================================================
 function normalizeIngredients(ingredients) {
-  return ingredients.map((ing) => {
-    const rawName = (ing.name || "").replace(/[""'']/g, "").trim();
-    const name = normalizeName(rawName);
-    const unit = assignUnit(name, ing.quantity, ing.unit);
-    let category = CATEGORY_MAP[name] || ing.category || "Other";
-    if (!VALID_CATEGORIES.includes(category)) category = "Other";
-    if (category === "Misc." || category === "Misc") category = "Other";
+  return ingredients
+    .map((ing) => {
+      const rawName = (ing.name || "").replace(/[""'']/g, "").trim();
+      const name = normalizeName(rawName);
+      const unit = assignUnit(name, ing.quantity, ing.unit);
+      let category = CATEGORY_MAP[name] || ing.category || "Other";
+      if (!VALID_CATEGORIES.includes(category)) category = "Other";
+      if (category === "Misc." || category === "Misc") category = "Other";
 
-    let cal = ing.calories ?? null;
-    let pro = ing.protein_g ?? null;
-    let carb = ing.carbs_g ?? null;
-    let fat = ing.fat_g ?? null;
+      let cal = ing.calories ?? null;
+      let pro = ing.protein_g ?? null;
+      let carb = ing.carbs_g ?? null;
+      let fat = ing.fat_g ?? null;
 
-    if (cal === null || pro === null || carb === null || fat === null) {
+      if (cal === null || pro === null || carb === null || fat === null) {
+        const est = estimateMacros(name, ing.quantity, unit);
+        if (est) {
+          if (cal === null) cal = est.cal;
+          if (pro === null) pro = est.p;
+          if (carb === null) carb = est.c;
+          if (fat === null) fat = est.f;
+        }
+      }
+
+      // Always override with USDA reference if we have it
       const est = estimateMacros(name, ing.quantity, unit);
       if (est) {
-        if (cal === null) cal = est.cal;
-        if (pro === null) pro = est.p;
-        if (carb === null) carb = est.c;
-        if (fat === null) fat = est.f;
+        cal = est.cal;
+        pro = est.p;
+        carb = est.c;
+        fat = est.f;
       }
-    }
 
-    // Always override with USDA reference if we have it
-    const est = estimateMacros(name, ing.quantity, unit);
-    if (est) {
-      cal = est.cal;
-      pro = est.p;
-      carb = est.c;
-      fat = est.f;
-    }
+      cal = Math.round(cal ?? 0);
+      pro = Math.round(pro ?? 0);
+      carb = Math.round(carb ?? 0);
+      fat = Math.round(fat ?? 0);
 
-    cal = Math.round(cal ?? 0);
-    pro = Math.round(pro ?? 0);
-    carb = Math.round(carb ?? 0);
-    fat = Math.round(fat ?? 0);
+      if (!name) return null;
 
-    if (!name) return null;
-
-    return { name, quantity: ing.quantity ?? 1, unit, category, cal, pro, carb, fat };
-  }).filter(Boolean);
+      return {
+        name,
+        quantity: ing.quantity ?? 1,
+        unit,
+        category,
+        cal,
+        pro,
+        carb,
+        fat,
+      };
+    })
+    .filter(Boolean);
 }
 
 // ============================================================
@@ -491,7 +685,9 @@ async function main() {
     return url && url.startsWith("http");
   });
 
-  console.log(`   Found ${recipes.length} recipes, ${withUrls.length} with Source URLs`);
+  console.log(
+    `   Found ${recipes.length} recipes, ${withUrls.length} with Source URLs`,
+  );
   console.log("");
 
   // Step 2: Fetch all ingredients (to know which to delete per recipe)
@@ -585,13 +781,15 @@ async function main() {
             [ING_FIELDS.fat]: ing.fat,
           },
         })),
-        { typecast: true }
+        { typecast: true },
       );
     }
 
     totalCreated += ingredients.length;
     succeeded++;
-    console.log(`   Created ${ingredients.length} new ingredient records (linked to ${recipeId})`);
+    console.log(
+      `   Created ${ingredients.length} new ingredient records (linked to ${recipeId})`,
+    );
     console.log("");
 
     // Rate limit: small delay between recipes

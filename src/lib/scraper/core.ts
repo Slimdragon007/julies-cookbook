@@ -212,15 +212,33 @@ export async function scrapeRecipe(
   // Cloudinary upload (only if env provided AND we have an image).
   // Namespace public_id by user when scoped, so two users with the same recipe
   // name don't overwrite each other's assets in the shared bucket.
-  let finalImageUrl: string | null = null;
+  // If env is missing or upload returns null, fall back to the source URL so
+  // the image is at least persisted — losing image_url silently was the cause
+  // of TASK-010.
+  let finalImageUrl: string | null = imageUrl;
   if (imageUrl && opts.cloudinary) {
     const slug = slugify(recipe.name);
     const publicId = opts.userScope ? `${opts.userScope.userId}/${slug}` : slug;
-    finalImageUrl = await uploadToCloudinary(
+    const uploaded = await uploadToCloudinary(
       imageUrl,
       publicId,
       opts.cloudinary,
     );
+    if (uploaded) {
+      finalImageUrl = uploaded;
+    } else {
+      console.warn(
+        "[scraper] Cloudinary upload returned null; persisting source URL",
+        { sourceUrl, imageUrl },
+      );
+      ctx.errors.push("Cloudinary upload failed; using source image URL");
+    }
+  } else if (imageUrl && !opts.cloudinary) {
+    console.warn(
+      "[scraper] Cloudinary env not configured; persisting source URL",
+      { sourceUrl, imageUrl },
+    );
+    ctx.errors.push("Cloudinary not configured; using source image URL");
   }
 
   // Persist

@@ -7,14 +7,13 @@ if (process.env.NODE_ENV === "development") {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Allow any HTTPS host so source recipe images render when Cloudinary
+    // isn't available (TASK-010). Cloudinary remains the optimization path
+    // when env is configured; this is the rendering fallback.
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "**",
       },
     ],
     // Optimize image sizes for mobile-first

@@ -5,15 +5,29 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Link2, Sparkles, ChefHat, ShoppingBasket, ArrowRight,
-  Check, Clock, Users, Play, Pause, RotateCcw, X,
-  Clipboard, Loader2, BookHeart,
+  Link2,
+  Sparkles,
+  ChefHat,
+  ShoppingBasket,
+  Check,
+  Clock,
+  Users,
+  Play,
+  Pause,
+  RotateCcw,
+  X,
+  Clipboard,
+  Loader2,
+  BookHeart,
 } from "lucide-react";
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
+import { buttonClass } from "@/components/ui/Button";
+import { StepRibbon } from "@/components/ui/StepRibbon";
 
 const DEMO_RECIPE = {
   title: "Creamy Tomato Basil Pasta",
-  image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80",
+  image:
+    "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80",
   prepTime: "15 min",
   cookTime: "20 min",
   servings: 4,
@@ -36,10 +50,30 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { id: 0, label: "Paste a Link", icon: <Link2 className="w-4 h-4" />, duration: 4500 },
-  { id: 1, label: "AI Extracts", icon: <Sparkles className="w-4 h-4" />, duration: 4000 },
-  { id: 2, label: "Recipe Ready", icon: <ChefHat className="w-4 h-4" />, duration: 5500 },
-  { id: 3, label: "Grocery List", icon: <ShoppingBasket className="w-4 h-4" />, duration: 5000 },
+  {
+    id: 0,
+    label: "Paste a Link",
+    icon: <Link2 className="w-4 h-4" />,
+    duration: 4500,
+  },
+  {
+    id: 1,
+    label: "AI Extracts",
+    icon: <Sparkles className="w-4 h-4" />,
+    duration: 4000,
+  },
+  {
+    id: 2,
+    label: "Recipe Ready",
+    icon: <ChefHat className="w-4 h-4" />,
+    duration: 5500,
+  },
+  {
+    id: 3,
+    label: "Grocery List",
+    icon: <ShoppingBasket className="w-4 h-4" />,
+    duration: 5000,
+  },
 ];
 
 export default function DemoPage() {
@@ -54,7 +88,6 @@ export default function DemoPage() {
 
   const demoUrl = "https://myfavoriterecipes.com/creamy-tomato-basil-pasta";
 
-  // Auto-advance steps
   useEffect(() => {
     if (!isPlaying) return;
     timerRef.current = setTimeout(() => {
@@ -69,7 +102,6 @@ export default function DemoPage() {
     };
   }, [currentStep, isPlaying]);
 
-  // Step-specific animations
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
 
@@ -82,7 +114,8 @@ export default function DemoPage() {
       intervalRef.current = setInterval(() => {
         i++;
         setTypedUrl(demoUrl.slice(0, i));
-        if (i >= demoUrl.length && intervalRef.current) clearInterval(intervalRef.current);
+        if (i >= demoUrl.length && intervalRef.current)
+          clearInterval(intervalRef.current);
       }, 50);
     }
     if (currentStep === 1) {
@@ -100,7 +133,8 @@ export default function DemoPage() {
       intervalRef.current = setInterval(() => {
         idx++;
         setRevealedIngredients(idx);
-        if (idx >= DEMO_RECIPE.ingredients.length && intervalRef.current) clearInterval(intervalRef.current);
+        if (idx >= DEMO_RECIPE.ingredients.length && intervalRef.current)
+          clearInterval(intervalRef.current);
       }, 500);
     }
     if (currentStep === 3) {
@@ -108,8 +142,13 @@ export default function DemoPage() {
       let idx = 0;
       intervalRef.current = setInterval(() => {
         idx++;
-        setCheckedItems((prev) => { const next = new Set(prev); next.add(idx - 1); return next; });
-        if (idx >= DEMO_RECIPE.ingredients.length && intervalRef.current) clearInterval(intervalRef.current);
+        setCheckedItems((prev) => {
+          const next = new Set(prev);
+          next.add(idx - 1);
+          return next;
+        });
+        if (idx >= DEMO_RECIPE.ingredients.length && intervalRef.current)
+          clearInterval(intervalRef.current);
       }, 600);
     }
 
@@ -129,94 +168,70 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] flex flex-col relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
-      {/* Ambient blobs */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <motion.div
-          animate={{ x: [0, 60, 0], y: [0, 40, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[5%] w-[600px] h-[600px] bg-amber-100/30 rounded-full blur-[120px]"
-        />
-        <motion.div
-          animate={{ x: [0, -80, 0], y: [0, 80, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-5%] right-[5%] w-[500px] h-[500px] bg-amber-100/15 rounded-full blur-[100px]"
-        />
-      </div>
-
-      {/* Top bar */}
-      <div className="relative z-30 flex items-center justify-between px-6 sm:px-10 pt-12 lg:pt-8 pb-6">
+    <div className="min-h-screen bg-cream flex flex-col">
+      <header className="relative z-30 flex items-center justify-between px-6 sm:px-10 pt-10 pb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-300/30">
-            <BookHeart className="w-5 h-5 text-white" />
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-linen text-brown">
+            <BookHeart size={18} aria-hidden />
           </div>
-          <div>
-            <span className="text-slate-800 text-[15px] font-black tracking-tight leading-none block mb-0.5">
+          <div className="flex flex-col leading-tight">
+            <span className="font-display font-semibold text-[15px] text-ink">
               Julie&apos;s Cookbook
             </span>
-            <span className="text-slate-400 text-[11px] font-bold uppercase tracking-widest leading-none">
+            <span className="font-sans text-[10px] font-medium uppercase tracking-[0.18em] text-ink-mute">
               Interactive Demo
             </span>
           </div>
         </div>
         <Link
           href="/login"
-          className="w-10 h-10 glass rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 transition-all"
+          aria-label="Close demo"
+          className={cn(
+            "inline-flex items-center justify-center w-10 h-10 rounded-full",
+            "bg-transparent text-ink-mute",
+            "transition-colors duration-150 ease-hearth",
+            "hover:bg-linen hover:text-ink",
+          )}
         >
-          <X className="w-5 h-5" />
+          <X size={18} aria-hidden />
         </Link>
-      </div>
+      </header>
 
-      <div className="relative z-20 px-6 sm:px-10 max-w-5xl mx-auto flex-1 flex flex-col pt-4">
-        {/* Step Progress Bar */}
-        <div className="flex items-center gap-2 mb-12 glass p-2 rounded-[2rem] max-w-fit mx-auto lg:mx-0">
-          {steps.map((step, idx) => (
+      <div className="relative z-20 px-6 sm:px-10 max-w-5xl mx-auto w-full flex-1 flex flex-col pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
+          <StepRibbon
+            steps={steps}
+            currentStep={currentStep}
+            onSelect={goToStep}
+            className="flex-1"
+          />
+
+          <div className="flex items-center gap-2 self-center sm:self-auto">
             <button
-              key={step.id}
-              onClick={() => goToStep(idx)}
-              className={clsx(
-                "flex items-center gap-2.5 px-4 py-3 rounded-[1.75rem] text-[13px] font-bold transition-all whitespace-nowrap relative",
-                idx === currentStep
-                  ? "text-amber-700 bg-white shadow-md border border-amber-200/50"
-                  : idx < currentStep
-                  ? "text-emerald-600 bg-white/40 hover:bg-white/60"
-                  : "text-slate-400 bg-transparent hover:bg-white/20"
-              )}
-            >
-              {idx < currentStep ? (
-                <Check className="w-4 h-4 stroke-[3]" />
-              ) : (
-                <div className={clsx("w-5 h-5 rounded-lg flex items-center justify-center", idx === currentStep ? "bg-amber-50" : "bg-slate-100/50")}>
-                  {step.icon}
-                </div>
-              )}
-              <span className="hidden sm:inline">{step.label}</span>
-              <span className="sm:hidden">{idx + 1}</span>
-            </button>
-          ))}
-
-          <div className="w-px h-6 bg-slate-200/50 mx-2" />
-
-          <div className="flex items-center gap-1.5 shrink-0 pr-1">
-            <button
+              type="button"
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-10 h-10 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center text-slate-500 hover:text-amber-700 transition-all active:scale-90"
+              aria-label={isPlaying ? "Pause" : "Play"}
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-linen text-ink-soft hover:bg-linen-dim hover:text-ink transition-colors duration-150 ease-hearth"
             >
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
+              {isPlaying ? (
+                <Pause size={16} aria-hidden />
+              ) : (
+                <Play size={16} aria-hidden className="ml-0.5" />
+              )}
             </button>
             <button
+              type="button"
               onClick={restart}
-              className="w-10 h-10 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center text-slate-500 hover:text-amber-700 transition-all active:scale-90"
+              aria-label="Restart"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-linen text-ink-soft hover:bg-linen-dim hover:text-ink transition-colors duration-150 ease-hearth"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw size={16} aria-hidden />
             </button>
           </div>
         </div>
 
-        {/* Step Content */}
         <div className="flex-1 relative min-h-[500px]">
           <AnimatePresence mode="wait">
-            {/* Step 0: Paste a link */}
             {currentStep === 0 && (
               <motion.div
                 key="step0"
@@ -227,49 +242,54 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-amber-200">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-brown-glass text-brown font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <Link2 className="w-3 h-3" /> Step 01: Capture
                   </div>
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-800 mb-6 tracking-tight leading-[1.1]">
-                    Import from <span className="text-amber-600">Anywhere.</span>
+                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
+                    Import from <span className="text-brown">Anywhere.</span>
                   </h2>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                    Just copy the URL of any recipe website. We&apos;ll extract only the ingredients and steps, leaving the ads behind.
+                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                    Just copy the URL of any recipe website. We&apos;ll extract
+                    only the ingredients and steps, leaving the ads behind.
                   </p>
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="glass-strong rounded-[3rem] p-10 relative">
-                    <div className="flex items-center gap-3 mb-8">
-                      <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center">
-                        <Clipboard className="w-5 h-5 text-amber-600" />
+                  <div className="bg-linen rounded-lg shadow-lift p-8 sm:p-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-cream text-brown">
+                        <Clipboard className="w-4 h-4" />
                       </div>
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">URL Smart Detector</span>
+                      <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-mute">
+                        URL Smart Detector
+                      </span>
                     </div>
 
-                    <div className="bg-white/80 border border-amber-200 rounded-2xl px-6 py-5 min-h-[64px] flex items-center shadow-inner mb-6">
-                      <span className="text-slate-700 font-bold text-[15px] break-all">
+                    <div className="bg-cream border border-brown-glass rounded px-5 py-4 min-h-[60px] flex items-center mb-6">
+                      <span className="font-sans text-[14px] text-ink break-all">
                         {typedUrl}
                       </span>
                       <motion.span
                         animate={{ opacity: [1, 0] }}
                         transition={{ repeat: Infinity, duration: 0.8 }}
-                        className="inline-block w-1 h-6 bg-amber-500 ml-1 rounded-full"
+                        className="inline-block w-0.5 h-5 bg-brown ml-1 rounded-full"
                       />
                     </div>
 
-                    <div className={clsx(
-                      "bg-amber-600 text-white py-5 rounded-2xl font-black text-center text-[15px] shadow-[0_8px_24px_rgba(196,149,46,0.25)] flex items-center justify-center gap-3 transition-opacity",
-                      typedUrl.length > 30 ? "opacity-100" : "opacity-40"
-                    )}>
-                      Import Recipe <ArrowRight className="w-5 h-5" />
+                    <div
+                      className={cn(
+                        "rounded-pill px-6 py-3.5 text-center font-sans font-semibold text-[15px]",
+                        "bg-brown text-cream transition-opacity duration-200",
+                        typedUrl.length > 30 ? "opacity-100" : "opacity-40",
+                      )}
+                    >
+                      Import Recipe
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* Step 1: AI extracting */}
             {currentStep === 1 && (
               <motion.div
                 key="step1"
@@ -280,63 +300,85 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left order-first lg:order-last">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-orange-100">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-ember/10 text-ember font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <Sparkles className="w-3 h-3" /> Step 02: Intelligence
                   </div>
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-800 mb-6 tracking-tight leading-[1.1]">
-                    AI-Powered <span className="text-orange-500">Extraction.</span>
+                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
+                    AI-Powered <span className="text-ember">Extraction.</span>
                   </h2>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                    Our AI parses recipes from any website, instantly structuring ingredients, cook times, and nutritional data into a clean format.
+                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                    Our AI parses recipes from any website, instantly
+                    structuring ingredients, cook times, and nutritional data
+                    into a clean format.
                   </p>
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="glass-strong rounded-[3rem] p-10">
-                    <div className="flex justify-center mb-10">
-                      <div className="relative">
-                        <div className="absolute inset-[-20px] bg-orange-400/20 rounded-full blur-3xl animate-pulse" />
-                        <div className="relative w-20 h-20 bg-white border border-orange-100 rounded-[2rem] flex items-center justify-center shadow-md">
-                          <Sparkles className="w-9 h-9 text-orange-400" />
-                        </div>
+                  <div className="bg-linen rounded-lg shadow-lift p-8 sm:p-10">
+                    <div className="flex justify-center mb-8">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cream text-ember">
+                        <Sparkles className="w-7 h-7" />
                       </div>
                     </div>
 
-                    <div className="mb-8">
-                      <div className="flex justify-between text-xs font-black mb-3 px-1">
-                        <span className="text-slate-400 uppercase tracking-widest">Parsing Structure...</span>
-                        <span className="text-orange-500">{extractProgress}%</span>
+                    <div className="mb-6">
+                      <div className="flex justify-between font-sans text-[11px] font-semibold uppercase tracking-[0.15em] mb-2 px-1">
+                        <span className="text-ink-mute">Parsing Structure</span>
+                        <span className="text-ember tabular-nums">
+                          {extractProgress}%
+                        </span>
                       </div>
-                      <div className="w-full h-3 bg-white/60 rounded-full overflow-hidden border border-white shadow-inner">
+                      <div className="w-full h-2 bg-cream rounded-full overflow-hidden border border-brown-glass">
                         <div
-                          className="h-full bg-gradient-to-r from-orange-400 to-pink-500 rounded-full transition-all duration-100"
+                          className="h-full bg-ember rounded-full transition-all duration-100"
                           style={{ width: `${extractProgress}%` }}
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      {["Recipe Metadata", "Ingredient Parsing", "Method Structuring", "Nutritional Data"].map((item, i) => {
+                    <div className="space-y-2.5">
+                      {[
+                        "Recipe Metadata",
+                        "Ingredient Parsing",
+                        "Method Structuring",
+                        "Nutritional Data",
+                      ].map((item, i) => {
                         const done = extractProgress > (i + 1) * 24;
                         const active = extractProgress > i * 24 && !done;
                         return (
                           <div
                             key={item}
-                            className={clsx(
-                              "flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all border",
-                              done ? "bg-emerald-50/50 border-emerald-100" : "bg-white/40 border-transparent"
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3 rounded transition-colors",
+                              done ? "bg-leaf/10" : "bg-cream",
                             )}
                           >
-                            <div className={clsx(
-                              "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all shadow-sm",
-                              done ? "bg-emerald-500 text-white" : active ? "bg-orange-100 text-orange-500" : "bg-slate-100 text-slate-300"
-                            )}>
-                              {done ? <Check className="w-4 h-4 stroke-[4]" /> : active ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            <div
+                              className={cn(
+                                "w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                                done
+                                  ? "bg-leaf text-cream"
+                                  : active
+                                    ? "bg-ember/20 text-ember"
+                                    : "bg-linen-dim text-ink-mute",
+                              )}
+                            >
+                              {done ? (
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              ) : active ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : null}
                             </div>
-                            <span className={clsx(
-                              "text-[14px] font-bold",
-                              done ? "text-emerald-700" : active ? "text-orange-700" : "text-slate-400"
-                            )}>
+                            <span
+                              className={cn(
+                                "font-sans text-[14px] font-medium",
+                                done
+                                  ? "text-ink"
+                                  : active
+                                    ? "text-ink-soft"
+                                    : "text-ink-mute",
+                              )}
+                            >
                               {item}
                             </span>
                           </div>
@@ -348,7 +390,6 @@ export default function DemoPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Recipe display */}
             {currentStep === 2 && (
               <motion.div
                 key="step2"
@@ -359,62 +400,97 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-emerald-100">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-leaf/10 text-leaf font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <ChefHat className="w-3 h-3" /> Step 03: Organization
                   </div>
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-800 mb-6 tracking-tight leading-[1.1]">
-                    Pure, Clean <span className="text-emerald-500">Design.</span>
+                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
+                    Pure, Clean <span className="text-leaf">Design.</span>
                   </h2>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                    No clutter, no popups. Just your recipe, beautifully presented with all the details you need to cook with confidence.
+                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                    No clutter, no popups. Just your recipe, beautifully
+                    presented with all the details you need to cook with
+                    confidence.
                   </p>
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="glass-strong rounded-[3rem] overflow-hidden">
+                  <div className="bg-linen rounded-lg shadow-lift overflow-hidden">
                     <div className="relative h-48 overflow-hidden">
-                      <Image src={DEMO_RECIPE.image} alt={DEMO_RECIPE.title} fill sizes="400px" className="object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent" />
-                      <div className="absolute bottom-6 left-8 right-8">
-                        <span className="px-2 py-0.5 bg-emerald-500/80 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-full">
+                      <Image
+                        src={DEMO_RECIPE.image}
+                        alt={DEMO_RECIPE.title}
+                        fill
+                        sizes="400px"
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
+                      <div className="absolute bottom-5 left-6 right-6">
+                        <span className="inline-block px-2 py-0.5 bg-leaf/90 text-cream font-sans text-[10px] font-semibold uppercase tracking-[0.12em] rounded-pill">
                           Easy Prep
                         </span>
-                        <h3 className="text-2xl font-black text-white leading-tight mt-2">{DEMO_RECIPE.title}</h3>
+                        <h3 className="font-display font-semibold text-2xl text-cream leading-tight mt-2">
+                          {DEMO_RECIPE.title}
+                        </h3>
                       </div>
                     </div>
 
-                    <div className="p-8">
-                      <div className="grid grid-cols-3 gap-3 mb-8">
+                    <div className="p-7">
+                      <div className="grid grid-cols-3 gap-3 mb-6 pb-6 border-b border-linen-dim">
                         {[
-                          { icon: <Clock className="w-4 h-4 text-emerald-500" />, text: DEMO_RECIPE.prepTime, label: "Prep" },
-                          { icon: <Clock className="w-4 h-4 text-emerald-500" />, text: DEMO_RECIPE.cookTime, label: "Cook" },
-                          { icon: <Users className="w-4 h-4 text-emerald-500" />, text: `${DEMO_RECIPE.servings}p`, label: "Yield" },
+                          {
+                            icon: <Clock className="w-4 h-4 text-brown" />,
+                            text: DEMO_RECIPE.prepTime,
+                            label: "Prep",
+                          },
+                          {
+                            icon: <Clock className="w-4 h-4 text-brown" />,
+                            text: DEMO_RECIPE.cookTime,
+                            label: "Cook",
+                          },
+                          {
+                            icon: <Users className="w-4 h-4 text-brown" />,
+                            text: `${DEMO_RECIPE.servings}`,
+                            label: "Servings",
+                          },
                         ].map((s, i) => (
-                          <div key={i} className="glass p-3 rounded-2xl flex flex-col items-center gap-1">
+                          <div
+                            key={i}
+                            className="flex flex-col items-center gap-1"
+                          >
                             {s.icon}
-                            <span className="text-[12px] font-black text-slate-700 leading-none">{s.text}</span>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter leading-none">{s.label}</span>
+                            <span className="font-sans text-[14px] font-semibold text-ink leading-none tabular-nums">
+                              {s.text}
+                            </span>
+                            <span className="font-sans text-[10px] font-semibold text-ink-mute uppercase tracking-[0.1em] leading-none">
+                              {s.label}
+                            </span>
                           </div>
                         ))}
                       </div>
 
-                      <div className="space-y-3">
-                        <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-4">Ingredients</h4>
-                        {DEMO_RECIPE.ingredients.slice(0, 5).map((ing, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{
-                              opacity: i < revealedIngredients ? 1 : 0,
-                              x: i < revealedIngredients ? 0 : -10,
-                            }}
-                            className="flex items-center gap-3 text-[14px] font-bold text-slate-600 glass p-3 rounded-2xl"
-                          >
-                            <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                            {ing}
-                          </motion.div>
-                        ))}
-                        <p className="text-[11px] font-bold text-slate-400 pl-2">+ {DEMO_RECIPE.ingredients.length - 5} more items...</p>
+                      <div>
+                        <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-brown mb-3">
+                          Ingredients
+                        </h4>
+                        <div className="space-y-1.5">
+                          {DEMO_RECIPE.ingredients.slice(0, 5).map((ing, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0, x: -8 }}
+                              animate={{
+                                opacity: i < revealedIngredients ? 1 : 0,
+                                x: i < revealedIngredients ? 0 : -8,
+                              }}
+                              className="flex items-center gap-3 font-serif text-[14px] text-ink py-1.5"
+                            >
+                              <div className="w-1.5 h-1.5 rounded-full bg-leaf shrink-0" />
+                              {ing}
+                            </motion.div>
+                          ))}
+                          <p className="font-serif text-[12px] italic text-ink-mute pl-5 pt-1">
+                            + {DEMO_RECIPE.ingredients.length - 5} more
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -422,7 +498,6 @@ export default function DemoPage() {
               </motion.div>
             )}
 
-            {/* Step 3: Grocery List */}
             {currentStep === 3 && (
               <motion.div
                 key="step3"
@@ -433,69 +508,94 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left order-first lg:order-last">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full mb-6 border border-amber-200">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-gold/15 text-brown-deep font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <ShoppingBasket className="w-3 h-3" /> Step 04: Shopping
                   </div>
-                  <h2 className="text-4xl sm:text-5xl font-black text-slate-800 mb-6 tracking-tight leading-[1.1]">
-                    Smart <span className="text-amber-600">Groceries.</span>
+                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
+                    Smart <span className="text-gold">Groceries.</span>
                   </h2>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                    Instantly sync ingredients to your shopping list. Mark them off as you go, and never wander aimlessly through aisles again.
+                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                    Instantly sync ingredients to your shopping list. Mark them
+                    off as you go, and never wander aimlessly through aisles
+                    again.
                   </p>
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="glass-strong rounded-[3rem] p-10 relative overflow-hidden">
-                    <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-amber-200/15 rounded-full blur-[60px] pointer-events-none" />
-
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-8 px-1">
-                        <div>
-                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">Weekly List</h4>
-                          <span className="text-[14px] font-black text-slate-800">Fresh Pantry</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-2xl font-black text-amber-700 leading-none block">
-                            {Math.round((checkedItems.size / DEMO_RECIPE.ingredients.length) * 100)}%
-                          </span>
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Done</span>
-                        </div>
+                  <div className="bg-linen rounded-lg shadow-lift p-8 sm:p-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-mute leading-none mb-1.5">
+                          Weekly List
+                        </h4>
+                        <span className="font-display font-semibold text-[18px] text-ink">
+                          Fresh Pantry
+                        </span>
                       </div>
-
-                      <div className="w-full h-2 bg-white/60 rounded-full overflow-hidden border border-white shadow-inner mb-10">
-                        <motion.div
-                          animate={{ width: `${(checkedItems.size / DEMO_RECIPE.ingredients.length) * 100}%` }}
-                          className="h-full bg-gradient-to-r from-amber-600 to-amber-700 rounded-full"
-                        />
+                      <div className="text-right">
+                        <span className="font-sans text-2xl font-semibold text-brown leading-none block tabular-nums">
+                          {Math.round(
+                            (checkedItems.size /
+                              DEMO_RECIPE.ingredients.length) *
+                              100,
+                          )}
+                          %
+                        </span>
+                        <span className="font-sans text-[10px] font-semibold text-ink-mute uppercase tracking-[0.15em]">
+                          Done
+                        </span>
                       </div>
+                    </div>
 
-                      <div className="space-y-3">
-                        {DEMO_RECIPE.ingredients.slice(0, 6).map((ing, i) => {
-                          const checked = checkedItems.has(i);
-                          return (
+                    <div className="w-full h-2 bg-cream rounded-full overflow-hidden border border-brown-glass mb-6">
+                      <motion.div
+                        animate={{
+                          width: `${
+                            (checkedItems.size /
+                              DEMO_RECIPE.ingredients.length) *
+                            100
+                          }%`,
+                        }}
+                        className="h-full bg-leaf rounded-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      {DEMO_RECIPE.ingredients.slice(0, 6).map((ing, i) => {
+                        const checked = checkedItems.has(i);
+                        return (
+                          <div
+                            key={i}
+                            className={cn(
+                              "flex items-center gap-3 py-3 px-4 rounded transition-colors",
+                              checked ? "bg-cream opacity-60" : "bg-cream",
+                            )}
+                          >
                             <div
-                              key={i}
-                              className={clsx(
-                                "flex items-center gap-4 py-4 px-5 rounded-2xl border transition-all",
-                                checked ? "bg-white/20 border-white/40 opacity-60" : "bg-white/60 border-white shadow-sm"
+                              className={cn(
+                                "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                                checked
+                                  ? "bg-leaf border-leaf"
+                                  : "border-brown-glass bg-transparent",
                               )}
                             >
-                              <div className={clsx(
-                                "w-7 h-7 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all shadow-sm",
-                                checked ? "bg-emerald-500 border-emerald-500" : "border-amber-200 bg-white"
-                              )}>
-                                {checked && <Check className="w-4 h-4 text-white stroke-[4]" />}
-                              </div>
-                              <span className={clsx(
-                                "text-[14px] font-bold transition-all",
-                                checked ? "text-slate-400 line-through" : "text-slate-700"
-                              )}>
-                                {ing}
-                              </span>
+                              {checked && (
+                                <Check className="w-3.5 h-3.5 text-cream stroke-[3]" />
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
+                            <span
+                              className={cn(
+                                "font-serif text-[14px] transition-all",
+                                checked
+                                  ? "text-ink-mute line-through"
+                                  : "text-ink",
+                              )}
+                            >
+                              {ing}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -504,18 +604,16 @@ export default function DemoPage() {
           </AnimatePresence>
         </div>
 
-        {/* CTA */}
-        <div className="mt-20 pb-16 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-40">
+        <div className="mt-16 pb-16 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-40">
           <Link
             href="/signup"
-            className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 text-white px-10 py-5 rounded-[2rem] font-black text-[16px] flex items-center justify-center gap-3 shadow-[0_12px_40px_rgba(196,149,46,0.3)] hover:shadow-[0_16px_48px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className={buttonClass("primary", "w-full sm:w-auto")}
           >
-            Try It Yourself — Create an Account
-            <ArrowRight className="w-5 h-5" />
+            Try It Yourself
           </Link>
           <Link
             href="/login"
-            className="w-full sm:w-auto text-slate-500 hover:text-amber-700 px-8 py-5 rounded-[2rem] font-bold text-[15px] transition-all glass"
+            className={buttonClass("secondary", "w-full sm:w-auto")}
           >
             Sign in to Existing Account
           </Link>

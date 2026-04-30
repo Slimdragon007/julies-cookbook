@@ -2,6 +2,32 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-30 — TASK-014 — Hearth reskin Phase 1.4 (/demo) — public surface complete
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+
+**Task:** Reskin the 4-step interactive demo (`/demo`) with Hearth tokens. Visual layer only; demo motion-react state machine, auto-advance pacing, typing/extract/reveal/check animations, and step durations preserved verbatim. Closes Phase 1 of the Hearth reskin (TASK-014).
+
+**Changed:**
+
+- `src/components/ui/StepRibbon.tsx` (new): step-progress component per `docs/design/component-specs.md:599-637`. Numbered dots with leaf-fill connectors, three states (upcoming / active / complete), click-to-navigate. Each button renders its step label visibly at `sm+` and `sr-only` at `<sm` so accessible names remain matchable on every viewport (preserves the existing playwright `getByRole("button", { name: /paste/i })` style selectors).
+- `src/app/demo/page.tsx`: full Hearth reskin. Top bar uses BookHeart in linen circle + Playfair "Julie's Cookbook" + Lora "Interactive Demo" eyebrow. StepRibbon replaces the old amber pill bar; Play/Pause/Restart broken out into their own restrained linen-pill toolbar. Each of 4 step panels rebuilt with Hearth tokens, swapping the previous amber/orange/emerald/pink accents for brown/ember/leaf/gold respectively (one accent per step, one signature per surface per design Rule 4 of the law sense). Mock display panels switched from `glass-strong` to `bg-linen rounded-lg shadow-lift` (Card pattern, since glass-as-base layer violated design bundle Rule 4 "glass goes on top, never on bottom"). CTA pair at bottom uses `buttonClass("primary")` and `buttonClass("secondary")` on `<Link>` elements. State machine and all animations untouched.
+- `task_plan.md`: TASK-014 moved from Active to Done with a sub-bullet ledger of which commit shipped which surface.
+
+**Verified:**
+
+- `npm run lint` clean (caught and fixed an unused `Button` import on first pass)
+- `npx tsc --noEmit` clean
+- `npm run test` -> 111 pass, 7 pre-existing skips
+- `npm run test:e2e` -> 28 pass, 1 documented skip (full suite re-run, including all 4 demo tests at `e2e/demo.spec.ts`)
+- `npm run build` -> 11 routes, /demo bundle 48 kB -> 48.1 kB (negligible delta; motion-react payload dominates)
+
+**Trust contract:**
+
+Same `next.config.mjs` workerd-disable dance as the prior commit was needed to run e2e locally; restored before commit. Confirmed via final lint/build that the committed file is the original 4-line wiring. First e2e pass surfaced two demo-test regressions caused by `role="tab"` on StepRibbon buttons (which made `getByRole("button", ...)` fail strict-mode matching, since tabs are not buttons); fixed by dropping the role and using `aria-current="step"` for the active state. Re-run was clean.
+
+---
+
 ## 2026-04-30 — TASK-014 — Hearth reskin Phase 1: /login, /signup, /auth/reset, /auth/update-password
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

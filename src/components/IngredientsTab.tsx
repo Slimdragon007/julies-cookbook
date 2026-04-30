@@ -29,7 +29,8 @@ export default function IngredientsTab({
   return (
     <div>
       {/* Header with servings scaler */}
-      <div className="flex items-center justify-between mb-6">
+      {/* flex-wrap + outer gap-3: prevent title pill / servings pill overlap on narrow viewports (TASK-013). */}
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-slate-800">Ingredients</h2>
           <div className="px-4 py-1.5 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-200 flex items-center gap-2">
@@ -37,23 +38,28 @@ export default function IngredientsTab({
             {ingredients.length} Items
           </div>
         </div>
-        <div className="flex items-center gap-3 glass rounded-full px-4 py-2">
+        <div className="flex items-center gap-2 glass rounded-full px-3 py-2">
+          {/* Each <button> is 44×44 (iOS HIG / WCAG 2.5.5 minimum tappable size). The visible circle stays 36px via the inner span — the extra 4px ring is invisible hit area. */}
           <button
             onClick={() => onServingsChange(Math.max(1, servings - 1))}
-            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm"
+            className="w-11 h-11 inline-flex items-center justify-center text-slate-800 text-lg"
             aria-label="Decrease servings"
           >
-            −
+            <span className="w-9 h-9 rounded-full bg-white border border-white flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm">
+              −
+            </span>
           </button>
           <span className="text-sm text-slate-800 font-bold min-w-[5rem] text-center">
             {servings} {servingsLabel}
           </span>
           <button
             onClick={() => onServingsChange(servings + 1)}
-            className="w-9 h-9 rounded-full bg-white border border-white text-slate-800 text-lg flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm"
+            className="w-11 h-11 inline-flex items-center justify-center text-slate-800 text-lg"
             aria-label="Increase servings"
           >
-            +
+            <span className="w-9 h-9 rounded-full bg-white border border-white flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm">
+              +
+            </span>
           </button>
         </div>
       </div>

@@ -2,6 +2,62 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-30 — TASK-013 — Mobile: ingredient +/- buttons not tappable
+
+**Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
+
+**Branch:** `fix/ingredients-touch-target` (off `main`, independent of PR #20 / `feat/hearth-reskin`)
+
+**Task:** Fix the bug Julie hit on her phone 2026-04-29: the `−` / `+` buttons on the recipe ingredient scaler did nothing because, in her words, "white space was covering the whole thing." Backlog ticket TASK-013 had three suspected causes; bench analysis confirmed the first two (layout overlap + sub-44pt buttons) and ruled out the third (count-text reservation pushing the title pill out of bounds — that's a downstream effect of the first cause, not an independent one).
+
+**Architect decision (this session, before code):** three options for the touch-target standard going forward — direct 44px, hit-area padding (visual stays small), or native stepper. Picked Option 2 (hit-area padding) on the rationale that the Hearth design intent of restrained 32px visual circles is real, the accessibility issue is about hit area not visual size, and the pattern composes with future +/- controls (food log, ingredient list qty) without forcing them all chunky. Apple's own apps use this pattern (visual ≤32px, 44pt hit area). Standard to be formalized as a `Button` primitive variant (`tap="comfortable"`) and ADR-005 once `feat/hearth-reskin` merges and the design-system foundation is on `main` — deferred to a follow-up branch since the Button primitive doesn't exist on `main` yet.
+
+**Changed:**
+
+- `src/components/IngredientsTab.tsx` (header block, lines 31-65 in new file). Two corrections, both required to fix the bug:
+  1. Outer header div now `flex items-center justify-between gap-3 flex-wrap mb-6`. The added `flex-wrap gap-3` lets the right-side servings pill drop to a new row on narrow viewports instead of overlapping the left-side title pill. Computed widths on a 375px viewport: title pill ~232px (Ingredients h2 + "X Items" sparkle pill), servings pill ~216px after the size changes below — total 448px, 73px over the viewport, so wrapping is mandatory. With wrap, the layout is title row + servings row, each centered-ish, no overlap.
+
+  2. Each `<button>` now wraps the visual circle in a hit-area extension: outer `<button class="w-11 h-11 inline-flex items-center justify-center text-slate-800 text-lg">` (44×44 — meets iOS HIG and WCAG 2.5.5), inner `<span class="w-9 h-9 rounded-full bg-white border border-white flex items-center justify-center hover:bg-amber-50 active:scale-90 transition-all shadow-sm">` (visual stays at 36px — same as before). Hover/active styles moved from the button to the span so they animate the visible circle, not the invisible padding ring. Pill container tightened to `px-3 py-2` (was `px-4 py-2`) and inner gap to `gap-2` (was `gap-3`) to absorb the 8px width increase per button without inflating the pill further.
+
+  Net pill width change: old `px-4 + 36 + 12 + 80 + 12 + 36 + px-4 = 208px`. New `px-3 + 44 + 8 + 80 + 8 + 44 + px-3 = 208px`. Pill width unchanged; visual gap between count and circles slightly larger (12 + 4 inset = 16px effective vs 12px), which feels more breathable not less.
+
+- `task_plan.md` — TASK-013 moved from Backlog to Done with the implementation summary.
+
+**Trade-offs explicitly accepted:**
+
+- The fix uses raw Tailwind classes inline rather than a reusable `Button` primitive variant. The variant is the right long-term home for this pattern, but it lives in `src/components/ui/Button.tsx` on the unmerged `feat/hearth-reskin` branch. Refactoring to use it is a follow-up after that branch lands.
+- No new e2e test added. The existing recipe-detail e2e doesn't drive a mobile viewport, and adding mobile-viewport coverage is bigger than this PR's scope. A unit test asserting the `w-11 h-11` className would be tautological (lint-level enforcement, not behavior). Visual smoke is the right verification mode here, deferred to the Cloudflare preview deploy.
+- Hover/active styles on the inner `<span>` are slightly less idiomatic than on the `<button>`, but this is necessary for the visual effect to be on the visible circle. The button itself has no visible chrome — only its hit area is real.
+
+**Gates:**
+
+- `npm run lint` → clean
+- `npx tsc --noEmit` → clean
+- `npm run test` (vitest) → IngredientsTab is not under unit-test coverage; full suite expected unaffected (re-run on commit via husky)
+- `npm run test:e2e` → not run (no mobile-viewport selector for this control; existing tests don't cover scaler interaction at 375px)
+- Husky pre-commit → fires on commit
+- Browser smoke at 375px → **deferred to Cloudflare PR preview deploy** (per memory: "if a step can't run, say so explicitly rather than claiming success" — local mobile smoke would require an authed dev session against a recipe, which is heavier than the PR warrants)
+
+**Doc updates / rules tightened:**
+
+- task_plan.md TASK-013 closed.
+- Architect-approved touch-target standard ("visual ≥ 32px, hit area ≥ 44×44 via padding extension") will land as ADR-005 + `Button` primitive variant in a follow-up branch off the merged `feat/hearth-reskin`. Phase 2 of the Hearth reskin remains formally blocked on that follow-up, not on this PR.
+
+**Anti-bloat audit:**
+
+- One file changed (`IngredientsTab.tsx`). No new abstraction, no helper extracted, no test scaffolding spun up for a single visual change. Two inline comments justify the non-obvious decisions (`flex-wrap` rationale, hit-area pattern rationale).
+- Did NOT touch `ServingsScaler` spec in `docs/design/component-specs.md`, the Phase 2 callout in `hearth-reskin-plan.md`, or the `Button` primitive — those edits all depend on the design-system foundation that hasn't merged to `main` yet, and conflating them with the Julie-pain fix would either delay the fix or pollute the standard work with a temporary inline implementation.
+
+**Not changed (intentional):**
+
+- Other +/- patterns in the codebase (food log quantity controls if any) — out of TASK-013's scope. The standard work picks them up.
+- ADR not written this commit. ADR-005 lands with the design-system follow-up.
+- CLAUDE.md not edited — no new rule established yet (the rule lives in the deferred ADR).
+
+**Next:** PR opens, Cloudflare deploys preview, Julie verifies on her actual phone. Once `feat/hearth-reskin` (PR #20) merges, follow-up branch carries ADR-005 + Button variant + Phase 2 spec update + IngredientsTab refactor to use the variant.
+
+---
+
 ## 2026-04-28 — TASK-011 / TASK-012 — Recipe images persist on scrape; targeted responsive cleanup
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

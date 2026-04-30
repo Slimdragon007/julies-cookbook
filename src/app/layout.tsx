@@ -43,7 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className={`${inter.variable} font-body antialiased text-slate-800 bg-[#FAF8F4]`}
+        className={`${inter.variable} font-sans antialiased text-slate-800 bg-[#FAF8F4]`}
       >
         <div className="ambient-bg">
           <div className="grid-overlay" />

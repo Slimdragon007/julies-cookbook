@@ -4,7 +4,7 @@
 
 ## Active
 
-_(none — TASK-014 closed; see Done.)_
+- **TASK-015 — Hearth reskin Phase 2 (Recipe Detail).** Started 2026-04-30. Branch `feat/hearth-recipe-detail` off `feat/hearth-reskin`. **Prep complete in this commit:** ADR-005 (touch-target standard) accepted + implemented; `Button` primitive gains `icon` variant (44×44 invisible hit area, visual-as-child pattern); `docs/design/component-specs.md` §6 ServingsScaler updated to use the variant; `docs/design/hearth-reskin-plan.md` Phase 2 BLOCKER callout marked resolved. **Implementation pending:** `/recipe/[slug]` hero, meta block, stat row, ServingsScaler, TabBar (sticky+frosted on scroll), IngredientsTab + InstructionsTab + NutritionTab reskins (refactoring inline w-11 h-11 from PR #21 to use the new Button icon variant), MacroGrid (with bounce animation), PortionCalculator (the killer feature — Rule 8), ChatFAB (with first-load pulse animation), ErrorState. Estimated 8-12 hours of focused work; multiple commits expected. PR opens when implementation is done. Eventually merges as part of the consolidated Hearth reskin (PR #20 + this branch + future Phase 3-4 branches as one cut, per Slim's 2026-04-30 decision to hold PR #20 and accumulate).
 
 ## Backlog
 

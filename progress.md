@@ -2,6 +2,71 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-30 — TASK-015 (prep) — Phase 2 unblocked: ADR-005 + Button icon variant
+
+**Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
+
+**Branch:** `feat/hearth-recipe-detail` (off `feat/hearth-reskin`, per Slim's 2026-04-30 decision to hold PR #20 and accumulate Phase 2-4 on top instead of shipping Phase 1 alone — avoids the visual-mismatch period during Phase 2-4 development).
+
+**Task:** Resolve the touch-target sizing question that blocked Phase 2 of the Hearth reskin. The Phase 2 ServingsScaler spec called for `w-8 h-8` (32px) buttons, smaller than the 36px IngredientsTab buttons that already broke for Julie on her phone (TASK-013, surfaced 2026-04-29). Architectural decision had to land before Phase 2 implementation could start.
+
+**Architect decision (this session):** Slim picked Option 2 (hit-area padding — visual stays small, hit area extends to 44×44) over Option 1 (direct 44px) and Option 3 (native stepper). Rationale captured in the ADR: preserves Hearth restraint, meets WCAG 2.5.5 / iOS HIG, composes cleanly with adjacent layouts, scales to other +/- patterns (food log, etc.). Implementation choice picked (after surfacing the API ambiguity per the new `feedback_authorization_scope.md` memory): add an `icon` variant to the existing `Button` primitive rather than creating a separate `IconButton` component. Trade: slightly more conditional behavior in `Button.tsx`, but one source of truth for all interactive controls.
+
+**Changed:**
+
+- `docs/adr/ADR-005-touch-target-standard.md` (new) — fifth accepted ADR. Status: accepted + implemented. Documents the rule (visual ≥ 32px, hit area ≥ 44×44 via padding extension), the three options considered, the consequences (lock-in: all icon-only / circular controls use `<Button variant="icon">` + visual-child-span pattern; loss: one-line raw `<button>` markup is now an anti-pattern in new code), and a concrete rollback plan (mechanical migration to inline classes if the variant pattern proves problematic).
+- `src/components/ui/Button.tsx` — added `"icon"` to `ButtonVariant` union. New variant entry: `icon: "w-11 h-11"` — gives a 44×44 invisible hit area, leaves visual styling to the child span. Inline comment explains the non-obvious "no bg, no text-styling" choice (per CLAUDE.md "comments only when WHY is non-obvious"). The base `inline-flex items-center justify-center` and `disabled:cursor-not-allowed disabled:opacity-40` already handle alignment + disabled state cascade. `rounded-pill` from base is meaningless visually (no bg) but harmless.
+- `docs/design/component-specs.md` — §6 ServingsScaler updated: import `Button` from `@/components/ui/Button` and `Minus`/`Plus` from `lucide-react`; outer `<button>` replaced with `<Button variant="icon">`; visual styling (bg, hover, active, transition) moved to inner `<span class="w-8 h-8 …">`; disabled state stays on the outer `Button` (single source of truth via `buttonBase`'s `disabled:opacity-40`); added a "Touch target" callout above the snippet pointing at ADR-005, and a "Disabled state" callout below explaining the cascade.
+- `docs/design/hearth-reskin-plan.md` — Phase 2 BLOCKER callout (the 🚧 + 3-option decision) replaced with a ✅ RESOLVED callout pointing at ADR-005, naming the chosen option (hit-area padding), and noting the bug-fix-on-PR-#21 relationship (PR #21 uses the same pattern inline since the variant doesn't exist on `main` yet; will be refactored to use the variant when Phase 2 implementation reskins IngredientsTab).
+- `task_plan.md` — TASK-015 added to Active with prep complete + implementation surface listed (hero, meta, stats, scaler, TabBar, three tab contents, MacroGrid, PortionCalculator, ChatFAB, ErrorState).
+
+**Why "Button variant" over "new IconButton component":**
+
+Surfaced as an explicit choice to Slim before implementation, given the recently-added `feedback_authorization_scope.md` memory ("queue X" / "fix Y" / "let's go" approves the goal, not the path). I leaned IconButton-as-new-component (cleaner separation of textual CTAs vs icon controls); Slim picked Button variant. Honoring that without re-litigating: the `icon` variant adds two characters to the type union and one short class string to the variants record. The complexity cost is genuinely low because the variant is essentially "size only, no other styling" — there's no conditional logic in the JSX rendering layer, just a different className string. If the surface area of Button later becomes problematic (e.g. variants needing fundamentally different markup), the refactor to an IconButton component is mechanical: extract the icon variant, update callsites, delete the variant. ADR-005's rollback plan covers this implicitly via the "if the pattern itself is wrong" branch.
+
+**Trade-offs explicitly accepted:**
+
+- Phase 2 implementation itself is not in this commit. The prep work is finished; the actual reskin (10+ components, 8-12 hours of work per the plan estimate) is a separate effort, multiple commits expected.
+- No unit test for the `icon` variant. The Button primitive currently has zero unit tests; adding one just for `icon` would be tautological (assert className contains `w-11 h-11`) and would set a precedent that the other variants don't follow. Visual + integration verification happens during Phase 2 implementation.
+- The `loading` prop on `Button` will render a `Loader2` spinner alongside the icon child if `loading={true}` is passed on `variant="icon"`. Acceptable since icon buttons are typically discrete actions without loading states; documented in the ADR.
+- The current `Button` file is now ~70 lines and conceptually mixes "text CTA" and "hit-area-only" concerns. Watching for the trigger to split.
+- `IngredientsTab.tsx` on this branch is still the OLD broken pre-fix version (PR #21's fix lives on a separate `fix/ingredients-touch-target` branch off `main`). When all three branches eventually consolidate, IngredientsTab gets reskinned in Phase 2 and the inline classes from PR #21 become `<Button variant="icon">` calls — ADR-005 documents this transition.
+
+**Gates:**
+
+- `npm run lint` → clean
+- `npx tsc --noEmit` → clean
+- `npm run test` (vitest) → no Button tests exist; full suite expected unaffected
+- `npm run test:e2e` → not run (no UI rendered yet, only primitive + spec changes)
+- Husky pre-commit → fires on commit
+- Visual smoke → N/A this commit; Phase 2 implementation will exercise the variant in real surfaces
+
+**Doc updates / rules tightened:**
+
+- ADR-005 is the fifth accepted ADR. It establishes a project-wide accessibility + design rule that didn't previously have a written home.
+- `docs/design/component-specs.md` §6 now serves as the canonical reference snippet for the variant — Phase 2 implementation copies from this when wiring up `ServingsScaler`.
+- The `feedback_authorization_scope.md` memory entry written earlier in this session was applied here: surfaced the IconButton-vs-Button-variant choice to Slim before committing instead of guessing. Caught the "implementation path is a separate decision from the goal" gap that the memory entry exists to close.
+
+**Anti-bloat audit:**
+
+- Button change is two characters in the type union + one short class string + a 4-line comment. Zero JSX changes, zero new abstractions, zero tests added (consistent with the file's existing test posture).
+- ADR-005 is a single document, not split across multiple files. The rollback plan is concrete (mechanical migration with line-level instructions), not handwaving.
+- Spec update is one section change (§6 ServingsScaler) plus two short callouts. Did NOT speculatively update §7 IngredientList qty controls (no concrete +/- pattern there yet — wait until Phase 2 implementation surfaces the need).
+- Plan callout swap is one block edit (BLOCKER → RESOLVED), not a wholesale rewrite of the Phase 2 section.
+- task_plan.md change is one new Active entry. Did NOT modify the existing TASK-013 Backlog entry — that's owned by PR #21 and will consolidate when branches merge. No double-editing.
+
+**Not changed (intentional):**
+
+- Phase 2 implementation surface (recipe page reskin). That's TASK-015's pending half, multiple commits expected on this same branch.
+- IngredientsTab.tsx on this branch — left as the old broken version. PR #21 owns the fix on `main`; merge consolidation happens later.
+- IngredientList qty controls in spec — no `+/-` pattern documented there yet. Wait for Phase 2 implementation to surface the need.
+- Button primitive's three other variants (`primary`, `secondary`, `ghost`) — untouched. Their padding-based sizing already meets 44pt minimum for visible textual buttons.
+- CLAUDE.md not edited — no new project-level rule (the rule lives in ADR-005, which is referenced from the design plan and component specs that Phase 2 work will read).
+
+**Next:** Phase 2 implementation begins on this same branch. First commit likely targets the ServingsScaler component itself (since the spec is now reference-able and the variant is available). PR opens for `feat/hearth-recipe-detail` once Phase 2 surface is complete.
+
+---
+
 ## 2026-04-30 — TASK-014 — Hearth reskin Phase 1.4 (/demo) — public surface complete
 
 **Executor:** Claude Code (Opus 4.7, 1M context)

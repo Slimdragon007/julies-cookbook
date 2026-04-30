@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "icon";
 
 const buttonBase =
   "inline-flex items-center justify-center gap-2 font-sans rounded-pill " +
@@ -24,6 +24,10 @@ const buttonVariants: Record<ButtonVariant, string> = {
   ghost:
     "px-4 py-2.5 text-sm font-medium bg-transparent text-ink-soft " +
     "hover:text-ink",
+  // Hit-area-only variant for icon/circular buttons. The 44×44 box (iOS HIG / WCAG 2.5.5)
+  // is invisible; the caller renders the visible element as a child (typically a w-8 h-8
+  // circle span) which carries its own bg/hover/active styles. Per ADR-005.
+  icon: "w-11 h-11",
 };
 
 export function buttonClass(

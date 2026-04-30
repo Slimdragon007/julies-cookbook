@@ -135,10 +135,10 @@ Lowest-stakes screens. Establish the aesthetic on flows that can be tested witho
 
 **PR title:** `feat(design): reskin Recipe Detail with Hearth aesthetic`
 
-> **🚧 BLOCKER — touch-target sizing must be resolved before this phase starts.**
-> The `ServingsScaler` spec in `docs/design/component-specs.md:170` calls for `w-8 h-8` (32px) buttons. iOS Human Interface Guidelines mandate 44×44pt minimum. The existing IngredientsTab buttons at 36px already broke for Julie on her phone (TASK-013, surfaced 2026-04-29). Shipping Phase 2 as currently specced would deploy a _worse_ version of that bug.
+> **✅ BLOCKER RESOLVED 2026-04-30 — see `docs/adr/ADR-005-touch-target-standard.md`.**
+> Decision: Option 2 (hit-area padding). Visual ≥ 32px, hit area ≥ 44×44, achieved via `<Button variant="icon">` wrapping a visual `w-8 h-8` circle span. ADR-005 documents the rule and rollback. The Button primitive in `src/components/ui/Button.tsx` now exposes the `icon` variant. Component spec at `docs/design/component-specs.md` §6 ServingsScaler updated to reference the variant. Same pattern applies to any +/- or icon-only control across Phase 2 (`IngredientList` qty if added) and Phase 4 (food log).
 >
-> Architect must decide before Phase 2 begins: (1) override the spec to use `w-11 h-11` (44px) buttons, (2) keep the visual 32px circle but extend the hit area with invisible padding/`::before`, or (3) replace the +/- pattern with a native stepper input on mobile. Decision should be captured in an ADR or Phase 2 amendment to this plan, and applied consistently across `ServingsScaler`, `IngredientList` qty controls, and any other +/- pattern.
+> Bug-fix application of the same pattern landed separately in PR #21 on `main` (raw inline classes since the Button primitive doesn't exist on `main` until this branch merges). When Phase 2 implementation reskins `IngredientsTab.tsx`, those inline classes get refactored to `<Button variant="icon">`.
 
 Highest component density. Build this second so the rest of the app inherits the heaviest lifting.
 

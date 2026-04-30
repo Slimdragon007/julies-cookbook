@@ -67,7 +67,8 @@
 **States:** default, hover, active (selected)
 
 ```tsx
-<button className="
+<button
+  className="
   inline-flex items-center gap-1.5
   px-3 py-1.5
   font-sans font-medium text-[13px]
@@ -77,7 +78,8 @@
   transition-colors duration-150
   hover:bg-linen-dim
   data-[active=true]:bg-brown data-[active=true]:text-cream
-">
+"
+>
   Quick
 </button>
 ```
@@ -89,13 +91,15 @@
 **Anatomy:** linen surface · radius · resting shadow
 
 ```tsx
-<div className="
+<div
+  className="
   bg-linen rounded
   shadow-lift-sm
   overflow-hidden
   transition-all duration-200 ease-hearth
   hover:shadow-lift hover:-translate-y-0.5
-">
+"
+>
   {children}
 </div>
 ```
@@ -107,22 +111,31 @@
 **Anatomy:** photo (4:3 mobile, 16:11 desktop) · body (title, meta, stars)
 
 ```tsx
-<button className="
+<button
+  className="
   flex flex-col
   bg-linen rounded
   shadow-lift-sm
   overflow-hidden cursor-pointer
   transition-all duration-200 ease-hearth
   hover:-translate-y-0.5 hover:shadow-lift
-">
-  <div className="aspect-[4/3] md:aspect-[16/11] bg-cover bg-center" style={{backgroundImage: `url(${photo})`}} />
+"
+>
+  <div
+    className="aspect-[4/3] md:aspect-[16/11] bg-cover bg-center"
+    style={{ backgroundImage: `url(${photo})` }}
+  />
   <div className="p-3.5 pb-4">
     <h3 className="font-display font-semibold text-[15px] text-ink leading-tight mb-2">
       Shakshuka
     </h3>
     <div className="flex items-center gap-2.5 font-sans text-xs text-ink-mute font-medium">
-      <span className="flex items-center gap-1"><Clock size={11} /> 25m</span>
-      <span className="flex items-center gap-1"><Flame size={11} /> 320</span>
+      <span className="flex items-center gap-1">
+        <Clock size={11} /> 25m
+      </span>
+      <span className="flex items-center gap-1">
+        <Flame size={11} /> 320
+      </span>
     </div>
     <div className="text-gold text-[11px] mt-1.5 tracking-wider">★★★★★</div>
   </div>
@@ -139,13 +152,14 @@
 
 ```tsx
 <div className="grid grid-cols-4 gap-px bg-linen-dim border-y border-linen-dim">
-  {stats.map(s => (
+  {stats.map((s) => (
     <div className="bg-cream py-3.5 px-2 text-center">
       <div className="font-sans text-[10px] tracking-[0.08em] uppercase text-ink-mute font-semibold mb-1">
         {s.label}
       </div>
       <div className="font-sans text-base font-semibold text-ink tabular-nums">
-        {s.value}<span className="text-[11px] text-ink-mute font-medium">{s.unit}</span>
+        {s.value}
+        <span className="text-[11px] text-ink-mute font-medium">{s.unit}</span>
       </div>
     </div>
   ))}
@@ -160,33 +174,51 @@
 
 **Live, no Apply button.** (Rule 7)
 
+**Touch target:** per ADR-005, the +/- controls use `<Button variant="icon">` (44×44 invisible hit area) wrapping a `w-8 h-8` visual circle span. Hover/active styling lives on the inner span so the visible circle animates, not the invisible padding ring.
+
 ```tsx
+import { Button } from "@/components/ui/Button";
+import { Minus, Plus } from "lucide-react";
+
 <div className="flex items-center justify-between px-5 py-4 bg-cream border-b border-linen-dim">
   <span className="font-serif text-sm text-ink-soft">Scale recipe</span>
   <div className="flex items-center gap-2.5">
-    <button
-      onClick={() => setServings(s => Math.max(1, s - 1))}
+    <Button
+      variant="icon"
+      onClick={() => setServings((s) => Math.max(1, s - 1))}
       disabled={servings <= 1}
-      className="
+      aria-label="Decrease servings"
+    >
+      <span
+        className="
         w-8 h-8 rounded-full bg-brown text-cream
         flex items-center justify-center
         transition-transform duration-150
         hover:bg-brown-deep hover:scale-105
-        disabled:bg-ink-mute disabled:opacity-40 disabled:cursor-not-allowed
-      ">
-      <Minus size={16} />
-    </button>
+      "
+      >
+        <Minus size={16} />
+      </span>
+    </Button>
     <span className="font-sans text-base font-semibold text-ink min-w-[60px] text-center transition-opacity duration-200">
-      {servings} {servings === 1 ? 'serving' : 'servings'}
+      {servings} {servings === 1 ? "serving" : "servings"}
     </span>
-    <button onClick={() => setServings(s => Math.min(12, s + 1))} className="w-8 h-8 rounded-full bg-brown text-cream flex items-center justify-center transition-transform hover:bg-brown-deep hover:scale-105">
-      <Plus size={16} />
-    </button>
+    <Button
+      variant="icon"
+      onClick={() => setServings((s) => Math.min(12, s + 1))}
+      aria-label="Increase servings"
+    >
+      <span className="w-8 h-8 rounded-full bg-brown text-cream flex items-center justify-center transition-transform hover:bg-brown-deep hover:scale-105">
+        <Plus size={16} />
+      </span>
+    </Button>
   </div>
-</div>
+</div>;
 ```
 
 **Crossfade:** when servings changes, set quantity element opacity to 0.3 for 200ms, swap text, restore to 1.
+
+**Disabled state:** the outer `<Button>` carries `disabled` and the base `disabled:opacity-40` from `buttonBase` cascades visually through the entire control. Do not also dim the inner span — single source of truth.
 
 ---
 
@@ -201,10 +233,12 @@
       <h4 className="font-sans text-xs font-semibold tracking-[0.06em] uppercase text-brown mb-2.5">
         {category}
       </h4>
-      {items.map(i => (
+      {items.map((i) => (
         <div className="flex justify-between py-2.5 border-b border-linen-dim">
           <span className="font-serif text-base text-ink">{i.name}</span>
-          <span className="font-sans text-sm font-medium text-ink-soft tabular-nums">{i.qty}</span>
+          <span className="font-sans text-sm font-medium text-ink-soft tabular-nums">
+            {i.qty}
+          </span>
         </div>
       ))}
     </section>
@@ -219,16 +253,18 @@
 **Anatomy:** numbered circle (32x32) · text (Lora 16px, line-height 1.65)
 
 ```tsx
-{steps.map((step, i) => (
-  <div className="flex gap-4 mb-6">
-    <div className="flex-none w-8 h-8 rounded-full bg-brown text-cream font-sans font-semibold text-sm flex items-center justify-center">
-      {i + 1}
+{
+  steps.map((step, i) => (
+    <div className="flex gap-4 mb-6">
+      <div className="flex-none w-8 h-8 rounded-full bg-brown text-cream font-sans font-semibold text-sm flex items-center justify-center">
+        {i + 1}
+      </div>
+      <div className="font-serif text-base leading-[1.65] text-ink pt-1">
+        {step}
+      </div>
     </div>
-    <div className="font-serif text-base leading-[1.65] text-ink pt-1">
-      {step}
-    </div>
-  </div>
-))}
+  ));
+}
 ```
 
 ---
@@ -241,16 +277,23 @@
 
 ```tsx
 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-  {macros.map(m => (
+  {macros.map((m) => (
     <div className="bg-linen rounded p-4">
       <div className="font-sans text-[11px] tracking-[0.08em] uppercase text-ink-mute font-semibold mb-1.5">
         {m.label}
       </div>
-      <div className={cn(
-        "font-sans text-2xl font-semibold text-ink tabular-nums",
-        m.changed && "animate-macro-bounce"
-      )}>
-        {m.value}{m.unit && <span className="text-[13px] text-ink-mute font-medium ml-0.5">{m.unit}</span>}
+      <div
+        className={cn(
+          "font-sans text-2xl font-semibold text-ink tabular-nums",
+          m.changed && "animate-macro-bounce",
+        )}
+      >
+        {m.value}
+        {m.unit && (
+          <span className="text-[13px] text-ink-mute font-medium ml-0.5">
+            {m.unit}
+          </span>
+        )}
       </div>
     </div>
   ))}
@@ -266,11 +309,16 @@
 **Killer feature.** Don't bury it. (Rule 8)
 
 ```tsx
-<div className="
+<div
+  className="
   bg-gradient-to-b from-linen to-linen-dim
   rounded-lg p-6 mb-6 relative overflow-hidden
-">
-  <div className="absolute -top-10 -right-10 w-30 h-30 rounded-full bg-leaf/10" aria-hidden />
+"
+>
+  <div
+    className="absolute -top-10 -right-10 w-30 h-30 rounded-full bg-leaf/10"
+    aria-hidden
+  />
 
   <div className="relative">
     <div className="font-sans text-[11px] tracking-[0.1em] uppercase text-brown font-semibold mb-1">
@@ -284,7 +332,7 @@
       <input
         type="number"
         value={grams}
-        onChange={e => setGrams(+e.target.value)}
+        onChange={(e) => setGrams(+e.target.value)}
         className="
           flex-1 font-sans text-[28px] font-semibold text-ink
           bg-transparent outline-none p-0 tabular-nums
@@ -296,7 +344,8 @@
     <MacroGrid macros={portionMacros} />
 
     <p className="font-serif text-[13px] italic text-ink-mute mt-3">
-      Total batch: {batchG}g · {servings} servings · {Math.round(batchG / servings)}g per serving
+      Total batch: {batchG}g · {servings} servings ·{" "}
+      {Math.round(batchG / servings)}g per serving
     </p>
 
     <button className="btn-primary w-full mt-4">
@@ -314,20 +363,22 @@
 **Anatomy:** 3 equal tabs · active underline · sticky · frosted on scroll past hero
 
 ```tsx
-<div className="
+<div
+  className="
   sticky top-16 z-40
   flex px-3
   bg-glass-base backdrop-blur-glass backdrop-saturate-glass
   border-b border-glass-line
-">
-  {tabs.map(t => (
+"
+>
+  {tabs.map((t) => (
     <button
       onClick={() => setActive(t.id)}
       className={cn(
         "flex-1 py-3.5 px-2",
         "font-sans text-sm font-semibold",
         "border-b-2 border-transparent transition-all duration-220 ease-hearth",
-        active === t.id ? "text-brown border-brown" : "text-ink-mute"
+        active === t.id ? "text-brown border-brown" : "text-ink-mute",
       )}
     >
       {t.label}
@@ -376,26 +427,36 @@
   <div
     className={cn(
       "absolute inset-0 z-70 transition-colors duration-320 ease-hearth",
-      open ? "bg-ink/30 pointer-events-auto" : "bg-transparent pointer-events-none"
+      open
+        ? "bg-ink/30 pointer-events-auto"
+        : "bg-transparent pointer-events-none",
     )}
     onClick={onClose}
   />
-  <div className={cn(
-    "absolute bottom-0 inset-x-0 z-80 h-3/4",
-    "bg-glass-base backdrop-blur-glass backdrop-saturate-glass",
-    "rounded-t-lg border border-glass-line border-b-0",
-    "shadow-glass",
-    "transition-transform duration-320 ease-hearth",
-    "flex flex-col",
-    open ? "translate-y-0" : "translate-y-full"
-  )}>
+  <div
+    className={cn(
+      "absolute bottom-0 inset-x-0 z-80 h-3/4",
+      "bg-glass-base backdrop-blur-glass backdrop-saturate-glass",
+      "rounded-t-lg border border-glass-line border-b-0",
+      "shadow-glass",
+      "transition-transform duration-320 ease-hearth",
+      "flex flex-col",
+      open ? "translate-y-0" : "translate-y-full",
+    )}
+  >
     <div className="w-9 h-1 bg-ink-mute/40 rounded mx-auto mt-2" />
     <header className="flex items-center justify-between px-5 py-4 border-b border-glass-line">
-      <h3 className="font-display font-semibold text-lg text-ink">Ask Cookbook</h3>
-      <button onClick={onClose} className="icon-btn"><X size={18} /></button>
+      <h3 className="font-display font-semibold text-lg text-ink">
+        Ask Cookbook
+      </h3>
+      <button onClick={onClose} className="icon-btn">
+        <X size={18} />
+      </button>
     </header>
     <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
-      {messages.map(m => <Message {...m} />)}
+      {messages.map((m) => (
+        <Message {...m} />
+      ))}
       {thinking && <SearchingIndicator />}
     </div>
     <QuickPrompts />
@@ -426,15 +487,19 @@
 **Snap points:** 60% (default), 90% (expanded for notes)
 
 ```tsx
-<div className={cn(
-  "absolute inset-x-0 bottom-0 z-95",
-  "bg-cream rounded-t-lg shadow-lift-lg",
-  "transition-transform duration-320 ease-hearth",
-  open ? "translate-y-0" : "translate-y-full"
-)}>
+<div
+  className={cn(
+    "absolute inset-x-0 bottom-0 z-95",
+    "bg-cream rounded-t-lg shadow-lift-lg",
+    "transition-transform duration-320 ease-hearth",
+    open ? "translate-y-0" : "translate-y-full",
+  )}
+>
   <div className="w-9 h-1 bg-ink-mute/40 rounded mx-auto my-3" />
   <div className="px-6 pb-8">
-    <h2 className="font-display font-bold text-2xl text-ink mb-5">Log a meal</h2>
+    <h2 className="font-display font-bold text-2xl text-ink mb-5">
+      Log a meal
+    </h2>
     <form className="flex flex-col gap-4">
       <RecipePicker />
       <MealSegmentedControl />
@@ -450,12 +515,16 @@
 
 ```tsx
 <div className="grid grid-cols-4 gap-1.5 bg-linen p-1 rounded-pill">
-  {['Breakfast','Lunch','Dinner','Snack'].map(m => (
-    <button className={cn(
-      "py-2.5 px-2 rounded-pill font-sans text-xs font-medium",
-      "transition-all duration-150",
-      meal === m ? "bg-cream text-ink font-semibold shadow-lift-sm" : "text-ink-mute"
-    )}>
+  {["Breakfast", "Lunch", "Dinner", "Snack"].map((m) => (
+    <button
+      className={cn(
+        "py-2.5 px-2 rounded-pill font-sans text-xs font-medium",
+        "transition-all duration-150",
+        meal === m
+          ? "bg-cream text-ink font-semibold shadow-lift-sm"
+          : "text-ink-mute",
+      )}
+    >
       {m}
     </button>
   ))}
@@ -470,27 +539,37 @@
 
 ```tsx
 <div className="grid grid-cols-7 gap-1 px-3 py-4 border-b border-linen-dim">
-  {days.map(d => (
-    <button className={cn(
-      "py-2 rounded-sm transition-colors duration-150 text-center",
-      d.active && "bg-brown"
-    )}>
-      <div className={cn(
-        "font-sans text-[10px] font-semibold tracking-wider uppercase",
-        d.active ? "text-cream" : "text-ink-mute"
-      )}>
+  {days.map((d) => (
+    <button
+      className={cn(
+        "py-2 rounded-sm transition-colors duration-150 text-center",
+        d.active && "bg-brown",
+      )}
+    >
+      <div
+        className={cn(
+          "font-sans text-[10px] font-semibold tracking-wider uppercase",
+          d.active ? "text-cream" : "text-ink-mute",
+        )}
+      >
         {d.dow}
       </div>
-      <div className={cn(
-        "font-display font-semibold text-lg mt-0.5",
-        d.active ? "text-cream" : "text-ink"
-      )}>
+      <div
+        className={cn(
+          "font-display font-semibold text-lg mt-0.5",
+          d.active ? "text-cream" : "text-ink",
+        )}
+      >
         {d.num}
       </div>
-      {d.hasData && <div className={cn(
-        "w-1 h-1 rounded-full mx-auto mt-1",
-        d.active ? "bg-gold" : "bg-leaf"
-      )} />}
+      {d.hasData && (
+        <div
+          className={cn(
+            "w-1 h-1 rounded-full mx-auto mt-1",
+            d.active ? "bg-gold" : "bg-leaf",
+          )}
+        />
+      )}
     </button>
   ))}
 </div>
@@ -510,16 +589,18 @@
     Daily calories
   </div>
   <div className="flex items-end gap-2 h-36">
-    {days.map(d => (
+    {days.map((d) => (
       <button
         onClick={() => goToDay(d.date)}
         style={{ height: `${(d.cals / maxCals) * 100}%` }}
         className={cn(
           "flex-1 rounded-t min-h-[4px]",
           "transition-colors duration-150 cursor-pointer",
-          d.future ? "bg-linen-dim cursor-default" :
-          d.today ? "bg-leaf hover:bg-leaf/90" :
-          "bg-brown hover:bg-brown-deep"
+          d.future
+            ? "bg-linen-dim cursor-default"
+            : d.today
+              ? "bg-leaf hover:bg-leaf/90"
+              : "bg-brown hover:bg-brown-deep",
         )}
       >
         <span className="absolute -bottom-5 left-0 right-0 text-center font-sans text-[10px] text-ink-mute font-semibold">
@@ -558,6 +639,7 @@
 ```
 
 **Variants by surface:**
+
 - Gallery: "The kitchen is quiet." / "Import your first recipe."
 - Food Log: "Nothing logged today, yet." / "Tap Log meal when you eat."
 - Weekly: "Not enough data to chart." / "Log a few meals first."
@@ -605,30 +687,39 @@
 <div className="flex items-center gap-2 px-6 py-5">
   {steps.map((s, i) => (
     <>
-      <button onClick={() => setStep(s.n)} className="flex flex-col items-center cursor-pointer">
-        <div className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center",
-          "font-sans font-semibold text-sm",
-          "transition-all duration-240 ease-hearth border-2 border-transparent",
-          s.complete && "bg-leaf text-cream",
-          s.active && "bg-brown text-cream",
-          !s.complete && !s.active && "bg-linen text-ink-mute"
-        )}>
+      <button
+        onClick={() => setStep(s.n)}
+        className="flex flex-col items-center cursor-pointer"
+      >
+        <div
+          className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center",
+            "font-sans font-semibold text-sm",
+            "transition-all duration-240 ease-hearth border-2 border-transparent",
+            s.complete && "bg-leaf text-cream",
+            s.active && "bg-brown text-cream",
+            !s.complete && !s.active && "bg-linen text-ink-mute",
+          )}
+        >
           {s.n}
         </div>
-        <div className={cn(
-          "font-sans text-[10px] mt-1.5 tracking-wide font-medium",
-          (s.complete || s.active) ? "text-ink-soft" : "text-ink-mute"
-        )}>
+        <div
+          className={cn(
+            "font-sans text-[10px] mt-1.5 tracking-wide font-medium",
+            s.complete || s.active ? "text-ink-soft" : "text-ink-mute",
+          )}
+        >
           {s.label}
         </div>
       </button>
       {i < steps.length - 1 && (
         <div className="flex-1 h-0.5 bg-linen-dim -mt-5 relative rounded-full">
-          <div className={cn(
-            "absolute inset-0 bg-leaf rounded-full transition-[inset] duration-240 ease-hearth",
-            steps[i].complete ? "right-0" : "right-full"
-          )} />
+          <div
+            className={cn(
+              "absolute inset-0 bg-leaf rounded-full transition-[inset] duration-240 ease-hearth",
+              steps[i].complete ? "right-0" : "right-full",
+            )}
+          />
         </div>
       )}
     </>
@@ -653,4 +744,4 @@ Plus, for the `text-cream` background on buttons (currently hard-coded as `#f5f0
 
 ---
 
-*End of component specs. Pair with `tailwind.config.ts` and `hearth-prototype.html` for the full handoff.*
+_End of component specs. Pair with `tailwind.config.ts` and `hearth-prototype.html` for the full handoff._

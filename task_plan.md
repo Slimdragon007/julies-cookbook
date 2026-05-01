@@ -4,7 +4,7 @@
 
 ## Active
 
-_(none — TASK-015 closed; see Done.)_
+- **TASK-017 — Hearth reskin Phase 3 (Authenticated app), Gallery slice.** Started + Gallery slice done 2026-04-30. Branch `feat/hearth-gallery` off `feat/hearth-recipe-detail`. Per the plan §Phase 3, Gallery is the "most-visited screen" and explicitly the #1 ordered task. **This commit:** RecipeCard reskinned per spec §4 (linen rounded card, 4:3 mobile / 16:11 desktop image, Playfair title + Lora meta, gold star rating, drops the cuisine tag and time badge image overlays in favor of body-row meta), RecipeGrid reskinned (Hearth search bar, Chip filter row per spec §2, "Your recipes" h2 in Playfair + tabular-nums count, 2-col mobile / 4-col desktop grid per acceptance criteria, two EmptyState variants per spec §17 — "Nothing matches that" for filtered, "The kitchen is quiet" for no-recipes-yet), home `/` page (drops gradient text on welcome header for plain Playfair ink + Lora subtitle, adds `max-w-7xl mx-auto` content wrapper for desktop layout breathing room, refreshed skeleton matches new card geometry). **Remaining Phase 3 surfaces (separate work, not started):** `/food-log` (WeekStrip + MealCard + MacroGrid + LogMealSheet), `/weekly` (BarChart + MacroGrid + Card), `/admin/import` (6 state cards), `/settings` (Card + ListRow). Plus 6 of 7 Phase-3-introduced components are still pending (only the inline Chip pattern has landed; WeekStrip / MealCard / BarChart / LogMealSheet / AppHeader / EmptyState as standalone primitive all still pending). Plan estimate for full Phase 3 was 6-9 hours; this slice is ~30 min of that. Lint/tsc clean; vitest 111/118 (7 pre-existing skips, no Gallery tests). Browser smoke deferred (no PR previews — TASK-016).
 
 ## Backlog
 

@@ -2,6 +2,68 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-30 — TASK-017 — Hearth reskin Phase 3 Gallery slice
+
+**Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
+
+**Branch:** `feat/hearth-gallery` (off `feat/hearth-recipe-detail`).
+
+**Task:** First slice of Phase 3 (Authenticated app). Per the design plan §Phase 3, Gallery is explicitly the #1 ordered task ("most-visited screen"). This commit reskins the Gallery surface only — RecipeCard, RecipeGrid, and the home `/` page assembly. The other four Phase 3 surfaces (Food Log, Weekly, Admin Import, Settings) plus six new components (WeekStrip, MealCard, BarChart, LogMealSheet, AppHeader, EmptyState as standalone primitive) are deferred to follow-up work — bundling all of Phase 3 into one commit would be 6-9 hours of execution per the plan estimate.
+
+**Architect rhythm note:** Slim's "Confirm B" continued the accumulation strategy from earlier this session (hold PR #20, branch each phase off the previous so the eventual merge is a single consolidated reskin). Phase 2 → Phase 3 stacks accordingly.
+
+**Changed:**
+
+- `src/components/RecipeCard.tsx` — full Hearth rewrite per spec §4. Card surface: `bg-linen rounded shadow-lift-sm`, hover `-translate-y-0.5 shadow-lift` per spec. Image aspect: 4:3 mobile, 16:11 desktop per spec acceptance. Title: Playfair (`font-display`) 15px, line-clamp-2 (was line-clamp-1; gives 2-line headlines room). Meta row: Clock + Flame icons (size 11) + values in Lora 12px ink-mute (was Users + Sparkles in amber). Star rating: gold + linen-dim per spec §4. **Drops the floating image overlays:** the previous time badge (top-right) and cuisine tag (top-left) over the image are gone — Hearth restraint, info migrates into the body. **Drops the dramatic hover transform** (was `-translate-y-2` + amber shadow); spec calls for restrained `-translate-y-0.5`. **Drops the group-hover:scale-110 image zoom** on hover (felt too modern for Hearth). Empty-photo fallback uses `UtensilsCrossed` icon at brown/30 over a linen gradient (was Sparkles at amber-200). Switched the wrapper from `<div onClick>` to `<button>` for proper focusable/keyboard semantics (was a div masquerading as a button — accessibility regression now fixed). Added `aria-label="Open ${recipe.name}"` and a focus-visible ring.
+
+- `src/components/RecipeGrid.tsx` — full Hearth rewrite. **Search bar:** rounded-pill linen surface with brown focus ring; magnifier icon turns brown on focus (was amber). **Filter chips:** spec §2 Chip pattern — bg-linen text-ink-soft default, bg-brown text-cream active. Drops `clsx` for project's `cn()` helper. Adds proper role="tablist" / role="tab" / aria-selected. Drops the "All" entries from the cuisine and dietary master lists (was duplicated — list now adds "All" once at the top). **Results header:** Playfair "Your recipes" + tabular-nums count (was amber bold). **Grid:** 2-col mobile / 4-col desktop per spec acceptance (was 1-col mobile / 2-col tablet / 3-col desktop). **EmptyStates:** two variants per spec §17. (a) Filtered-to-nothing: linen circle + Search icon + Playfair "Nothing matches that." + Lora prose + secondary Button "Clear filters." (b) No-recipes-yet: linen circle + BookOpen icon + Playfair "The kitchen is quiet." + Lora prose + primary Link to /add-recipe with the buttonClass — verbatim spec §17 copy because the plan calls out "warm, useful copy. Never 'Nothing here yet.'"
+
+- `src/app/(main)/page.tsx` — home page assembly reskin. **Welcome header:** drops the gradient-text Hello (was amber→brown→gold WebKit gradient with a Sparkles icon) for a plain Playfair `font-display` ink h1 with Lora subtitle. Cleaner, matches Hearth restraint. **Container:** wrapped the Suspense'd content in `max-w-7xl mx-auto` so the desktop grid doesn't stretch edge-to-edge on wide displays. **Skeleton:** rebuilt to match new RecipeCard geometry (4:3 image aspect, smaller padding, Lora 4-line meta) and 2-col mobile / 4-col desktop grid. Removed unused `Sparkles` import.
+
+**Deferred (intentional, with rationale):**
+
+- **Phase 3 remaining surfaces** — `/food-log`, `/weekly`, `/admin/import`, `/settings`. Each requires new components (WeekStrip, MealCard, BarChart, LogMealSheet) and substantial layout work. Per the plan §Phase 3 task ordering: Gallery is #1, the rest are #3-#6. Stopping after #1 keeps the diff reviewable and gives a clean checkpoint.
+- **Standalone EmptyState component** — used inline in RecipeGrid (two variants); only 2 uses in this commit. Extract when a third surface needs it (likely Food Log "Nothing logged today" per spec §17 variants list).
+- **Standalone Chip component** — used inline as filter buttons in RecipeGrid; only 1 surface uses it. Extract when Food Log or other surfaces add their own filter chips.
+- **Standalone Card component** — `bg-linen rounded shadow-lift-sm` pattern is used 1 time in this commit (RecipeCard) and 3 times in Phase 2 commits. Extract when Phase 3+ usage compounds.
+
+**Trade-offs explicitly accepted:**
+
+- RecipeCard drops the time + cuisine image overlays. These were useful at-a-glance info. The compromise: time still shows in the meta row; cuisine no longer shows on the card (visible on detail page). If Slim or Julie miss the cuisine on cards, the simplest restoration is a small text chip below the title — minimal visual cost.
+- Grid changed from 3-col desktop to 4-col desktop. More cards per row at desktop sizes; each card is smaller. Matches the spec acceptance criteria; if it feels too dense, swap `lg:grid-cols-4` → `lg:grid-cols-3` and adjust card aspect ratio.
+- Welcome header lost the gradient text + Sparkles icon. Plainer; less personality. The Hearth aesthetic is restraint-first, but if Slim wants more warmth here, a brown accent could go on the user's name (`Hello, <span class="text-brown">Slim</span>`).
+- RecipeCard switched from clickable div to actual `<button>`. Keyboard users can now tab to + activate cards (previously were trapped). One pre-existing accessibility bug closed as a byproduct.
+- The PR #21 `IngredientsTab.tsx` fix on `main` is not on this branch (this branch is off `feat/hearth-recipe-detail`, which is off `feat/hearth-reskin`, which is parallel to PR #21). When everything consolidates, the Phase 2 reskin of IngredientsTab will already use `<Button variant="icon">`, making the inline pattern from PR #21 moot.
+
+**Gates:**
+
+- `npm run lint` → clean
+- `npx tsc --noEmit` → clean
+- `npm run test` (vitest src/) → 111 pass / 7 skipped (no Gallery unit tests exist)
+- `npm run test:e2e` → not run (no dev server; no Gallery e2e selectors changed beyond visual styling)
+- Husky pre-commit → fires on commit
+- **Browser smoke** → DEFERRED (no PR previews — TASK-016). Verification path: merge, or local dev.
+
+**Anti-bloat audit:**
+
+- 3 files changed. No new component files extracted (Chip, Card, EmptyState all still inline since usage hasn't crossed the third-use threshold).
+- Did NOT add unit tests — these components have no existing tests, and CSS/visual changes are not productively unit-tested.
+- Did NOT touch the data layer, API routes, or any other surface.
+- Did NOT add the search bar's `Search` icon to the design system; it's a one-line lucide-react import per use site.
+- Comments are sparse — only "spec §X" callouts and the rationale for the line-clamp change in RecipeCard.
+
+**Not changed (intentional):**
+
+- All other Phase 3 surfaces and components. See Deferred above.
+- `RecipeCard`'s view-transitions integration (`startViewTransition` + `viewTransitionName`) — preserved verbatim since it's a real progressive enhancement and the spec doesn't conflict.
+- Filter logic in RecipeGrid — search/tag matching unchanged. Only chrome reskinned.
+- `getAllRecipes` data layer — same query, same shape, same caller signature.
+- The `(main)/loading.tsx` skeleton (separate file from page.tsx's Suspense fallback) — wasn't in scope; would deserve its own pass if Slim wants a fully consistent loading aesthetic.
+
+**Next:** Phase 3's other 4 surfaces remain. Each is its own committable unit; could be done one-by-one on this branch (continuing accumulation) or split across branches. Slim's call when to pick them up.
+
+---
+
 ## 2026-04-30 — TASK-015 — Hearth reskin Phase 2 (Recipe Detail) complete
 
 **Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode

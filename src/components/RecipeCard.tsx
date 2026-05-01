@@ -3,88 +3,83 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Recipe } from "@/lib/types";
-import { Clock, Users, Sparkles } from "lucide-react";
+import { Clock, Flame, UtensilsCrossed } from "lucide-react";
 
 export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   const router = useRouter();
-  const totalTime =
-    (recipe.prepTime || 0) + (recipe.cookTime || 0) || null;
+  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0) || null;
+  const calories =
+    recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0
+      ? Math.round(recipe.caloriesPerServing)
+      : null;
 
   function handleClick() {
     const href = `/recipe/${recipe.slug}`;
     if ("startViewTransition" in document) {
-      (document as unknown as { startViewTransition: (cb: () => void) => void })
-        .startViewTransition(() => router.push(href));
+      (
+        document as unknown as { startViewTransition: (cb: () => void) => void }
+      ).startViewTransition(() => router.push(href));
     } else {
       router.push(href);
     }
   }
 
   return (
-    <div onClick={handleClick} className="group cursor-pointer">
-      <div className="relative glass rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:shadow-[0_16px_48px_rgba(196,149,46,0.12)] hover:-translate-y-2">
-        {/* Image */}
-        <div className="relative h-64 overflow-hidden">
-          {recipe.imageUrl ? (
-            <Image
-              src={recipe.imageUrl}
-              alt={recipe.name}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              style={{ viewTransitionName: `recipe-img-${recipe.slug}` }}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-              <Sparkles className="w-12 h-12 text-amber-200" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent opacity-60" />
-
-          {/* Time Badge */}
-          {totalTime && (
-            <div className="absolute top-5 right-5 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-2xl text-[12px] font-bold text-slate-800 flex items-center gap-1.5 border border-white shadow-sm">
-              <Clock className="w-3.5 h-3.5 text-amber-600" />
-              {totalTime}m
-            </div>
-          )}
-
-          {/* Cuisine Tag */}
-          {recipe.cuisineTag && (
-            <div className="absolute top-5 left-5 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-2xl text-[12px] font-bold text-slate-800 border border-white shadow-sm">
-              {recipe.cuisineTag}
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-6 pt-5">
-          <h3
-            className="text-xl font-bold text-slate-800 mb-4 line-clamp-1 group-hover:text-amber-700 transition-colors"
-            style={{ viewTransitionName: `recipe-title-${recipe.slug}` }}
-          >
-            {recipe.name}
-          </h3>
-
-          <div className="flex items-center gap-6">
-            {recipe.servings && (
-              <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                <Users className="w-4 h-4 text-amber-500" />
-                <span>{recipe.servings} servings</span>
-              </div>
-            )}
-            {recipe.caloriesPerServing != null && recipe.caloriesPerServing > 0 && (
-              <>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span>{Math.round(recipe.caloriesPerServing)} cal</span>
-                </div>
-              </>
-            )}
+    <button
+      onClick={handleClick}
+      className="group flex flex-col text-left bg-linen rounded shadow-lift-sm overflow-hidden transition-all duration-200 ease-hearth hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+      aria-label={`Open ${recipe.name}`}
+    >
+      {/* Image — spec §4: 4:3 mobile, 16:11 desktop. */}
+      <div className="relative aspect-[4/3] md:aspect-[16/11] overflow-hidden bg-linen-dim">
+        {recipe.imageUrl ? (
+          <Image
+            src={recipe.imageUrl}
+            alt={recipe.name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
+            style={{ viewTransitionName: `recipe-img-${recipe.slug}` }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-linen-dim to-linen flex items-center justify-center">
+            <UtensilsCrossed className="w-10 h-10 text-brown/30" />
           </div>
-        </div>
+        )}
       </div>
-    </div>
+
+      {/* Body — title (Playfair) + meta row (Lora) + stars (gold). */}
+      <div className="p-3.5 pb-4">
+        <h3
+          className="font-display font-semibold text-[15px] text-ink leading-tight mb-2 line-clamp-2"
+          style={{ viewTransitionName: `recipe-title-${recipe.slug}` }}
+        >
+          {recipe.name}
+        </h3>
+        <div className="flex items-center gap-2.5 font-sans text-xs text-ink-mute font-medium">
+          {totalTime && (
+            <span className="flex items-center gap-1">
+              <Clock size={11} aria-hidden /> {totalTime}m
+            </span>
+          )}
+          {calories != null && (
+            <span className="flex items-center gap-1">
+              <Flame size={11} aria-hidden /> {calories}
+            </span>
+          )}
+        </div>
+        {recipe.julieRating && (
+          <div
+            className="text-gold text-[11px] mt-1.5 tracking-wider"
+            aria-label={`Julie rated this ${recipe.julieRating} of 5 stars`}
+          >
+            {"★".repeat(recipe.julieRating)}
+            <span className="text-linen-dim">
+              {"★".repeat(5 - recipe.julieRating)}
+            </span>
+          </div>
+        )}
+      </div>
+    </button>
   );
 }

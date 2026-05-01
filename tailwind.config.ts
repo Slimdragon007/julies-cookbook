@@ -34,19 +34,24 @@ const config: Config = {
         gold: "#C9A96E",
       },
       fontFamily: {
-        display: ['"Playfair Display"', "Georgia", "serif"],
-        serif: ['"Lora"', "Georgia", "serif"],
-        sans: ['"Inter"', "system-ui", "sans-serif"],
+        // CSS variables come from next/font in src/app/layout.tsx. Georgia is
+        // the FOIT/FOUT fallback during the Google Fonts load.
+        display: ["var(--font-playfair)", "Georgia", "serif"],
+        serif: ["var(--font-lora)", "Georgia", "serif"],
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       fontSize: {
         // Display / H scales (line-height bundled)
-        "display-mobile": ["36px", { lineHeight: "1.15", letterSpacing: "-0.01em" }],
-        "display": ["48px", { lineHeight: "1.15", letterSpacing: "-0.01em" }],
-        "h1": ["28px", { lineHeight: "1.2", letterSpacing: "-0.005em" }],
-        "h2": ["22px", { lineHeight: "1.3" }],
-        "h3": ["18px", { lineHeight: "1.4" }],
-        "body": ["16px", { lineHeight: "1.6" }],
-        "caption": ["14px", { lineHeight: "1.5" }],
+        "display-mobile": [
+          "36px",
+          { lineHeight: "1.15", letterSpacing: "-0.01em" },
+        ],
+        display: ["48px", { lineHeight: "1.15", letterSpacing: "-0.01em" }],
+        h1: ["28px", { lineHeight: "1.2", letterSpacing: "-0.005em" }],
+        h2: ["22px", { lineHeight: "1.3" }],
+        h3: ["18px", { lineHeight: "1.4" }],
+        body: ["16px", { lineHeight: "1.6" }],
+        caption: ["14px", { lineHeight: "1.5" }],
         "mono-stat": ["14px", { lineHeight: "1.4" }],
         "calc-input": ["28px", { lineHeight: "1.2", letterSpacing: "-0.01em" }],
       },
@@ -58,9 +63,9 @@ const config: Config = {
       },
       boxShadow: {
         "lift-sm": "0 1px 2px rgba(42, 37, 32, 0.06)",
-        "lift": "0 4px 16px rgba(42, 37, 32, 0.08)",
+        lift: "0 4px 16px rgba(42, 37, 32, 0.08)",
         "lift-lg": "0 12px 32px rgba(42, 37, 32, 0.12)",
-        "glass":
+        glass:
           "0 8px 24px rgba(42, 37, 32, 0.06), inset 0 1px 0 rgba(255,255,255,0.4)",
       },
       backdropBlur: {
@@ -76,7 +81,7 @@ const config: Config = {
         "glass-line": "rgba(139, 115, 85, 0.16)",
       },
       transitionTimingFunction: {
-        "hearth": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        hearth: "cubic-bezier(0.2, 0.8, 0.2, 1)",
       },
       keyframes: {
         "fab-pulse": {

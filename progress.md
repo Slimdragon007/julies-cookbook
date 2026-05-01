@@ -2,6 +2,103 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-04-30 — TASK-015 — Hearth reskin Phase 2 (Recipe Detail) complete
+
+**Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
+
+**Branch:** `feat/hearth-recipe-detail` (off `feat/hearth-reskin`).
+
+**Task:** Reskin the recipe-detail surface — `/recipe/[slug]` page assembly + the three tab contents + the tab bar + the actions bar — to the Hearth aesthetic. Architecturally unblocked earlier in this session by the Phase 2 prep commit (ADR-005 + `Button` `icon` variant). Implementation followed the per-component specs in `docs/design/component-specs.md`.
+
+**Commits on this branch (4 total):**
+
+1. **`4a89875`** — Phase 2 prep (logged separately above).
+2. **`ed9fb93`** — Tab contents reskin (IngredientsTab, InstructionsTab, NutritionTab).
+3. **`b23da51`** — TabBar reskin (RecipeTabs).
+4. **(this commit)** — Page assembly (page.tsx + RecipeActions + responsive bleed clamps on Phase 2 components).
+
+**Changed:**
+
+- `src/components/IngredientsTab.tsx` — full Hearth rewrite. ServingsScaler now uses `<Button variant="icon">` wrapping a w-8 h-8 brown circle (visual unchanged at 32px, hit area 44×44 per ADR-005). Ingredients now group by category (the type already had a `category` field; previously rendered flat). When all ingredients are uncategorized, group headings are suppressed. Rows are font-serif name + font-sans tabular qty with linen-dim bottom borders. Drops amber dot bullets and glass cards. Bleeds full-width on mobile (`-mx-6 sm:-mx-10`), clamps at desktop (`lg:mx-0 lg:rounded`).
+- `src/components/InstructionsTab.tsx` — full Hearth rewrite per spec §8. Numbered brown circles (32×32, cream text), Lora 16px steps with line-height 1.65. Drops the before:absolute connecting vertical line and per-step glass cards. "Bon Appetit" completion card simplified — flat linen surface with leaf-tinted CheckCircle2, no gradient. Removed redundant React import (Next.js 14 + new JSX transform).
+- `src/components/NutritionTab.tsx` — full Hearth rewrite preserving all portion-calculator logic (PORTION_UNITS, toGrams, batch-weight fallback chain). Extracted four duplicated MacroGrid renderings into a single subcomponent so styling is single-source-of-truth — drops the per-macro coloring (calories=amber, protein=emerald, carbs=orange, fat=purple) which violated Hearth Rule 4 (one signature per surface). Portion calculator section reskinned per spec §10 inspiration: linen→linen-dim gradient + leaf decorative blob + cream input row. Per-ingredient breakdown table swapped from slate-100 borders + per-macro colored cells to linen-dim borders + ink-soft tabular-nums. Header cells use the same brown caption pattern as IngredientsTab category headings for cross-tab consistency. Subtle logic cleanup: `scaledTotals` computed once at the top instead of inline in each cell's fmt() call (net behavior identical).
+- `src/components/RecipeTabs.tsx` — TabBar reskin per spec §11. Sticky top-0 (the (main) MainNav is a side/bottom nav, not a top header — overrides the spec's top-16 assumption). Frosted via bg-glass-base + backdrop-blur-glass + backdrop-saturate-glass. Active state: text-brown + brown 2px underline. Inactive: text-ink-mute. Drops the previous "white pill with shadow" active state. Bleeds full-width on mobile (`-mx-6 sm:-mx-10`), clamps at desktop (`lg:mx-0`). Adds proper role="tablist" / role="tab" / aria-selected for screen readers (these were missing before). Swaps clsx for the project's cn() helper for consistency with the Phase 1 ui/ primitives.
+- `src/components/RecipeActions.tsx` — full Hearth rewrite. Default-state action buttons (Edit / Replace photo / Delete) use `buttonClass("ghost")` + `border border-brown-glass` for a subtle restrained pill row. Edit form uses Hearth Input + InputLabel primitives from Phase 1; close button uses `<Button variant="icon">`. Delete confirmation card uses bg-linen surface; "Yes, delete" CTA inherits primary Button geometry but overrides bg-rust for destructive intent. Upload error inline message uses cream + rust accent.
+- `src/app/(main)/recipe/[id]/page.tsx` — full Hearth rewrite. Drops the amber/orange decorative background blobs (Hearth = restraint). Drops the `bg-white/30 backdrop-blur-3xl` frosted content panel in favor of a flat cream surface with linen-dim border. Mobile back button is a Link wrapper with `w-11 h-11` hit area and inner `w-9 h-9` cream/30 backdrop-blur circle (44×44 honored per ADR-005, even though it's a Link not a Button — the pattern is portable). Mobile cuisine pill on the dark hero gradient uses `bg-brown/90 + cream text` for legibility. Desktop title uses `font-display` (Playfair) + ink color. StatRow per spec §5: 4-column grid `gap-px bg-linen-dim` with cream cells, no icons (dropped the Clock/Flame/Users/Zap icons in favor of typographic restraint). Dietary tags use Chip pattern (linen pill + ink-soft text). Star rating uses gold + linen-dim. Source link uses brown italic Lora. Bleeds StatRow at mobile (`-mx-6 sm:-mx-10`), clamps and rounds at desktop (`lg:mx-0 lg:rounded lg:overflow-hidden`).
+- `task_plan.md` — TASK-015 moved to Done with full implementation summary across the 4 commits.
+
+**Deferred (intentional, with rationale):**
+
+- **ChatFAB reskin (spec §12).** Global component used on every page, not just /recipe. Bundling it into the recipe-detail reskin would expand scope across the whole app. Separate task when the rest of the surfaces are ready.
+- **PortionCalculator standalone "killer feature" treatment (spec §10).** The current NutritionTab's portion calculator section already implements the underlying logic with the spec §10 visual treatment applied. Elevating it to a more prominent position (e.g. above the tab bar) would be a layout decision separate from a reskin.
+- **ErrorState pattern (spec §18).** This page uses Next.js `notFound()` which routes to the (main)/not-found.tsx — not exercised on the happy path. ErrorState pattern lands when a surface actually needs it.
+- **Card primitive component (spec §3).** The bg-linen + rounded + shadow-lift-sm pattern shows up in 3 places in this commit (RecipeActions delete confirmation, RecipeActions edit form, NutritionTab per-ingredient table). Worth extracting in a follow-up if it shows up in another phase.
+
+**Trade-offs explicitly accepted:**
+
+- The mobile back button uses a raw `<Link>` with manual `w-11 h-11` hit area instead of `<Button variant="icon">`. Reason: Button is a `<button>` element; for a navigation Link the hit-area pattern needs to live on the Link itself. Could be abstracted later (an "icon link" wrapper, or polymorphic Button), but inline is fine for one occurrence.
+- StatRow drops the 4 stat icons (Clock, Flame, Users, Zap). Trade: less visual scanability; gain: matches spec §5 exactly and aligns with Hearth restraint. If user feedback flags this as a regression, icons can come back at small size (e.g. inline before the value).
+- NutritionTab subtly reorganizes — portion calculator section now always renders the "total batch · servings · per-serving g" caption when batch weight exists, not only as a child of the portion-result branch. Slight UX clarification.
+- IngredientsTab now groups by category. Existing recipes may not have category populated for many ingredients (would all fall under "Other" — heading suppressed when all are "Other"). Visual change is invisible for typical existing recipes.
+- RecipeActions edit form swaps cuisine `<select>` from `glass-input` to a Hearth-tokened cream/brown-glass styling. Native select still uses OS dropdown; wrapping in a custom dropdown was out of scope.
+
+**Gates:**
+
+- `npm run lint` → clean (per-commit verified)
+- `npx tsc --noEmit` → clean
+- `npm run test` (vitest scoped to src/) → 111 pass / 7 skipped (no regression — none of these files have unit tests)
+- `npm run test:e2e` → not run (no dev server stood up; e2e selectors preserved per spec — tab labels still "Ingredients" / "Instructions" / "Nutrition")
+- Husky pre-commit → fires on each commit
+- **Browser smoke** → DEFERRED. PR previews don't exist for this repo (TASK-016 in backlog). The only verification paths are (a) merge to main and check production, or (b) local `npm run dev`. Per memory `feedback_verify_before_done.md`, naming this explicitly rather than implying success.
+
+**Anti-bloat audit:**
+
+- 5 files reskinned, 1 file added (StatRow inline in page, no separate component file). Did NOT extract Card / Chip / StatRow / IconButton / etc. into separate component files since each only appears 1-2 times — wait for the third use before abstracting.
+- NutritionTab MacroGrid IS extracted into a subcomponent (within the same file) because it's used 4 times in that file alone. Single-file abstraction, no cross-file API surface.
+- Did NOT add unit tests for the reskinned components — these have no existing tests, and CSS/visual changes are not productively unit-tested.
+- Comments are sparse and explain WHY (e.g. "top-0 since the (main) MainNav is a side/bottom nav, not a top header"). No what-comments.
+
+**Not changed (intentional):**
+
+- All non-recipe pages — gallery, add-recipe, weekly-summary, food-log, profile, etc. Those are Phase 3-4.
+- ChatFAB, MainNav, RecipeCard, RecipeGrid — global / non-recipe-detail components.
+- Service worker, scraper logic, data layer, API routes — none touched.
+- The Ingredient type in `src/lib/types.ts` — already had `category: string | null`, no schema change needed.
+- Existing e2e tests — selectors preserved (tab labels unchanged, button aria-labels preserved).
+
+**Next:** PR for `feat/hearth-recipe-detail` opens when Slim is ready to review. Eventual consolidation: this branch + PR #20 (Phase 0 + 1) + future Phase 3-4 branches all merge as one consolidated Hearth reskin per Slim's 2026-04-30 decision to hold PR #20 and accumulate. PR #21 (TASK-013 fix on `main`) merges independently and earlier; when this branch consolidates with main, the Phase 2 IngredientsTab will have already absorbed the touch-target pattern and the inline classes from PR #21 become moot.
+
+---
+
+## 2026-04-30 — TASK-015 (prep) — Phase 2 unblocked: ADR-005 + Button icon variant
+
+**Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
+
+**Branch:** `feat/hearth-recipe-detail` (off `feat/hearth-reskin`, per Slim's 2026-04-30 decision to hold PR #20 and accumulate Phase 2-4 on top instead of shipping Phase 1 alone — avoids the visual-mismatch period during Phase 2-4 development).
+
+**Task:** Resolve the touch-target sizing question that blocked Phase 2 of the Hearth reskin. The Phase 2 ServingsScaler spec called for `w-8 h-8` (32px) buttons, smaller than the 36px IngredientsTab buttons that already broke for Julie on her phone (TASK-013, surfaced 2026-04-29). Architectural decision had to land before Phase 2 implementation could start.
+
+**Architect decision (this session):** Slim picked Option 2 (hit-area padding — visual stays small, hit area extends to 44×44) over Option 1 (direct 44px) and Option 3 (native stepper). Rationale captured in the ADR: preserves Hearth restraint, meets WCAG 2.5.5 / iOS HIG, composes cleanly with adjacent layouts, scales to other +/- patterns (food log, etc.). Implementation choice picked (after surfacing the API ambiguity per the new `feedback_authorization_scope.md` memory): add an `icon` variant to the existing `Button` primitive rather than creating a separate `IconButton` component. Trade: slightly more conditional behavior in `Button.tsx`, but one source of truth for all interactive controls.
+
+**Changed:**
+
+- `docs/adr/ADR-005-touch-target-standard.md` (new) — fifth accepted ADR. Status: accepted + implemented. Documents the rule (visual ≥ 32px, hit area ≥ 44×44 via padding extension), the three options considered, the consequences (lock-in: all icon-only / circular controls use `<Button variant="icon">` + visual-child-span pattern; loss: one-line raw `<button>` markup is now an anti-pattern in new code), and a concrete rollback plan (mechanical migration to inline classes if the variant pattern proves problematic).
+- `src/components/ui/Button.tsx` — added `"icon"` to `ButtonVariant` union. New variant entry: `icon: "w-11 h-11"` — gives a 44×44 invisible hit area, leaves visual styling to the child span. Inline comment explains the non-obvious "no bg, no text-styling" choice (per CLAUDE.md "comments only when WHY is non-obvious"). The base `inline-flex items-center justify-center` and `disabled:cursor-not-allowed disabled:opacity-40` already handle alignment + disabled state cascade. `rounded-pill` from base is meaningless visually (no bg) but harmless.
+- `docs/design/component-specs.md` — §6 ServingsScaler updated: import `Button` from `@/components/ui/Button` and `Minus`/`Plus` from `lucide-react`; outer `<button>` replaced with `<Button variant="icon">`; visual styling (bg, hover, active, transition) moved to inner `<span class="w-8 h-8 …">`; disabled state stays on the outer `Button` (single source of truth via `buttonBase`'s `disabled:opacity-40`); added a "Touch target" callout above the snippet pointing at ADR-005, and a "Disabled state" callout below explaining the cascade.
+- `docs/design/hearth-reskin-plan.md` — Phase 2 BLOCKER callout (the 🚧 + 3-option decision) replaced with a ✅ RESOLVED callout pointing at ADR-005, naming the chosen option (hit-area padding), and noting the bug-fix-on-PR-#21 relationship (PR #21 uses the same pattern inline since the variant doesn't exist on `main` yet; will be refactored to use the variant when Phase 2 implementation reskins IngredientsTab).
+- `task_plan.md` — TASK-015 added to Active with prep complete + implementation surface listed (hero, meta, stats, scaler, TabBar, three tab contents, MacroGrid, PortionCalculator, ChatFAB, ErrorState).
+
+**Why "Button variant" over "new IconButton component":**
+
+Surfaced as an explicit choice to Slim before implementation, given the recently-added `feedback_authorization_scope.md` memory ("queue X" / "fix Y" / "let's go" approves the goal, not the path). I leaned IconButton-as-new-component (cleaner separation of textual CTAs vs icon controls); Slim picked Button variant. Honoring that without re-litigating: the `icon` variant adds two characters to the type union and one short class string to the variants record. The complexity cost is genuinely low because the variant is essentially "size only, no other styling" — there's no conditional logic in the JSX rendering layer, just a different className string. If the surface area of Button later becomes problematic (e.g. variants needing fundamentally different markup), the refactor to an IconButton component is mechanical: extract the icon variant, update callsites, delete the variant. ADR-005's rollback plan covers this implicitly via the "if the pattern itself is wrong" branch.
+
+**Trade-offs explicitly accepted:**
+
+- Phase 2 implementation itself is not in this commit. The prep work is finished; the actual reskin (10+ components, 8-12 hours of work per the plan estimate) is a separate effort, multiple commits expected.
+- No unit test for the `icon` variant. The Button primitive currently has zero unit tests; adding one just for `icon` would be tautological (assert className contains `w-11 h-11`) and would set a precedent that the other variants don't follow. Visual + integration verification happens during Phase 2 implementation.
+- The `loading` prop on `Button` will render a `Loader2` spinner alongside the icon child if `loading={true}` is passed on `variant="icon"`. Acceptable since icon buttons are typically discrete actions without loading states; documented in the ADR.
+- The current `Button` file is now ~70 lines and conceptually mixes "text CTA" and "hit-area-only" concerns. Watching for the trigger to split.
+- `IngredientsTab.tsx` on this branch is still the OLD broken pre-fix version (PR #21's fix lives on a separate `fix/ingredients-touch-target` branch off `main`). When all three branches eventually consolidate, IngredientsTab gets reskinned in Phase 2 and the inline classes from PR #21 become `<Button variant="icon">` calls — ADR-005 documents this transition.
 ## 2026-04-30 — TASK-013 — Mobile: ingredient +/- buttons not tappable
 
 **Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
@@ -33,6 +130,94 @@
 
 - `npm run lint` → clean
 - `npx tsc --noEmit` → clean
+- `npm run test` (vitest) → no Button tests exist; full suite expected unaffected
+- `npm run test:e2e` → not run (no UI rendered yet, only primitive + spec changes)
+- Husky pre-commit → fires on commit
+- Visual smoke → N/A this commit; Phase 2 implementation will exercise the variant in real surfaces
+
+**Doc updates / rules tightened:**
+
+- ADR-005 is the fifth accepted ADR. It establishes a project-wide accessibility + design rule that didn't previously have a written home.
+- `docs/design/component-specs.md` §6 now serves as the canonical reference snippet for the variant — Phase 2 implementation copies from this when wiring up `ServingsScaler`.
+- The `feedback_authorization_scope.md` memory entry written earlier in this session was applied here: surfaced the IconButton-vs-Button-variant choice to Slim before committing instead of guessing. Caught the "implementation path is a separate decision from the goal" gap that the memory entry exists to close.
+
+**Anti-bloat audit:**
+
+- Button change is two characters in the type union + one short class string + a 4-line comment. Zero JSX changes, zero new abstractions, zero tests added (consistent with the file's existing test posture).
+- ADR-005 is a single document, not split across multiple files. The rollback plan is concrete (mechanical migration with line-level instructions), not handwaving.
+- Spec update is one section change (§6 ServingsScaler) plus two short callouts. Did NOT speculatively update §7 IngredientList qty controls (no concrete +/- pattern there yet — wait until Phase 2 implementation surfaces the need).
+- Plan callout swap is one block edit (BLOCKER → RESOLVED), not a wholesale rewrite of the Phase 2 section.
+- task_plan.md change is one new Active entry. Did NOT modify the existing TASK-013 Backlog entry — that's owned by PR #21 and will consolidate when branches merge. No double-editing.
+
+**Not changed (intentional):**
+
+- Phase 2 implementation surface (recipe page reskin). That's TASK-015's pending half, multiple commits expected on this same branch.
+- IngredientsTab.tsx on this branch — left as the old broken version. PR #21 owns the fix on `main`; merge consolidation happens later.
+- IngredientList qty controls in spec — no `+/-` pattern documented there yet. Wait for Phase 2 implementation to surface the need.
+- Button primitive's three other variants (`primary`, `secondary`, `ghost`) — untouched. Their padding-based sizing already meets 44pt minimum for visible textual buttons.
+- CLAUDE.md not edited — no new project-level rule (the rule lives in ADR-005, which is referenced from the design plan and component specs that Phase 2 work will read).
+
+**Next:** Phase 2 implementation begins on this same branch. First commit likely targets the ServingsScaler component itself (since the spec is now reference-able and the variant is available). PR opens for `feat/hearth-recipe-detail` once Phase 2 surface is complete.
+
+---
+
+## 2026-04-30 — TASK-014 — Hearth reskin Phase 1.4 (/demo) — public surface complete
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+
+**Task:** Reskin the 4-step interactive demo (`/demo`) with Hearth tokens. Visual layer only; demo motion-react state machine, auto-advance pacing, typing/extract/reveal/check animations, and step durations preserved verbatim. Closes Phase 1 of the Hearth reskin (TASK-014).
+
+**Changed:**
+
+- `src/components/ui/StepRibbon.tsx` (new): step-progress component per `docs/design/component-specs.md:599-637`. Numbered dots with leaf-fill connectors, three states (upcoming / active / complete), click-to-navigate. Each button renders its step label visibly at `sm+` and `sr-only` at `<sm` so accessible names remain matchable on every viewport (preserves the existing playwright `getByRole("button", { name: /paste/i })` style selectors).
+- `src/app/demo/page.tsx`: full Hearth reskin. Top bar uses BookHeart in linen circle + Playfair "Julie's Cookbook" + Lora "Interactive Demo" eyebrow. StepRibbon replaces the old amber pill bar; Play/Pause/Restart broken out into their own restrained linen-pill toolbar. Each of 4 step panels rebuilt with Hearth tokens, swapping the previous amber/orange/emerald/pink accents for brown/ember/leaf/gold respectively (one accent per step, one signature per surface per design Rule 4 of the law sense). Mock display panels switched from `glass-strong` to `bg-linen rounded-lg shadow-lift` (Card pattern, since glass-as-base layer violated design bundle Rule 4 "glass goes on top, never on bottom"). CTA pair at bottom uses `buttonClass("primary")` and `buttonClass("secondary")` on `<Link>` elements. State machine and all animations untouched.
+- `task_plan.md`: TASK-014 moved from Active to Done with a sub-bullet ledger of which commit shipped which surface.
+
+**Verified:**
+
+- `npm run lint` clean (caught and fixed an unused `Button` import on first pass)
+- `npx tsc --noEmit` clean
+- `npm run test` -> 111 pass, 7 pre-existing skips
+- `npm run test:e2e` -> 28 pass, 1 documented skip (full suite re-run, including all 4 demo tests at `e2e/demo.spec.ts`)
+- `npm run build` -> 11 routes, /demo bundle 48 kB -> 48.1 kB (negligible delta; motion-react payload dominates)
+
+**Trust contract:**
+
+Same `next.config.mjs` workerd-disable dance as the prior commit was needed to run e2e locally; restored before commit. Confirmed via final lint/build that the committed file is the original 4-line wiring. First e2e pass surfaced two demo-test regressions caused by `role="tab"` on StepRibbon buttons (which made `getByRole("button", ...)` fail strict-mode matching, since tabs are not buttons); fixed by dropping the role and using `aria-current="step"` for the active state. Re-run was clean.
+
+---
+
+## 2026-04-30 — TASK-014 — Hearth reskin Phase 1: /login, /signup, /auth/reset, /auth/update-password
+
+**Executor:** Claude Code (Opus 4.7, 1M context)
+
+**Task:** Apply the Hearth aesthetic (Magnolia warmth + Liquid Glass polish) to the four entry surfaces. UI-only reskin; copy preserved verbatim per design Rule 9; auth flows untouched. Phase 1.4 (`/demo`) deferred to its own commit due to size (526 lines, motion-react state machine, new `StepRibbon` component per spec).
+
+**Changed:**
+
+- `src/lib/utils.ts` (new): thin `cn()` helper over `clsx`. Component-specs.md uses `cn(...)` throughout, so this matches the documented API.
+- `src/components/ui/Button.tsx` (new): primary/secondary/ghost variants per `docs/design/component-specs.md:1-57`. Exports both `<Button>` and a `buttonClass(variant, extra?)` helper so `<Link>` navigation controls wear button styles without a polymorphic `asChild` abstraction.
+- `src/components/ui/Input.tsx` (new): paired `<Input>` + `<InputLabel>`. Cream surface, brown-glass border, `text-base` (16px min on mobile). Label has no baked-in `mb-*` so consumers control spacing via `space-y-*` wrappers.
+- `src/app/login/page.tsx`: Hearth reskin. Cream floor, BookHeart in linen circle, Playfair title, Lora tagline preserved verbatim, brown pill primary CTA, divider, secondary `<Link>` to `/demo`, ghost `<Link>` to `/signup`. Particle splash skipped per architect direction. Bundle 2.81 kB -> 2.55 kB. Shipped in commit `072babb` on PR #20 earlier in the session.
+- `src/app/signup/page.tsx`: Hearth reskin. Same layout grammar. 5-field form. Gold accent on invite-code label + input border per reskin-plan acceptance. Success state uses `Sparkles` in linen circle with `animate-drift-up`. Existing `/api/signup` POST + 3-second redirect to `/login` preserved verbatim.
+- `src/app/auth/reset/page.tsx`: Hearth reskin. Email input + "Send reset link" primary. Sent state shows `Mail` icon in linen circle (leaf-tinted) with `animate-drift-up`. "Back to login" as bare brown text.
+- `src/app/auth/update-password/page.tsx`: Hearth reskin. Two password inputs, "Update password" primary. Recovery-session detection preserved verbatim (`PASSWORD_RECOVERY` / `SIGNED_IN` listener + `getSession()` fallback). Expired-link branch shows "Request new link" as a secondary `<Link>` via `buttonClass("secondary")`. Not in original Phase 1 scope; reskinned for consistency with the rest of the auth surface.
+- `task_plan.md`: TASK-013 updated to flag that it blocks Phase 2 reskin (the spec'd `ServingsScaler` at `w-8 h-8` / 32px is smaller than the broken 36px buttons surfaced in TASK-013). TASK-014 added to Active.
+- `docs/design/hearth-reskin-plan.md`: Phase 2 section gained a touch-target blocker callout listing three architect-decision options (44px buttons direct, invisible padding hit-area, or native stepper input on mobile).
+- `next.config.mjs`: temporarily edited mid-session to disable `setupDevPlatform()` for local visual review, then restored. The local workerd binary version-mismatched against its own validation script (Node-version PATH drift between the user's shell at v22 and a build sub-process invoking v25). Restored before commit.
+
+**Verified:**
+
+- `npm run lint` clean
+- `npx tsc --noEmit` clean
+- `npm run test` -> 111 pass, 7 pre-existing skips (12 files)
+- `npm run test:e2e` -> 28 pass, 1 documented skip
+- `npm run build` -> 11 routes, all clean
+- E2e selectors intact via `auth.spec.ts` and `pages.spec.ts`: heading `/cookbook/i`, label `/email/i`, label `/password/i`, label `/invite/i`, button `/sign in/i`
+
+**Trust contract:**
+
+Mid-session, multiple sections of `docs/trust-contract.md` were caught failing once the contract was actually read (missed at session start; no harness hook injects it). Remediation walked §1 (linguistic), §3 (parallelization lock for `next.config.mjs`), §4 (Shared Memory Contract: no TASK declared, no `progress.md` entry), and §9 (full DOD including e2e). All pass post-remediation. Open follow-up: no SessionStart hook integrates the trust contract; manual discipline only.
 - `npm run test` (vitest) → IngredientsTab is not under unit-test coverage; full suite expected unaffected (re-run on commit via husky)
 - `npm run test:e2e` → not run (no mobile-viewport selector for this control; existing tests don't cover scaler interaction at 375px)
 - Husky pre-commit → fires on commit

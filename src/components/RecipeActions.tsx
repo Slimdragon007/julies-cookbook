@@ -11,6 +11,9 @@ import {
   Camera,
   Upload,
 } from "lucide-react";
+import { Button, buttonClass } from "@/components/ui/Button";
+import { Input, InputLabel } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
 
 interface Props {
   recipe: {
@@ -69,7 +72,6 @@ export default function RecipeActions({ recipe }: Props) {
       router.refresh();
     } finally {
       setUploading(false);
-      // Reset the input so the same file can be re-selected if needed.
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -111,34 +113,37 @@ export default function RecipeActions({ recipe }: Props) {
   // Delete confirmation
   if (deleting) {
     return (
-      <div className="glass rounded-[2rem] p-6 mb-8">
-        <h3 className="text-lg font-bold text-red-600 mb-2">
+      <div className="bg-linen rounded shadow-lift-sm p-6 mb-8">
+        <h3 className="font-display text-lg font-semibold text-rust mb-2">
           Delete this recipe?
         </h3>
-        <p className="text-slate-500 text-sm mb-6">
+        <p className="font-serif text-sm text-ink-soft mb-6">
           This will permanently remove <strong>{recipe.name}</strong> and all
           its ingredients. This cannot be undone.
         </p>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={handleDelete}
             disabled={saving}
-            className="px-6 py-3 bg-red-500 text-white rounded-2xl font-bold hover:bg-red-600 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
+            className={cn(
+              buttonClass("primary"),
+              "bg-rust hover:bg-rust disabled:bg-ink-mute",
+            )}
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Trash2 className="w-4 h-4" />
             )}
-            Yes, Delete
+            Yes, delete
           </button>
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setDeleting(false)}
             disabled={saving}
-            className="px-6 py-3 glass rounded-2xl text-slate-600 font-bold hover:bg-white/60 transition-all"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -147,46 +152,46 @@ export default function RecipeActions({ recipe }: Props) {
   // Edit form
   if (editing) {
     return (
-      <div className="glass rounded-[2rem] p-6 mb-8">
+      <div className="bg-linen rounded shadow-lift-sm p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-slate-800">Edit Recipe</h3>
-          <button
+          <h3 className="font-display text-lg font-semibold text-ink">
+            Edit recipe
+          </h3>
+          <Button
+            variant="icon"
             onClick={() => setEditing(false)}
-            className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 active:scale-95 transition-all"
+            aria-label="Close edit form"
           >
-            <X className="w-4 h-4" />
-          </button>
+            <span className="w-8 h-8 rounded-full bg-cream flex items-center justify-center text-ink-soft hover:bg-linen-dim transition-colors">
+              <X className="w-4 h-4" />
+            </span>
+          </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div className="sm:col-span-2 space-y-2">
-            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-              Recipe Name
-            </label>
-            <input
+            <InputLabel htmlFor="edit-name">Recipe name</InputLabel>
+            <Input
+              id="edit-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl glass-input text-slate-800 font-bold"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-              Servings
-            </label>
-            <input
+            <InputLabel htmlFor="edit-servings">Servings</InputLabel>
+            <Input
+              id="edit-servings"
               type="number"
               value={servings}
               onChange={(e) => setServings(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl glass-input text-slate-800 font-bold"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-              Cuisine
-            </label>
+            <InputLabel htmlFor="edit-cuisine">Cuisine</InputLabel>
             <select
+              id="edit-cuisine"
               value={cuisineTag}
               onChange={(e) => setCuisineTag(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl glass-input text-slate-800 font-bold"
+              className="w-full px-4 py-3 rounded bg-cream border border-brown-glass font-sans text-[15px] text-ink outline-none transition-colors focus:border-brown"
             >
               <option value="">None</option>
               {CUISINES.map((c) => (
@@ -197,40 +202,32 @@ export default function RecipeActions({ recipe }: Props) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-              Prep Time (min)
-            </label>
-            <input
+            <InputLabel htmlFor="edit-prep">Prep time (min)</InputLabel>
+            <Input
+              id="edit-prep"
               type="number"
               value={prepTime}
               onChange={(e) => setPrepTime(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl glass-input text-slate-800 font-bold"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-              Cook Time (min)
-            </label>
-            <input
+            <InputLabel htmlFor="edit-cook">Cook time (min)</InputLabel>
+            <Input
+              id="edit-cook"
               type="number"
               value={cookTime}
               onChange={(e) => setCookTime(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl glass-input text-slate-800 font-bold"
             />
           </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving || !name.trim()}
-          className="px-8 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
-        >
+        <Button onClick={handleSave} disabled={saving || !name.trim()}>
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Check className="w-4 h-4" />
           )}
-          Save Changes
-        </button>
+          Save changes
+        </Button>
       </div>
     );
   }
@@ -241,7 +238,10 @@ export default function RecipeActions({ recipe }: Props) {
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setEditing(true)}
-          className="flex items-center gap-2 px-4 py-2.5 glass rounded-2xl text-slate-600 font-bold text-sm hover:bg-white/60 active:scale-95 transition-all"
+          className={cn(
+            buttonClass("ghost"),
+            "border border-brown-glass px-4 py-2.5",
+          )}
         >
           <Pencil className="w-4 h-4" />
           Edit
@@ -249,18 +249,24 @@ export default function RecipeActions({ recipe }: Props) {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2.5 glass rounded-2xl text-slate-600 font-bold text-sm hover:bg-white/60 active:scale-95 transition-all disabled:opacity-60"
+          className={cn(
+            buttonClass("ghost"),
+            "border border-brown-glass px-4 py-2.5",
+          )}
         >
           {uploading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Camera className="w-4 h-4" />
           )}
-          {uploading ? "Uploading..." : "Replace photo"}
+          {uploading ? "Uploading…" : "Replace photo"}
         </button>
         <button
           onClick={() => setDeleting(true)}
-          className="flex items-center gap-2 px-4 py-2.5 glass rounded-2xl text-red-500 font-bold text-sm hover:bg-red-50 active:scale-95 transition-all"
+          className={cn(
+            buttonClass("ghost"),
+            "border border-brown-glass px-4 py-2.5 text-rust hover:text-rust",
+          )}
         >
           <Trash2 className="w-4 h-4" />
           Delete
@@ -274,7 +280,7 @@ export default function RecipeActions({ recipe }: Props) {
         onChange={handlePhotoSelected}
       />
       {uploadError && (
-        <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-sm text-red-600 font-medium flex items-center gap-2">
+        <div className="mt-3 bg-cream border border-rust/30 rounded px-4 py-2 font-sans text-sm text-rust flex items-center gap-2">
           <Upload className="w-4 h-4" />
           {uploadError}
         </div>

@@ -1,4 +1,3 @@
-import React from "react";
 import { CheckCircle2 } from "lucide-react";
 
 interface Props {
@@ -14,35 +13,41 @@ export default function InstructionsTab({ preparation }: Props) {
 
   if (steps.length === 0) {
     return (
-      <p className="text-slate-500 font-medium">No instructions available.</p>
+      <p className="font-serif text-base text-ink-mute">
+        No instructions available.
+      </p>
     );
   }
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-slate-800 mb-8">Method</h2>
-      <div className="space-y-8 relative before:absolute before:left-5 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100/50">
+      <h2 className="font-display text-2xl font-semibold text-ink mb-8">
+        Method
+      </h2>
+
+      {/* InstructionList — spec §8. Numbered circle (32×32 brown) + Lora 16px text. */}
+      <ol className="space-y-6 mb-10">
         {steps.map((step, i) => (
-          <div key={i} className="flex gap-6 relative">
-            <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-white border border-white shadow-sm text-amber-700 text-sm font-bold flex items-center justify-center z-10">
+          <li key={i} className="flex gap-4">
+            <div className="flex-none w-8 h-8 rounded-full bg-brown text-cream font-sans font-semibold text-sm flex items-center justify-center">
               {i + 1}
             </div>
-            <div className="pt-1.5 flex-1 glass p-5 rounded-3xl">
-              <p className="text-slate-600 leading-relaxed text-base font-medium">
-                {step}
-              </p>
+            <div className="font-serif text-base leading-[1.65] text-ink pt-1">
+              {step}
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
 
-      {/* Completion card */}
-      <div className="text-center p-10 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[3rem] border border-white shadow-sm mt-10">
-        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
-          <CheckCircle2 className="w-8 h-8 text-amber-600" />
+      {/* Completion card — restrained linen surface, no gradients. */}
+      <div className="text-center py-8 px-6 bg-linen rounded shadow-lift-sm">
+        <div className="w-12 h-12 bg-cream rounded-full flex items-center justify-center mx-auto mb-3">
+          <CheckCircle2 className="w-6 h-6 text-leaf" />
         </div>
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Bon Appetit!</h3>
-        <p className="text-slate-500 text-sm font-medium">Enjoy your meal.</p>
+        <h3 className="font-display text-lg font-semibold text-ink mb-1">
+          Bon Appetit
+        </h3>
+        <p className="font-serif text-sm text-ink-soft">Enjoy your meal.</p>
       </div>
     </div>
   );

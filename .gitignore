@@ -8,6 +8,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -41,3 +43,6 @@ CLAUDE.md.pre-handbook
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code worktrees (local working state, never commit)
+.claude/

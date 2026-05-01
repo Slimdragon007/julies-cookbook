@@ -5,7 +5,7 @@ import { Ingredient } from "@/lib/types";
 import IngredientsTab from "./IngredientsTab";
 import InstructionsTab from "./InstructionsTab";
 import NutritionTab from "./NutritionTab";
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
 
 type TabName = "ingredients" | "instructions" | "nutrition";
 
@@ -22,7 +22,12 @@ interface Props {
   totalBatchWeightG: number | null;
 }
 
-export default function RecipeTabs({ ingredients, preparation, defaultServings, totalBatchWeightG }: Props) {
+export default function RecipeTabs({
+  ingredients,
+  preparation,
+  defaultServings,
+  totalBatchWeightG,
+}: Props) {
   const [activeTab, setActiveTab] = useState<TabName>("ingredients");
   const baseServings = defaultServings || 1;
   const [servings, setServings] = useState(baseServings);
@@ -30,24 +35,34 @@ export default function RecipeTabs({ ingredients, preparation, defaultServings, 
 
   return (
     <div>
-      {/* Tab bar */}
-      <div className="sticky top-0 z-10 glass rounded-2xl mb-8 p-1.5">
-        <div className="flex">
-          {TABS.map(({ key, label }) => (
+      {/* TabBar — spec §11. Sticky, frosted on scroll, brown active underline.
+          top-0 since the (main) MainNav is a side/bottom nav, not a top header.
+          Bleeds full-width via -mx so the underline divider runs edge-to-edge. */}
+      <div
+        role="tablist"
+        aria-label="Recipe sections"
+        className="sticky top-0 z-40 flex px-3 -mx-6 sm:-mx-10 lg:mx-0 mb-8 bg-glass-base backdrop-blur-glass backdrop-saturate-glass border-b border-glass-line"
+      >
+        {TABS.map(({ key, label }) => {
+          const isActive = activeTab === key;
+          return (
             <button
               key={key}
+              role="tab"
+              aria-selected={isActive}
               onClick={() => setActiveTab(key)}
-              className={clsx(
-                "flex-1 py-3 text-center text-sm font-bold transition-all rounded-xl",
-                activeTab === key
-                  ? "text-amber-700 bg-white border border-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-600"
+              className={cn(
+                "flex-1 py-3.5 px-2 font-sans text-sm font-semibold",
+                "border-b-2 border-transparent transition-all duration-200 ease-hearth",
+                isActive
+                  ? "text-brown border-brown"
+                  : "text-ink-mute hover:text-ink-soft",
               )}
             >
               {label}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {activeTab === "ingredients" && (

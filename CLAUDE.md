@@ -23,17 +23,17 @@
 
 ## 🏗️ 2. STACK
 
-| Layer     | Tool                | Version | Notes                                                                           |
-| --------- | ------------------- | ------- | ------------------------------------------------------------------------------- |
-| Framework | Next.js             | 14.2.35 | App Router, dynamic rendering via cookie auth                                   |
-| Database  | Supabase            | —       | Project: `cqfszhxuvvsgusvjdyqx`, us-east-1, replaced Airtable Mar 2026          |
-| Auth      | Supabase Auth       | —       | Email/password, middleware-enforced, invite-only signup                         |
-| Styling   | Tailwind            | 3.4     | Liquid Glass theme (warm-tinted), Inter font, warm-gold accent (`#C4952E`)      |
-| Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001) |
-| AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                             |
-| Storage   | Cloudinary          | —       | Image hosting                                                                   |
-| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                               |
-| Hooks     | Husky               | —       | Pre-commit lint + tsc                                                           |
+| Layer     | Tool                | Version | Notes                                                                                                     |
+| --------- | ------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| Framework | Next.js             | 14.2.35 | App Router, dynamic rendering via cookie auth                                                             |
+| Database  | Supabase            | —       | Project: `cqfszhxuvvsgusvjdyqx`, us-east-1, replaced Airtable Mar 2026                                    |
+| Auth      | Supabase Auth       | —       | Email/password, middleware-enforced, invite-only signup                                                   |
+| Styling   | Tailwind            | 3.4     | Hearth theme (Magnolia palette + Liquid Glass surfaces), Playfair + Lora + Inter, gold accent (`#C9A96E`) |
+| Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001)                           |
+| AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                                                       |
+| Storage   | Cloudinary          | —       | Image hosting                                                                                             |
+| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                                                         |
+| Hooks     | Husky               | —       | Pre-commit lint + tsc                                                                                     |
 
 Full env var contract: see `@docs/REFERENCE.md`.
 
@@ -112,6 +112,7 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 ```
 @task_plan.md                  → current task state (architect-owned)
 @progress.md                   → completed work log (append-only)
+@docs/trust-contract.md        → pre-flight compliance gate (read at session start + before any file write)
 @docs/REFERENCE.md             → schema, env vars, file index, current state
 @docs/architecture/ui.md       → Liquid Glass design system, component patterns
 @docs/architecture/api.md      → API routes, scraper architecture, chat endpoint

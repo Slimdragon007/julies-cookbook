@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookHeart, ArrowRight, Mail, Lock, KeyRound, Loader2, Sparkles, User } from "lucide-react";
+import { BookHeart, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Input, InputLabel } from "@/components/ui/Input";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -35,7 +37,12 @@ export default function SignupPage() {
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, inviteCode, displayName: displayName.trim() }),
+      body: JSON.stringify({
+        email,
+        password,
+        inviteCode,
+        displayName: displayName.trim(),
+      }),
     });
 
     const data = await res.json();
@@ -54,160 +61,129 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
-            <Sparkles className="w-8 h-8 text-amber-600" />
+      <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md flex flex-col items-center text-center animate-drift-up">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-gold mb-6">
+            <Sparkles size={28} aria-hidden />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-4">
-            Welcome to the family!
+          <h1 className="font-display font-semibold text-h1 text-ink mb-3">
+            Welcome to the family.
           </h1>
-          <p className="text-sm text-slate-500 font-medium">
-            Your account is ready. Redirecting to sign in...
+          <p className="font-serif text-base text-ink-soft leading-relaxed max-w-[280px]">
+            Your account is ready. Redirecting you to sign in.
           </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center px-4 relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
-      {/* Ambient blobs */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-amber-100/30 rounded-full blur-[120px] animate-[float1_15s_ease-in-out_infinite]" />
-        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-amber-100/15 rounded-full blur-[140px] animate-[float2_12s_ease-in-out_infinite]" />
-      </div>
-
-      <div className="w-full max-w-md z-10">
-        {/* Logo */}
-        <div className="flex justify-center mb-10">
-          <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-amber-600 to-amber-700 rounded-[2rem] flex items-center justify-center shadow-[0_12px_32px_rgba(196,149,46,0.25)] border-4 border-white">
-              <BookHeart className="text-white w-8 h-8" />
-            </div>
-            <div className="absolute inset-[-10px] bg-amber-100/50 rounded-[2.5rem] blur-xl -z-10" />
-          </div>
+    <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md flex flex-col items-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-6">
+          <BookHeart size={28} aria-hidden />
         </div>
 
-        <div className="glass-strong rounded-[3rem] p-8 sm:p-10 space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">Join the Cookbook</h1>
-            <p className="text-sm text-slate-500 font-medium">Create your account with an invite code</p>
+        <h1 className="font-display font-semibold text-h1 sm:text-display-mobile text-ink text-center mb-3">
+          Join the Cookbook
+        </h1>
+        <p className="font-serif text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
+          Create your account with an invite code.
+        </p>
+
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
+          <div className="space-y-1.5">
+            <InputLabel htmlFor="invite" className="text-gold">
+              Invite Code
+            </InputLabel>
+            <Input
+              id="invite"
+              type="text"
+              required
+              autoFocus
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              placeholder="Enter invite code"
+              className="border-gold/40 focus:border-gold focus:ring-gold/15"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="invite" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-                <KeyRound className="w-3 h-3" />
-                Invite Code
-              </label>
-              <input
-                id="invite"
-                type="text"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                placeholder="Enter invite code"
-                required
-                autoFocus
-              />
-            </div>
+          <div className="space-y-1.5">
+            <InputLabel htmlFor="displayName">Your Name</InputLabel>
+            <Input
+              id="displayName"
+              type="text"
+              required
+              maxLength={50}
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="First and last name"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label htmlFor="displayName" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-                <User className="w-3 h-3" />
-                Your Name
-              </label>
-              <input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                placeholder="First and last name"
-                maxLength={50}
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <InputLabel htmlFor="email">Email</InputLabel>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label htmlFor="email" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-                <Mail className="w-3 h-3" />
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <InputLabel htmlFor="password">Password</InputLabel>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label htmlFor="password" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-                <Lock className="w-3 h-3" />
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                placeholder="At least 6 characters"
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <InputLabel htmlFor="confirmPassword">Confirm Password</InputLabel>
+            <Input
+              id="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm password"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1">
-                <Lock className="w-3 h-3" />
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                placeholder="Confirm password"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_16px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+          {error && (
+            <div
+              role="alert"
+              className="rounded border border-rust bg-rust/[0.06] px-4 py-3 font-serif text-sm text-ink-soft"
             >
-              {loading ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <>
-                  Sign Up
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
-          </form>
+              {error}
+            </div>
+          )}
 
-          <p className="text-center text-sm text-slate-400">
-            Already have an account?{" "}
-            <Link href="/login" className="text-amber-700 font-bold hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </div>
+          <Button type="submit" loading={loading} className="w-full mt-2">
+            Sign Up
+          </Button>
+        </form>
+
+        <p className="font-serif text-sm text-ink-mute mt-8 text-center">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-sans font-medium text-brown hover:text-brown-deep transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
       </div>
-    </div>
+    </main>
   );
 }

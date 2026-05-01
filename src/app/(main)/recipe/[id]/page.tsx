@@ -9,7 +9,7 @@ import RecipeTabs from "@/components/RecipeTabs";
 import RecipeActions from "@/components/RecipeActions";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { sumIngredientMacros, perServingMacros } from "@/lib/macros";
-import { ChevronLeft, Clock, Flame, Users, Sparkles, Zap } from "lucide-react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -51,15 +51,32 @@ export default async function RecipePage({
         ).calories
       : null;
 
-  return (
-    <div className="min-h-screen relative selection:bg-amber-100 selection:text-amber-900">
-      {/* Background blobs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-50/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-amber-50/30 rounded-full blur-[100px]" />
-      </div>
+  // StatRow values — spec §5. Label / value / optional unit.
+  const stats: { label: string; value: string; unit?: string }[] = [
+    {
+      label: "Prep",
+      value: recipe.prepTime ? String(recipe.prepTime) : "—",
+      unit: recipe.prepTime ? "min" : undefined,
+    },
+    {
+      label: "Cook",
+      value: recipe.cookTime ? String(recipe.cookTime) : "—",
+      unit: recipe.cookTime ? "min" : undefined,
+    },
+    {
+      label: "Serves",
+      value: recipe.servings ? String(recipe.servings) : "—",
+    },
+    {
+      label: "Calories",
+      value: perServingCalories != null ? String(perServingCalories) : "—",
+      unit: perServingCalories != null ? "/ serving" : undefined,
+    },
+  ];
 
-      <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:min-h-screen relative z-10">
+  return (
+    <div className="min-h-screen bg-cream selection:bg-brown-glass selection:text-ink">
+      <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:min-h-screen">
         {/* Image section */}
         <div className="relative aspect-[4/3] lg:aspect-auto lg:h-screen lg:sticky lg:top-0 w-full overflow-hidden">
           {recipe.imageUrl ? (
@@ -73,102 +90,73 @@ export default async function RecipePage({
               style={{ viewTransitionName: `recipe-img-${recipe.slug}` }}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-              <Sparkles className="w-16 h-16 text-amber-300" />
+            <div className="w-full h-full bg-linen flex items-center justify-center">
+              <Sparkles className="w-16 h-16 text-brown/30" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-slate-900/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/20" />
 
-          {/* Top bar */}
-          <div className="absolute top-0 left-0 w-full p-6 pt-12 lg:pt-8 flex justify-between items-center z-20">
+          {/* Top bar — back button. 44×44 hit area on the outer Link
+              (matches ADR-005), 36px visual circle on the inner span. */}
+          <div className="absolute top-0 left-0 w-full p-6 pt-12 lg:pt-8 z-20">
             <Link
               href="/"
-              className="w-11 h-11 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white border border-white/30 shadow-lg hover:bg-white/40 transition-all"
+              aria-label="Back to gallery"
+              className="w-11 h-11 inline-flex items-center justify-center"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <span className="w-9 h-9 rounded-full bg-cream/30 backdrop-blur-md text-cream border border-cream/40 flex items-center justify-center hover:bg-cream/50 active:scale-95 transition-all">
+                <ChevronLeft className="w-5 h-5" />
+              </span>
             </Link>
           </div>
 
           {/* Title overlay (mobile) */}
           <div className="absolute bottom-0 left-0 right-0 p-8 pb-12 lg:hidden">
             {recipe.cuisineTag && (
-              <span className="inline-block px-3 py-1 bg-amber-600/80 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-amber-500/50">
+              <span className="inline-block px-3 py-1 bg-brown/90 backdrop-blur-sm text-cream font-sans text-[10px] font-semibold uppercase tracking-[0.12em] rounded-pill mb-3">
                 {recipe.cuisineTag}
               </span>
             )}
-            <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight drop-shadow-lg line-clamp-2 break-words">
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-cream leading-tight drop-shadow-[0_2px_8px_rgba(42,37,32,0.5)] line-clamp-2 break-words">
               {recipe.name}
             </h1>
           </div>
         </div>
 
         {/* Content section */}
-        <div className="relative -mt-8 lg:mt-0 bg-white/60 lg:bg-white/30 backdrop-blur-3xl rounded-t-[3rem] lg:rounded-none px-6 sm:px-10 pt-12 lg:pt-12 lg:pl-16 lg:pr-12 pb-32 lg:pb-12 lg:overflow-y-auto lg:max-h-screen border-t lg:border-t-0 lg:border-l border-white/60 shadow-[0_-8px_40px_rgba(0,0,0,0.05)]">
+        <div className="relative -mt-8 lg:mt-0 bg-cream rounded-t-[2.5rem] lg:rounded-none px-6 sm:px-10 pt-12 lg:pt-12 lg:pl-16 lg:pr-12 pb-32 lg:pb-12 lg:overflow-y-auto lg:max-h-screen border-t lg:border-t-0 lg:border-l border-linen-dim">
           {/* Mobile drag indicator */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="w-12 h-1.5 bg-slate-200/50 rounded-full" />
+            <div className="w-9 h-1 bg-ink-mute/40 rounded-pill" />
           </div>
 
           {/* Title (desktop) */}
           <div className="hidden lg:block mb-8">
             {recipe.cuisineTag && (
-              <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 border border-amber-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-linen text-ink-soft font-sans text-[11px] font-semibold uppercase tracking-[0.1em] rounded-pill mb-3">
                 {recipe.cuisineTag}
               </span>
             )}
-            <h1 className="text-4xl xl:text-5xl font-bold text-slate-800 leading-tight break-words">
+            <h1 className="font-display text-4xl xl:text-5xl font-semibold text-ink leading-tight break-words">
               {recipe.name}
             </h1>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-            {[
-              {
-                icon: Clock,
-                label: "Prep Time",
-                value: recipe.prepTime ? `${recipe.prepTime} min` : "N/A",
-                color: "text-amber-600",
-                bg: "bg-amber-50",
-              },
-              {
-                icon: Flame,
-                label: "Cook Time",
-                value: recipe.cookTime ? `${recipe.cookTime} min` : "N/A",
-                color: "text-orange-500",
-                bg: "bg-orange-50",
-              },
-              {
-                icon: Users,
-                label: "Servings",
-                value: recipe.servings ? `${recipe.servings}` : "N/A",
-                color: "text-emerald-500",
-                bg: "bg-emerald-50",
-              },
-              {
-                icon: Zap,
-                label: "Calories",
-                value:
-                  perServingCalories != null ? `${perServingCalories}` : "N/A",
-                color: "text-rose-500",
-                bg: "bg-rose-50",
-              },
-            ].map(({ icon: Icon, label, value, color, bg }) => (
-              <div
-                key={label}
-                className="glass p-4 rounded-3xl flex flex-col items-center text-center transition-transform hover:scale-[1.02]"
-              >
-                <div
-                  className={`w-10 h-10 ${bg} rounded-2xl flex items-center justify-center mb-2 shadow-sm`}
-                >
-                  <Icon className={`w-5 h-5 ${color}`} />
+          {/* StatRow — spec §5. 4-col grid, divider lines via gap-px on linen-dim bg. */}
+          <div className="grid grid-cols-4 gap-px bg-linen-dim border-y border-linen-dim mb-8 -mx-6 sm:-mx-10 lg:mx-0 lg:rounded lg:overflow-hidden">
+            {stats.map((s) => (
+              <div key={s.label} className="bg-cream py-3.5 px-2 text-center">
+                <div className="font-sans text-[10px] tracking-[0.08em] uppercase text-ink-mute font-semibold mb-1">
+                  {s.label}
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-1 leading-none">
-                  {label}
-                </p>
-                <p className="text-sm font-bold text-slate-700 leading-none">
-                  {value}
-                </p>
+                <div className="font-sans text-base font-semibold text-ink tabular-nums">
+                  {s.value}
+                  {s.unit && (
+                    <span className="text-[11px] text-ink-mute font-medium ml-0.5">
+                      {s.unit}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -179,15 +167,18 @@ export default async function RecipePage({
               {recipe.dietaryTags.map((tag) => (
                 <span
                   key={tag}
-                  className="bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-200"
+                  className="inline-flex items-center px-3 py-1.5 bg-linen text-ink-soft font-sans text-[13px] font-medium rounded-pill"
                 >
                   {tag}
                 </span>
               ))}
               {recipe.julieRating && (
-                <span className="ml-auto text-amber-600 text-sm font-bold">
+                <span
+                  className="ml-auto text-gold text-sm tracking-[0.1em]"
+                  aria-label={`Julie rated this ${recipe.julieRating} of 5 stars`}
+                >
                   {"★".repeat(recipe.julieRating)}
-                  <span className="text-slate-200">
+                  <span className="text-linen-dim">
                     {"★".repeat(5 - recipe.julieRating)}
                   </span>
                 </span>
@@ -195,7 +186,6 @@ export default async function RecipePage({
             </div>
           )}
 
-          {/* Edit/Delete actions */}
           <RecipeActions
             recipe={{
               id: recipe.id,
@@ -207,7 +197,6 @@ export default async function RecipePage({
             }}
           />
 
-          {/* Tabbed content */}
           <RecipeTabs
             ingredients={recipe.ingredients}
             preparation={recipe.preparation}
@@ -215,14 +204,13 @@ export default async function RecipePage({
             totalBatchWeightG={recipe.totalBatchWeightG}
           />
 
-          {/* Source link */}
           {recipe.sourceUrl && (
             <div className="mt-10 text-center">
               <a
                 href={recipe.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-amber-700 hover:text-amber-800 text-xs font-bold underline"
+                className="font-serif italic text-sm text-brown hover:text-brown-deep underline-offset-4 hover:underline"
               >
                 Original recipe source
               </a>

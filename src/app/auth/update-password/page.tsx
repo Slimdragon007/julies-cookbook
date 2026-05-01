@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
-import { BookHeart, ArrowRight, Lock, Loader2 } from "lucide-react";
+import { BookHeart } from "lucide-react";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { Button, buttonClass } from "@/components/ui/Button";
+import { Input, InputLabel } from "@/components/ui/Input";
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
@@ -18,9 +20,6 @@ export default function UpdatePasswordPage() {
   const supabase = createSupabaseBrowser();
 
   useEffect(() => {
-    // The browser client auto-parses the recovery token from the URL hash on
-    // mount (detectSessionInUrl: true). Wait for the PASSWORD_RECOVERY event
-    // or check the existing session — whichever resolves first.
     let resolved = false;
 
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -65,112 +64,82 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] flex flex-col items-center justify-center px-4 relative overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-amber-100/30 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[10%] w-[450px] h-[450px] bg-amber-100/15 rounded-full blur-[140px]" />
-      </div>
+    <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md flex flex-col items-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-6">
+          <BookHeart size={28} aria-hidden />
+        </div>
 
-      <div className="w-full max-w-md mx-auto flex flex-col items-center relative z-10">
-        <div className="relative mb-12">
-          <div className="w-24 h-24 bg-gradient-to-br from-amber-600 to-amber-700 rounded-[2.5rem] flex items-center justify-center shadow-[0_12px_32px_rgba(196,149,46,0.25)] border-4 border-white relative z-10">
-            <BookHeart className="text-white w-10 h-10" />
+        <h1 className="font-display font-semibold text-h1 sm:text-display-mobile text-ink text-center mb-3">
+          Set new password
+        </h1>
+        <p className="font-serif text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
+          Choose a password you&apos;ll remember.
+        </p>
+
+        {hasRecoverySession === false ? (
+          <div className="w-full flex flex-col items-center text-center">
+            <h2 className="font-display font-semibold text-h2 text-ink mb-3">
+              Link expired or invalid
+            </h2>
+            <p className="font-serif text-base text-ink-soft leading-relaxed max-w-[320px] mb-6">
+              Request a new password reset link.
+            </p>
+            <Link href="/auth/reset" className={buttonClass("secondary")}>
+              Request new link
+            </Link>
           </div>
-          <div className="absolute inset-[-12px] bg-amber-100/50 rounded-[3rem] blur-xl" />
-        </div>
-
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-black text-slate-800 mb-3 tracking-tight">
-            Set new password
-          </h1>
-          <p className="text-slate-500 font-medium max-w-xs mx-auto leading-relaxed">
-            Choose a password you&apos;ll remember.
-          </p>
-        </div>
-
-        <div className="w-full glass-strong p-8 sm:p-10 rounded-[3rem] relative overflow-hidden">
-          {hasRecoverySession === false ? (
-            <div className="relative z-10 text-center space-y-4">
-              <h2 className="text-xl font-black text-slate-800">
-                Link expired or invalid
-              </h2>
-              <p className="text-sm text-slate-500 font-medium">
-                Request a new password reset link.
-              </p>
-              <Link
-                href="/auth/reset"
-                className="inline-block mt-2 text-[13px] font-bold text-amber-700 hover:underline"
-              >
-                Request new link
-              </Link>
+        ) : (
+          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
+            <div className="space-y-1.5">
+              <InputLabel htmlFor="password">New password</InputLabel>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                autoFocus
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+              />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
-              <div className="space-y-2">
-                <label
-                  className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1"
-                  htmlFor="password"
-                >
-                  <Lock className="w-3 h-3" />
-                  New password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                  autoFocus
-                />
-              </div>
 
-              <div className="space-y-2">
-                <label
-                  className="flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-[0.2em] pl-1"
-                  htmlFor="confirm"
-                >
-                  <Lock className="w-3 h-3" />
-                  Confirm password
-                </label>
-                <input
-                  id="confirm"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Re-enter password"
-                  className="w-full h-14 px-6 rounded-2xl glass-input text-slate-800 text-[15px] font-bold placeholder:text-slate-300 shadow-sm"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <InputLabel htmlFor="confirm">Confirm password</InputLabel>
+              <Input
+                id="confirm"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Re-enter password"
+              />
+            </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading || hasRecoverySession === null}
-                className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-[1.75rem] font-bold text-[16px] flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_12px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_16px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+            {error && (
+              <div
+                role="alert"
+                className="rounded border border-rust bg-rust/[0.06] px-4 py-3 font-serif text-sm text-ink-soft"
               >
-                {loading ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    Update password
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-        </div>
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              loading={loading}
+              disabled={hasRecoverySession === null}
+              className="w-full mt-2"
+            >
+              Update password
+            </Button>
+          </form>
+        )}
       </div>
-    </div>
+    </main>
   );
 }

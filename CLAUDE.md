@@ -1,7 +1,7 @@
 # 🧬 ENGINEERING LAW: julies-cookbook
 
 > **Read `flowstateai-claude-md-base` skill first.** This file is the project-specific layer.
-> **Owner:** Michael Haslim | **Client:** Internal (Julie + family) | **Last updated:** 2026-04-26
+> **Owner:** Michael Haslim | **Client:** Internal (Julie + family) | **Last updated:** 2026-05-15
 
 ---
 
@@ -32,7 +32,7 @@
 | Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001)                           |
 | AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                                                       |
 | Storage   | Cloudinary          | —       | Image hosting                                                                                             |
-| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                                                         |
+| Tests     | Vitest + Playwright | —       | 14 unit test files (lib + api/__tests__/) + 5 e2e specs (auth, pages, demo, two unit-pickers)             |
 | Hooks     | Husky               | —       | Pre-commit lint + tsc                                                                                     |
 
 Full env var contract: see `@docs/REFERENCE.md`.
@@ -110,25 +110,32 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 ## 📂 5. POINTER TABLE
 
 ```
-@task_plan.md                  → current task state (architect-owned)
-@progress.md                   → completed work log (append-only)
-@docs/trust-contract.md        → pre-flight compliance gate (read at session start + before any file write)
-@docs/REFERENCE.md             → schema, env vars, file index, current state
-@docs/architecture/ui.md       → Liquid Glass design system, component patterns
-@docs/architecture/api.md      → API routes, scraper architecture, chat endpoint
-@docs/architecture/data.md     → Supabase schema, RLS, fallback chain
-@docs/architecture/infra.md    → Cloudflare Pages deploy state, GH Action CI/CD
-@docs/adr/ADR-001-deploy-target.md     → accepted (Cloudflare Pages)
-@docs/adr/ADR-002-dual-scraper-paths.md → accepted + implemented 2026-04-26 (Option B, src/lib/scraper/*)
+@task_plan.md                                 → current task state (architect-owned)
+@progress.md                                  → completed work log (append-only)
+@docs/trust-contract.md                       → pre-flight compliance gate (read at session start + before any file write)
+@docs/REFERENCE.md                            → schema, env vars, file index, current state
+@docs/architecture/ui.md                      → Liquid Glass + Hearth design system, component patterns
+@docs/architecture/api.md                     → API routes, scraper architecture, chat endpoint
+@docs/architecture/data.md                    → Supabase schema, RLS, fallback chain
+@docs/architecture/infra.md                   → Cloudflare Pages deploy state, GH Action CI/CD
+@docs/design/julies-cookbook-design-bundle.md → Hearth design language source-of-truth
+@docs/design/hearth-reskin-plan.md            → Phase-by-phase reskin execution plan
+@docs/design/component-specs.md               → Hearth component specs (Button, Input, MacroGrid, EmptyState, ...)
+@docs/adr/ADR-001-deploy-target.md            → accepted (Cloudflare Pages)
+@docs/adr/ADR-002-dual-scraper-paths.md       → accepted + implemented 2026-04-26 (Option B, src/lib/scraper/*)
+@docs/adr/ADR-003-cron-restoration.md         → accepted (GitHub Actions schedule for /api/audit)
+@docs/adr/ADR-004-migration-tooling.md        → accepted (Supabase migration tooling decision)
+@docs/adr/ADR-005-touch-target-standard.md    → accepted (44px min touch target, Button icon variant)
 ```
 
 **Load triggers:**
 
-- UI work → `@docs/architecture/ui.md`
+- UI / reskin work → `@docs/architecture/ui.md` + `@docs/design/hearth-reskin-plan.md` + `@docs/design/component-specs.md`
 - API or schema work → `@docs/architecture/api.md` + `@docs/architecture/data.md`
 - Scraper work → `@docs/architecture/api.md` + `src/lib/scraper/core.ts` (single source of truth)
 - Infra or deploy → `@docs/architecture/infra.md` + ADR-001
 - Auth or middleware → `@docs/architecture/data.md` (RLS) + base handbook Law 2
+- New shared component → `@docs/design/component-specs.md` + check 3rd-use threshold before extracting
 
 ---
 
@@ -136,12 +143,13 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 
 - [ ] 0 lint errors (`npm run lint`)
 - [ ] 0 TypeScript errors (`tsc --noEmit`)
-- [ ] Unit tests pass (`npm run test`, 93 tests)
-- [ ] E2E tests pass (`npm run test:e2e`, 28 tests, requires dev server)
-- [ ] Husky pre-commit passes
+- [ ] Unit tests pass (`npm run test`)
+- [ ] E2E tests pass (`npm run test:e2e`, requires dev server)
+- [ ] Husky pre-commit passes (`npx next lint --quiet && npx tsc --noEmit`)
 - [ ] `@progress.md` appended with task summary
 - [ ] Affected `@docs/*.md` updated if reality changed
 - [ ] If scraper logic changed: shared module in `src/lib/scraper/` updated, both callers (`scripts/scrape-recipe.ts` + `src/app/api/scrape/route.ts`) exercised mentally
+- [ ] If a UI primitive crossed 3 in-tree uses: extract per `@docs/design/component-specs.md` instead of copy-paste
 - [ ] If infra touched: ADR written and committed before code
 
 ---
@@ -153,11 +161,11 @@ npm run dev              # localhost:3000
 npm run build            # Next.js production build
 npm run build:cf         # Cloudflare next-on-pages build (canonical deploy build)
 npm run preview          # Local preview of the Cloudflare build via wrangler
-npm run lint             # ESLint
-npm run test             # Vitest, 53 tests
+npm run lint             # ESLint (next lint)
+npm run test             # Vitest, src/lib/__tests__/* and src/app/api/__tests__/*
 npm run test:watch       # Vitest watch mode
-npm run test:e2e         # Playwright, 28 tests, needs dev server running
-npm run scrape <url>     # CLI recipe scraper, writes to Supabase
+npm run test:e2e         # Playwright, e2e/*.spec.ts, needs dev server running
+npm run scrape <url>     # CLI recipe scraper (scripts/scrape-recipe.ts via tsx), writes to Supabase
 ```
 
 ---
@@ -173,15 +181,22 @@ Agents do not read Notion as source of truth.
 
 ## 🚦 9. CURRENT STATE
 
-_(Last edit: 2026-04-26, post-scraper-refactor)_
+_(Last edit: 2026-05-15, mid-Hearth-reskin)_
 
-**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup. Liquid Glass UI. Portion calculator with USDA macros. Weekly summary page. Chatbot with per-user context. 90 unit tests (83 pass / 7 pre-existing skips) + 28 E2E. Single-source-of-truth scraper module at `src/lib/scraper/`; CLI and web API both wrap `scrapeRecipe()`.
+**Working in production:** Multi-user with per-user recipes, ingredients, food logs. Invite-only signup gated by `INVITE_CODE`. Hearth design language rolling out (Magnolia palette, Playfair display + Lora body + Inter UI, gold accent `#C9A96E`) — the Liquid Glass system is being progressively replaced surface by surface. Portion calculator with USDA-first macro pipeline. Weekly summary page. Chatbot with per-user context (`/api/chat`). Single-source-of-truth scraper module at `src/lib/scraper/`; CLI (`scripts/scrape-recipe.ts` via `tsx`) and web route (`src/app/api/scrape/route.ts`) both wrap `scrapeRecipe()`. ScrapingBee tiered escalation for ~5x credit budget. Manual photo upload escape hatch on the recipe page. Self-serve password reset wired (`/auth/reset` + `/auth/update-password`). Daily `/api/audit` cron via `.github/workflows/audit.yml`.
 
-**Mid-build / unresolved:** `@docs/architecture/{ui,api,data}.md` are still stubs; populate as work touches each surface. CLI live smoke test (npm run scrape <real-url>) is a manual post-merge verification — automated coverage now lives in `src/lib/__tests__/scraper-*.test.ts`.
+**Test surface:** 14 unit test files under `src/lib/__tests__/` and `src/app/api/__tests__/` (scraper core/parse/extract/macros/normalize/persist/cloudinary, USDA, fractions, unit conversions, macros, plus API route tests for signup, recipe PATCH/DELETE, log-meal POST/GET). 5 Playwright specs in `e2e/` (auth, pages, demo, nutrition-unit-picker, food-log-unit-picker).
 
-**Recently closed (2026-04-25 → 2026-04-26):** ADR-001 / TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback decommissioned, single Supabase naming scheme). TASK-005 (residual Vercel strings in audit route cleaned up). TASK-006 (legacy `VERCEL` env var removed from Cloudflare Pages). TASK-003 / ADR-003 (`/api/audit` cron restored via GitHub Actions daily schedule). Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) wired up. **TASK-002 / ADR-002 (dual scraper paths refactor, Option B): scraper logic extracted to `src/lib/scraper/`, CLI migrated to TypeScript via `tsx`, web route shrunk from 1,113 → ~95 lines, +37 unit tests added, Rule 4 deleted, Pitfall 1 marked resolved.**
+**Mid-build / unresolved:**
 
-**Blocked:** Any new infra change requires its own ADR per Law 4. UI and API work can proceed in worktrees freely.
+- **Hearth reskin Phase 3+** in flight. Phase 0/1/2 (foundation, auth, recipe detail) and Phase 3 Gallery + Food Log slices have landed. Outstanding within Phase 3: WeekStrip + LogMealSheet behavioral work (drag-gesture lib, snap points), Weekly Summary surface, EmptyState component extraction (now at 3 inline uses — next surface should pull it out per `@docs/design/component-specs.md`).
+- `@docs/architecture/api.md` and `@docs/architecture/data.md` still partial stubs; populate as work touches each surface. `ui.md` was filled in 2026-04-27 alongside the reskin.
+- `@docs/REFERENCE.md` schema + file index sections still stubs.
+- CLI live smoke test (`npm run scrape <real-url>`) remains a manual post-merge step — automated coverage lives in `src/lib/__tests__/scraper-*.test.ts`.
+
+**Recently closed (2026-04-25 → 2026-05):** ADR-001/TASK-001 (Cloudflare Pages canonical, `vercel.json` removed). TASK-004 (Marketplace env-var fallback removed). TASK-005, TASK-006 (Vercel strings + `VERCEL` env var cleaned up). TASK-003/ADR-003 (`/api/audit` cron restored via GH Actions). TASK-002/ADR-002 (scraper extracted to `src/lib/scraper/`, CLI migrated to TS, web route shrunk 1,113 → ~95 lines). TASK-007 (recipe detail tab redesign). TASK-008 (self-serve password reset). TASK-009 (service worker no longer hides newly-added recipes). TASK-010 (deprecated Claude model bumped, env example reset). TASK-010a (ScrapingBee tier escalation). TASK-010b (manual photo upload). TASK-011/TASK-012 (image persistence on scrape + responsive cleanup). TASK-013/ADR-005 (44px touch-target standard, Button icon variant). TASK-014 (Hearth Phase 1: login/signup/reset/update-password + Phase 1.4 `/demo`). TASK-015 (Hearth Phase 2: recipe detail). TASK-017 (Hearth Phase 3 Gallery + Food Log slices, MacroGrid extracted). TASK-024 (API test coverage for `/api/recipe` PATCH/DELETE + `/api/log-meal` POST/GET). ADR-004 (migration tooling). UI mockups bundled under `public/mockups/{editorial,liquid-glass}.html`.
+
+**Blocked:** Any new infra change requires its own ADR per Law 4. UI reskin work continues per `@docs/design/hearth-reskin-plan.md`; pull EmptyState out before adding a 4th inline use. API and scraper work can proceed in worktrees freely.
 
 ---
 

@@ -2,6 +2,63 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-05-19 — Imperial/metric unit toggle on recipe detail page
+
+**Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
+
+**Branch:** `claude/infallible-nash-6dafb3` (worktree off `main`, parity at start)
+
+**Task:** Add a user-controlled imperial/metric toggle to the recipe detail page IngredientsTab. Display-only — the database stays imperial. Scope explicitly excluded the Food Log Form.
+
+**Changed:**
+
+- `src/lib/unit-conversions.ts` — added `convertForDisplay(amount, unit, system) → {amount, label}` plus a `MeasurementSystem` type. Per spec conversions: 1 cup=240ml, 1 tbsp=15ml, 1 tsp=5ml, 1 oz=28g, 1 lb=454g. Long-form and plural variants supported ("tablespoon", "ounces", "pounds"). Case-insensitive, trims whitespace, strips trailing "." for abbreviations like "oz.". Unknown units (each, can, "" / null) pass through unchanged so non-volumetric ingredients still render sensibly. Rounding rule: integer for |value| ≥ 1, one-decimal for sub-1 (so 1/4 tsp doesn't collapse to 0 ml). Kept **deliberately separate** from `toGrams()` — `toGrams` is USDA-precise (1 cup = 237g, 1 oz = 28.35g) and feeds the macro pipeline; the rounder display constants would be wrong there.
+- `src/lib/__tests__/unit-conversions.test.ts` — 21 new tests covering both systems, every supported unit shape, case/whitespace tolerance, rounding edges, null-unit handling, and pass-through behavior.
+- `src/lib/measurement-system.tsx` — **NEW**. `MeasurementSystemProvider` (client component) + `useMeasurementSystem()` hook. State persists to `localStorage` under `"julies-cookbook:measurement-system"`. SSR-safe lazy init: useState seeds with the imperial default so server + first client render agree (no hydration mismatch), then `useEffect` reads localStorage post-mount. Storage reads/writes wrapped in try/catch for private-browsing tolerance. Hook throws if used outside the provider — fail loud.
+- `src/app/(main)/layout.tsx` — wrapped `<MainNav>` in `<MeasurementSystemProvider>`. Provider lives inside the `(main)` group so marketing/auth routes stay untouched.
+- `src/components/ui/MeasurementToggle.tsx` — **NEW**. Two-state pill using Hearth tokens (`rounded-pill`, `bg-cream` / `bg-brown text-cream`, `shadow-lift-sm`, `ease-hearth`). Active option is filled brown-on-cream; inactive is `text-ink-soft` with hover lift to `text-ink`. Uses `aria-pressed` on each option button + a wrapping `role="group" aria-label="Measurement units"` — better semantics than `role="switch"` for a named-state pair.
+- `src/components/IngredientsTab.tsx` — added a `renderQuantity(ing)` helper that branches on system:
+  - **Imperial** keeps the existing `formatQuantity(ing.quantity, scale)` cooking-fraction path verbatim ("1 1/2 cups") — zero behavior change.
+  - **Metric** calls `convertForDisplay(ing.quantity * scale, ing.unit, "metric")`. For pass-through units (label equals the original unit, e.g. "each" / "can"), still uses `formatQuantity` so fractions like "1/2 can" survive; for converted units (ml/g) renders the rounded decimal via `formatMetricAmount`.
+  - Restructured the header band to host both controls: units toggle (right-aligned) sits in a top strip, servings scaler sits below, both inside one `bg-cream` band with the existing negative-margin bleed. Reads as one related-controls group.
+- `progress.md` — this entry.
+
+**Architectural choices worth surfacing:**
+
+1. **Why not push metric into `toGrams()` / the macro pipeline?** Because Rule 3 in CLAUDE.md locks the USDA-first nutrition pipeline, and `toGrams()` is its entry point. Mixing display rounding into a macro-math function would be a violation of single responsibility and break the documented fallback chain. `convertForDisplay` is explicitly a render helper — no caller in the macro path imports it.
+2. **Why fraction-display only on imperial?** Metric recipes don't traditionally use fractions (60 ml, not "1/4 cup → 1/4-of-240 ml"). Switching numeric style with the system mirrors how real cookbooks read, and `formatMetricAmount` strips trailing ".0" so whole results stay clean.
+3. **Why provider at `(main)/layout` instead of root `layout.tsx`?** Auth + marketing routes don't need this context. Scoping the provider to the authed shell keeps the unauthed render path leaner (one less context provider in the tree, no client component leak into static routes).
+4. **Why pass-through for unknown units?** A recipe with `quantity: 2, unit: "can"` would otherwise lose information if we forced metric. Pass-through preserves the user's mental model and the existing fraction formatting.
+
+**Trade-offs explicitly accepted:**
+
+- One-frame flicker for users who previously chose metric — first paint shows imperial (the SSR default), then `useEffect` updates to metric after hydration. Acceptable for a personal/family app; preventing it would require an inline `<script>` reading localStorage before hydration, which is heavier than the UX gain here.
+- The Food Log Form still uses imperial-only (`PortionUnit` is its own typed enum and the spec locked this out of scope). A future task could add a parallel toggle there, but it's a different surface — log entries store grams, so the display toggle would change how the _input_ is interpreted, not just rendered.
+- No automated E2E for the toggle. The unit suite covers the conversion logic exhaustively; a Playwright test would need to assert DOM text changes after a click on the toggle, which is straightforward to add but wasn't in the locked scope.
+
+**Verification:**
+
+- `npx tsc --noEmit` — 0 errors
+- `npx next lint --quiet` (per affected file) — 0 errors / 0 warnings
+- `npx vitest run` — 158 pass / 7 pre-existing skips, 0 failures
+- Husky pre-commit gate (`next lint --quiet && tsc --noEmit`) passed on all 5 commits
+
+**Commits (atomic, each individually green):**
+
+1. `feat(lib): add convertForDisplay for imperial/metric ingredient rendering` — lib + 21 new tests
+2. `feat(lib): add MeasurementSystemProvider + useMeasurementSystem hook`
+3. `feat(app): wrap (main) layout in MeasurementSystemProvider`
+4. `feat(ui): add MeasurementToggle pill component`
+5. `feat(recipe): wire imperial/metric toggle into IngredientsTab` — this commit (includes progress.md entry)
+
+**Open follow-ups (out of scope this task):**
+
+- The CLAUDE.md §9 "Current state" line still says "90 unit tests (83 pass / 7 pre-existing skips)" but the suite is now 158 pass / 7 skip. Doc has been drifting since TASK-017 — worth a sweep next time a doc-update touches §9.
+- E2E coverage for the toggle (click → DOM updates → reload preserves choice).
+- If/when Food Log Form gets the same treatment, lift the toggle render into a shared `RecipeHeader`-like wrapper to avoid duplicating the header band layout.
+
+---
+
 ## 2026-04-30 — TASK-017 — Hearth reskin Phase 3 Food Log slice + MacroGrid extraction
 
 **Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
@@ -221,6 +278,7 @@ Surfaced as an explicit choice to Slim before implementation, given the recently
 - The `loading` prop on `Button` will render a `Loader2` spinner alongside the icon child if `loading={true}` is passed on `variant="icon"`. Acceptable since icon buttons are typically discrete actions without loading states; documented in the ADR.
 - The current `Button` file is now ~70 lines and conceptually mixes "text CTA" and "hit-area-only" concerns. Watching for the trigger to split.
 - `IngredientsTab.tsx` on this branch is still the OLD broken pre-fix version (PR #21's fix lives on a separate `fix/ingredients-touch-target` branch off `main`). When all three branches eventually consolidate, IngredientsTab gets reskinned in Phase 2 and the inline classes from PR #21 become `<Button variant="icon">` calls — ADR-005 documents this transition.
+
 ## 2026-04-30 — TASK-013 — Mobile: ingredient +/- buttons not tappable
 
 **Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode
@@ -340,6 +398,7 @@ Same `next.config.mjs` workerd-disable dance as the prior commit was needed to r
 **Trust contract:**
 
 Mid-session, multiple sections of `docs/trust-contract.md` were caught failing once the contract was actually read (missed at session start; no harness hook injects it). Remediation walked §1 (linguistic), §3 (parallelization lock for `next.config.mjs`), §4 (Shared Memory Contract: no TASK declared, no `progress.md` entry), and §9 (full DOD including e2e). All pass post-remediation. Open follow-up: no SessionStart hook integrates the trust contract; manual discipline only.
+
 - `npm run test` (vitest) → IngredientsTab is not under unit-test coverage; full suite expected unaffected (re-run on commit via husky)
 - `npm run test:e2e` → not run (no mobile-viewport selector for this control; existing tests don't cover scaler interaction at 375px)
 - Husky pre-commit → fires on commit

@@ -2,6 +2,8 @@
 // HTML cache that was hiding newly-added recipes from the gallery (TASK-009).
 const CACHE_NAME = "cookbook-v3";
 
+const CACHED_AT_HEADER = "sw-cached-at";
+
 // Install: skip waiting to activate immediately
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -31,12 +33,10 @@ self.addEventListener("fetch", (event) => {
   // Skip API routes entirely (auth-gated, can't cache)
   if (url.pathname.startsWith("/api/")) return;
 
-  // Skip Supabase/external API calls
-  if (!url.origin.includes(self.location.origin)) {
-    // Exception: cache Cloudinary images aggressively
+  // Cross-origin: only cache Cloudinary images; let everything else pass through.
+  if (url.origin !== self.location.origin) {
     if (url.hostname === "res.cloudinary.com") {
       event.respondWith(cacheFirst(event.request, 30 * 24 * 60 * 60)); // 30 days
-      return;
     }
     return;
   }
@@ -58,18 +58,43 @@ self.addEventListener("fetch", (event) => {
   // when SWR served stale HTML with no mutation-bust hook (TASK-009). Static
   // assets and Cloudinary images above keep their cache-first strategies, so
   // the perf win on repeat loads is preserved.
-  return;
 });
 
-// Strategy: Cache-first (for immutable assets)
+// Strategy: Cache-first with optional max-age. Entries are stamped on write
+// and refetched when older than maxAgeSec; omit maxAgeSec for immutable assets.
 async function cacheFirst(request, maxAgeSec) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
 
-  const response = await fetch(request);
-  if (response.ok) {
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, response.clone());
+  if (cached && !isExpired(cached, maxAgeSec)) {
+    return cached;
   }
-  return response;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, stampResponse(response.clone()));
+    }
+    return response;
+  } catch (err) {
+    if (cached) return cached;
+    throw err;
+  }
+}
+
+function isExpired(response, maxAgeSec) {
+  if (!maxAgeSec) return false;
+  const cachedAt = Number(response.headers.get(CACHED_AT_HEADER));
+  if (!cachedAt) return false;
+  return Date.now() - cachedAt > maxAgeSec * 1000;
+}
+
+function stampResponse(response) {
+  const headers = new Headers(response.headers);
+  headers.set(CACHED_AT_HEADER, String(Date.now()));
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }

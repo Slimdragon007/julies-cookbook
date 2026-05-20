@@ -39,7 +39,7 @@ const MEALS = ["Breakfast", "Lunch", "Dinner", "Snack"] as const;
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const selectClass =
-  "w-full px-4 py-3 rounded bg-cream border border-brown-glass font-sans text-[15px] text-ink outline-none transition-colors focus:border-brown";
+  "w-full px-4 py-3 rounded bg-card border border-rule font-sans text-[15px] text-ink outline-none transition-colors focus:border-accent";
 
 export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
   const [recipeId, setRecipeId] = useState("");
@@ -187,7 +187,7 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       {/* Log form */}
       <form
         onSubmit={handleSubmit}
-        className="bg-linen rounded shadow-lift-sm p-6 mb-8"
+        className="bg-card border border-rule rounded shadow-lift-sm p-6 mb-8"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
           <div className="space-y-2">
@@ -270,17 +270,17 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
             {saving ? "Saving…" : "Log meal"}
           </Button>
           {message && (
-            <span className="font-serif italic text-sm text-ink-soft">
+            <span className="font-sans italic text-sm text-ink-soft">
               {message}
             </span>
           )}
         </div>
       </form>
 
-      {/* Day total — uses extracted MacroGrid. */}
+      {/* Day total: uses retoned MacroGrid. */}
       {entries.length > 0 && (
         <section className="mb-8">
-          <h3 className="font-sans text-xs font-semibold tracking-[0.06em] uppercase text-brown mb-3">
+          <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-3">
             Day total
           </h3>
           <MacroGrid values={todayTotal} />
@@ -288,23 +288,23 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
       )}
 
       {/* Entries */}
-      <h3 className="font-display text-xl font-semibold text-ink mb-4">
+      <h3 className="font-display text-[24px] text-ink mb-4">
         {isToday ? "Today" : logDate}
       </h3>
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="w-5 h-5 text-brown animate-spin" />
+          <Loader2 className="w-5 h-5 text-accent animate-spin" />
         </div>
       ) : entries.length === 0 ? (
-        // EmptyState — spec §17 Food Log variant.
+        // EmptyState: Food Log variant.
         <div className="text-center py-12 px-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-4">
             <UtensilsCrossed size={28} aria-hidden />
           </div>
-          <h4 className="font-display font-semibold text-lg text-ink mb-2">
+          <h4 className="font-display text-[22px] text-ink mb-2">
             Nothing logged{isToday ? " today" : ""}, yet.
           </h4>
-          <p className="font-serif text-sm text-ink-mute leading-relaxed max-w-[260px] mx-auto">
+          <p className="font-sans text-sm text-ink-mute leading-relaxed max-w-[260px] mx-auto">
             Pick a recipe above and tap <em>Log meal</em> when you eat.
           </p>
         </div>
@@ -313,10 +313,10 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
           {entries.map((entry) => (
             <li
               key={entry.id}
-              className="flex items-center gap-4 bg-linen rounded shadow-lift-sm p-4 sm:p-5"
+              className="flex items-center gap-4 bg-card border border-rule rounded shadow-lift-sm p-4 sm:p-5"
             >
               <div className="min-w-0 flex-1">
-                <div className="font-display text-base font-semibold text-ink truncate">
+                <div className="font-display text-[18px] text-ink truncate">
                   {entry.recipes?.name || "Unknown"}
                 </div>
                 <div className="font-sans text-xs text-ink-mute mt-0.5 uppercase tracking-[0.08em]">
@@ -324,12 +324,12 @@ export default function FoodLogForm({ recipes }: { recipes: Recipe[] }) {
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <div className="font-sans text-sm font-medium text-ink-soft tabular-nums">
+                <div className="font-mono text-sm font-medium text-ink-soft tabular-nums">
                   {entry.portion_amount && entry.portion_unit
                     ? `${entry.portion_amount} ${entry.portion_unit}`
                     : `${entry.portion_g}g`}
                 </div>
-                <div className="font-sans text-sm font-semibold text-brown tabular-nums">
+                <div className="font-mono text-sm font-semibold text-accent tabular-nums">
                   {entry.calories} cal
                 </div>
               </div>

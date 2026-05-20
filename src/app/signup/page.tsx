@@ -61,15 +61,15 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+      <main className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md flex flex-col items-center text-center animate-drift-up">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-gold mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-6">
             <Sparkles size={28} aria-hidden />
           </div>
-          <h1 className="font-display font-semibold text-h1 text-ink mb-3">
+          <h1 className="font-display text-h1 text-ink mb-3">
             Welcome to the family.
           </h1>
-          <p className="font-serif text-base text-ink-soft leading-relaxed max-w-[280px]">
+          <p className="font-sans text-base text-ink-soft leading-relaxed max-w-[280px]">
             Your account is ready. Redirecting you to sign in.
           </p>
         </div>
@@ -78,22 +78,22 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+    <main className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md flex flex-col items-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-6">
           <BookHeart size={28} aria-hidden />
         </div>
 
-        <h1 className="font-display font-semibold text-h1 sm:text-display-mobile text-ink text-center mb-3">
+        <h1 className="font-display text-h1 sm:text-display-mobile text-ink text-center mb-3">
           Join the Cookbook
         </h1>
-        <p className="font-serif text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
+        <p className="font-sans text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
           Create your account with an invite code.
         </p>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
           <div className="space-y-1.5">
-            <InputLabel htmlFor="invite" className="text-gold">
+            <InputLabel htmlFor="invite" className="text-accent">
               Invite Code
             </InputLabel>
             <Input
@@ -104,7 +104,7 @@ export default function SignupPage() {
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
               placeholder="Enter invite code"
-              className="border-gold/40 focus:border-gold focus:ring-gold/15"
+              className="border-accent/40 focus:border-accent focus:ring-accent/15"
             />
           </div>
 
@@ -163,7 +163,7 @@ export default function SignupPage() {
           {error && (
             <div
               role="alert"
-              className="rounded border border-rust bg-rust/[0.06] px-4 py-3 font-serif text-sm text-ink-soft"
+              className="rounded border border-accent-ink/40 bg-accent-soft px-4 py-3 font-sans text-sm text-ink-soft"
             >
               {error}
             </div>
@@ -174,11 +174,11 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <p className="font-serif text-sm text-ink-mute mt-8 text-center">
+        <p className="font-sans text-sm text-ink-mute mt-8 text-center">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-sans font-medium text-brown hover:text-brown-deep transition-colors"
+            className="font-sans font-medium text-accent hover:text-accent-ink transition-colors"
           >
             Sign in
           </Link>

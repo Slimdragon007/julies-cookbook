@@ -41,16 +41,16 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+    <main className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md flex flex-col items-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-6">
           <BookHeart size={28} aria-hidden />
         </div>
 
-        <h1 className="font-display font-semibold text-display-mobile sm:text-display text-ink text-center mb-3">
+        <h1 className="font-display text-display-mobile sm:text-display text-ink text-center mb-3">
           Julie&apos;s Cookbook
         </h1>
-        <p className="font-serif text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
+        <p className="font-sans text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
           A meditative space to organize your recipes and simplify your kitchen
           workflow.
         </p>
@@ -75,7 +75,7 @@ export default function LoginPage() {
               <InputLabel htmlFor="password">Password</InputLabel>
               <Link
                 href="/auth/reset"
-                className="font-sans text-xs font-medium text-brown hover:text-brown-deep transition-colors"
+                className="font-sans text-xs font-medium text-accent hover:text-accent-ink transition-colors"
               >
                 Forgot?
               </Link>
@@ -94,7 +94,7 @@ export default function LoginPage() {
           {error && (
             <div
               role="alert"
-              className="rounded border border-rust bg-rust/[0.06] px-4 py-3 font-serif text-sm text-ink-soft"
+              className="rounded border border-accent-ink/40 bg-accent-soft px-4 py-3 font-sans text-sm text-ink-soft"
             >
               {error}
             </div>
@@ -106,11 +106,11 @@ export default function LoginPage() {
         </form>
 
         <div className="w-full flex items-center gap-4 my-8">
-          <div className="flex-1 h-px bg-linen-dim" />
+          <div className="flex-1 h-px bg-rule" />
           <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-mute">
             New to Cookbook?
           </span>
-          <div className="flex-1 h-px bg-linen-dim" />
+          <div className="flex-1 h-px bg-rule" />
         </div>
 
         <div className="w-full flex flex-col items-center gap-3">

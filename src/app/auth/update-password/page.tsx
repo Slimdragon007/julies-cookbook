@@ -64,25 +64,25 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream flex flex-col items-center justify-center px-6 py-12">
+    <main className="min-h-screen bg-paper flex flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md flex flex-col items-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-6">
           <BookHeart size={28} aria-hidden />
         </div>
 
-        <h1 className="font-display font-semibold text-h1 sm:text-display-mobile text-ink text-center mb-3">
+        <h1 className="font-display text-h1 sm:text-display-mobile text-ink text-center mb-3">
           Set new password
         </h1>
-        <p className="font-serif text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
+        <p className="font-sans text-base text-ink-soft leading-relaxed text-center max-w-[320px] mb-10">
           Choose a password you&apos;ll remember.
         </p>
 
         {hasRecoverySession === false ? (
           <div className="w-full flex flex-col items-center text-center">
-            <h2 className="font-display font-semibold text-h2 text-ink mb-3">
+            <h2 className="font-display text-h2 text-ink mb-3">
               Link expired or invalid
             </h2>
-            <p className="font-serif text-base text-ink-soft leading-relaxed max-w-[320px] mb-6">
+            <p className="font-sans text-base text-ink-soft leading-relaxed max-w-[320px] mb-6">
               Request a new password reset link.
             </p>
             <Link href="/auth/reset" className={buttonClass("secondary")}>
@@ -123,7 +123,7 @@ export default function UpdatePasswordPage() {
             {error && (
               <div
                 role="alert"
-                className="rounded border border-rust bg-rust/[0.06] px-4 py-3 font-serif text-sm text-ink-soft"
+                className="rounded border border-accent-ink/40 bg-accent-soft px-4 py-3 font-sans text-sm text-ink-soft"
               >
                 {error}
               </div>

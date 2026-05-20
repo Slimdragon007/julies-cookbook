@@ -168,17 +168,17 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col">
+    <div className="min-h-screen bg-paper flex flex-col">
       <header className="relative z-30 flex items-center justify-between px-6 sm:px-10 pt-10 pb-6">
         <div className="flex items-center gap-3">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-linen text-brown">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-accent text-accent-on">
             <BookHeart size={18} aria-hidden />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="font-display font-semibold text-[15px] text-ink">
+            <span className="font-display text-[18px] text-ink leading-none">
               Julie&apos;s Cookbook
             </span>
-            <span className="font-sans text-[10px] font-medium uppercase tracking-[0.18em] text-ink-mute">
+            <span className="font-sans text-[10px] font-medium uppercase tracking-[0.18em] text-ink-mute mt-1">
               Interactive Demo
             </span>
           </div>
@@ -190,7 +190,7 @@ export default function DemoPage() {
             "inline-flex items-center justify-center w-10 h-10 rounded-full",
             "bg-transparent text-ink-mute",
             "transition-colors duration-150 ease-hearth",
-            "hover:bg-linen hover:text-ink",
+            "hover:bg-card hover:text-ink",
           )}
         >
           <X size={18} aria-hidden />
@@ -211,7 +211,7 @@ export default function DemoPage() {
               type="button"
               onClick={() => setIsPlaying(!isPlaying)}
               aria-label={isPlaying ? "Pause" : "Play"}
-              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-linen text-ink-soft hover:bg-linen-dim hover:text-ink transition-colors duration-150 ease-hearth"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-card border border-rule text-ink-soft hover:bg-accent-soft hover:text-accent-ink transition-colors duration-150 ease-hearth"
             >
               {isPlaying ? (
                 <Pause size={16} aria-hidden />
@@ -223,7 +223,7 @@ export default function DemoPage() {
               type="button"
               onClick={restart}
               aria-label="Restart"
-              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-linen text-ink-soft hover:bg-linen-dim hover:text-ink transition-colors duration-150 ease-hearth"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-card border border-rule text-ink-soft hover:bg-accent-soft hover:text-accent-ink transition-colors duration-150 ease-hearth"
             >
               <RotateCcw size={16} aria-hidden />
             </button>
@@ -242,22 +242,22 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-brown-glass text-brown font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-soft text-accent-ink font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <Link2 className="w-3 h-3" /> Step 01: Capture
                   </div>
-                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
-                    Import from <span className="text-brown">Anywhere.</span>
+                  <h2 className="font-display text-[40px] sm:text-[56px] text-ink mb-5 leading-[1.05]">
+                    Import from <span className="text-accent">Anywhere.</span>
                   </h2>
-                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  <p className="font-sans text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
                     Just copy the URL of any recipe website. We&apos;ll extract
                     only the ingredients and steps, leaving the ads behind.
                   </p>
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="bg-linen rounded-lg shadow-lift p-8 sm:p-10">
+                  <div className="bg-card border border-rule rounded-lg shadow-lift p-8 sm:p-10">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-cream text-brown">
+                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-accent-soft text-accent-ink">
                         <Clipboard className="w-4 h-4" />
                       </div>
                       <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-mute">
@@ -265,21 +265,21 @@ export default function DemoPage() {
                       </span>
                     </div>
 
-                    <div className="bg-cream border border-brown-glass rounded px-5 py-4 min-h-[60px] flex items-center mb-6">
-                      <span className="font-sans text-[14px] text-ink break-all">
+                    <div className="bg-paper border border-rule rounded px-5 py-4 min-h-[60px] flex items-center mb-6">
+                      <span className="font-mono text-[14px] text-ink break-all">
                         {typedUrl}
                       </span>
                       <motion.span
                         animate={{ opacity: [1, 0] }}
                         transition={{ repeat: Infinity, duration: 0.8 }}
-                        className="inline-block w-0.5 h-5 bg-brown ml-1 rounded-full"
+                        className="inline-block w-0.5 h-5 bg-accent ml-1 rounded-full"
                       />
                     </div>
 
                     <div
                       className={cn(
                         "rounded-pill px-6 py-3.5 text-center font-sans font-semibold text-[15px]",
-                        "bg-brown text-cream transition-opacity duration-200",
+                        "bg-accent text-accent-on transition-opacity duration-200",
                         typedUrl.length > 30 ? "opacity-100" : "opacity-40",
                       )}
                     >
@@ -300,13 +300,13 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left order-first lg:order-last">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-ember/10 text-ember font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-soft text-accent-ink font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <Sparkles className="w-3 h-3" /> Step 02: Intelligence
                   </div>
-                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
-                    AI-Powered <span className="text-ember">Extraction.</span>
+                  <h2 className="font-display text-[40px] sm:text-[56px] text-ink mb-5 leading-[1.05]">
+                    AI-Powered <span className="text-accent">Extraction.</span>
                   </h2>
-                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  <p className="font-sans text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
                     Our AI parses recipes from any website, instantly
                     structuring ingredients, cook times, and nutritional data
                     into a clean format.
@@ -314,9 +314,9 @@ export default function DemoPage() {
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="bg-linen rounded-lg shadow-lift p-8 sm:p-10">
+                  <div className="bg-card border border-rule rounded-lg shadow-lift p-8 sm:p-10">
                     <div className="flex justify-center mb-8">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cream text-ember">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink">
                         <Sparkles className="w-7 h-7" />
                       </div>
                     </div>
@@ -324,13 +324,13 @@ export default function DemoPage() {
                     <div className="mb-6">
                       <div className="flex justify-between font-sans text-[11px] font-semibold uppercase tracking-[0.15em] mb-2 px-1">
                         <span className="text-ink-mute">Parsing Structure</span>
-                        <span className="text-ember tabular-nums">
+                        <span className="text-accent font-mono tabular-nums">
                           {extractProgress}%
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-cream rounded-full overflow-hidden border border-brown-glass">
+                      <div className="w-full h-2 bg-paper rounded-full overflow-hidden border border-rule">
                         <div
-                          className="h-full bg-ember rounded-full transition-all duration-100"
+                          className="h-full bg-accent rounded-full transition-all duration-100"
                           style={{ width: `${extractProgress}%` }}
                         />
                       </div>
@@ -350,17 +350,17 @@ export default function DemoPage() {
                             key={item}
                             className={cn(
                               "flex items-center gap-3 px-4 py-3 rounded transition-colors",
-                              done ? "bg-leaf/10" : "bg-cream",
+                              done ? "bg-accent-soft" : "bg-paper",
                             )}
                           >
                             <div
                               className={cn(
                                 "w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors",
                                 done
-                                  ? "bg-leaf text-cream"
+                                  ? "bg-accent text-accent-on"
                                   : active
-                                    ? "bg-ember/20 text-ember"
-                                    : "bg-linen-dim text-ink-mute",
+                                    ? "bg-accent-soft text-accent-ink"
+                                    : "bg-rule text-ink-mute",
                               )}
                             >
                               {done ? (
@@ -400,13 +400,13 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-leaf/10 text-leaf font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-soft text-accent-ink font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <ChefHat className="w-3 h-3" /> Step 03: Organization
                   </div>
-                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
-                    Pure, Clean <span className="text-leaf">Design.</span>
+                  <h2 className="font-display text-[40px] sm:text-[56px] text-ink mb-5 leading-[1.05]">
+                    Pure, Clean <span className="text-accent">Design.</span>
                   </h2>
-                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  <p className="font-sans text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
                     No clutter, no popups. Just your recipe, beautifully
                     presented with all the details you need to cook with
                     confidence.
@@ -414,7 +414,7 @@ export default function DemoPage() {
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="bg-linen rounded-lg shadow-lift overflow-hidden">
+                  <div className="bg-card border border-rule rounded-lg shadow-lift overflow-hidden">
                     <div className="relative h-48 overflow-hidden">
                       <Image
                         src={DEMO_RECIPE.image}
@@ -425,30 +425,30 @@ export default function DemoPage() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-transparent" />
                       <div className="absolute bottom-5 left-6 right-6">
-                        <span className="inline-block px-2 py-0.5 bg-leaf/90 text-cream font-sans text-[10px] font-semibold uppercase tracking-[0.12em] rounded-pill">
+                        <span className="inline-block px-2 py-0.5 bg-accent/95 text-accent-on font-sans text-[10px] font-semibold uppercase tracking-[0.12em] rounded-pill">
                           Easy Prep
                         </span>
-                        <h3 className="font-display font-semibold text-2xl text-cream leading-tight mt-2">
+                        <h3 className="font-display text-[28px] text-accent-on leading-tight mt-2">
                           {DEMO_RECIPE.title}
                         </h3>
                       </div>
                     </div>
 
                     <div className="p-7">
-                      <div className="grid grid-cols-3 gap-3 mb-6 pb-6 border-b border-linen-dim">
+                      <div className="grid grid-cols-3 gap-3 mb-6 pb-6 border-b border-rule">
                         {[
                           {
-                            icon: <Clock className="w-4 h-4 text-brown" />,
+                            icon: <Clock className="w-4 h-4 text-accent" />,
                             text: DEMO_RECIPE.prepTime,
                             label: "Prep",
                           },
                           {
-                            icon: <Clock className="w-4 h-4 text-brown" />,
+                            icon: <Clock className="w-4 h-4 text-accent" />,
                             text: DEMO_RECIPE.cookTime,
                             label: "Cook",
                           },
                           {
-                            icon: <Users className="w-4 h-4 text-brown" />,
+                            icon: <Users className="w-4 h-4 text-accent" />,
                             text: `${DEMO_RECIPE.servings}`,
                             label: "Servings",
                           },
@@ -458,7 +458,7 @@ export default function DemoPage() {
                             className="flex flex-col items-center gap-1"
                           >
                             {s.icon}
-                            <span className="font-sans text-[14px] font-semibold text-ink leading-none tabular-nums">
+                            <span className="font-mono text-[14px] font-semibold text-ink leading-none tabular-nums">
                               {s.text}
                             </span>
                             <span className="font-sans text-[10px] font-semibold text-ink-mute uppercase tracking-[0.1em] leading-none">
@@ -469,7 +469,7 @@ export default function DemoPage() {
                       </div>
 
                       <div>
-                        <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-brown mb-3">
+                        <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">
                           Ingredients
                         </h4>
                         <div className="space-y-1.5">
@@ -481,13 +481,13 @@ export default function DemoPage() {
                                 opacity: i < revealedIngredients ? 1 : 0,
                                 x: i < revealedIngredients ? 0 : -8,
                               }}
-                              className="flex items-center gap-3 font-serif text-[14px] text-ink py-1.5"
+                              className="flex items-center gap-3 font-sans text-[14px] text-ink py-1.5"
                             >
-                              <div className="w-1.5 h-1.5 rounded-full bg-leaf shrink-0" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
                               {ing}
                             </motion.div>
                           ))}
-                          <p className="font-serif text-[12px] italic text-ink-mute pl-5 pt-1">
+                          <p className="font-sans text-[12px] italic text-ink-mute pl-5 pt-1">
                             + {DEMO_RECIPE.ingredients.length - 5} more
                           </p>
                         </div>
@@ -508,13 +508,13 @@ export default function DemoPage() {
                 className="grid lg:grid-cols-2 gap-12 items-center"
               >
                 <div className="text-center lg:text-left order-first lg:order-last">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-gold/15 text-brown-deep font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent-soft text-accent-ink font-sans text-[11px] font-semibold uppercase tracking-[0.15em] rounded-pill mb-6">
                     <ShoppingBasket className="w-3 h-3" /> Step 04: Shopping
                   </div>
-                  <h2 className="font-display font-semibold text-[36px] sm:text-[48px] text-ink mb-5 tracking-tight leading-[1.1]">
-                    Smart <span className="text-gold">Groceries.</span>
+                  <h2 className="font-display text-[40px] sm:text-[56px] text-ink mb-5 leading-[1.05]">
+                    Smart <span className="text-accent">Groceries.</span>
                   </h2>
-                  <p className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  <p className="font-sans text-base sm:text-lg text-ink-soft leading-relaxed max-w-lg mx-auto lg:mx-0">
                     Instantly sync ingredients to your shopping list. Mark them
                     off as you go, and never wander aimlessly through aisles
                     again.
@@ -522,18 +522,18 @@ export default function DemoPage() {
                 </div>
 
                 <div className="max-w-md mx-auto w-full">
-                  <div className="bg-linen rounded-lg shadow-lift p-8 sm:p-10">
+                  <div className="bg-card border border-rule rounded-lg shadow-lift p-8 sm:p-10">
                     <div className="flex items-center justify-between mb-6">
                       <div>
                         <h4 className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-mute leading-none mb-1.5">
                           Weekly List
                         </h4>
-                        <span className="font-display font-semibold text-[18px] text-ink">
+                        <span className="font-display text-[22px] text-ink leading-none">
                           Fresh Pantry
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="font-sans text-2xl font-semibold text-brown leading-none block tabular-nums">
+                        <span className="font-mono text-2xl font-semibold text-accent leading-none block tabular-nums">
                           {Math.round(
                             (checkedItems.size /
                               DEMO_RECIPE.ingredients.length) *
@@ -547,7 +547,7 @@ export default function DemoPage() {
                       </div>
                     </div>
 
-                    <div className="w-full h-2 bg-cream rounded-full overflow-hidden border border-brown-glass mb-6">
+                    <div className="w-full h-2 bg-paper rounded-full overflow-hidden border border-rule mb-6">
                       <motion.div
                         animate={{
                           width: `${
@@ -556,7 +556,7 @@ export default function DemoPage() {
                             100
                           }%`,
                         }}
-                        className="h-full bg-leaf rounded-full"
+                        className="h-full bg-accent rounded-full"
                       />
                     </div>
 
@@ -568,24 +568,24 @@ export default function DemoPage() {
                             key={i}
                             className={cn(
                               "flex items-center gap-3 py-3 px-4 rounded transition-colors",
-                              checked ? "bg-cream opacity-60" : "bg-cream",
+                              checked ? "bg-paper opacity-60" : "bg-paper",
                             )}
                           >
                             <div
                               className={cn(
                                 "w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
                                 checked
-                                  ? "bg-leaf border-leaf"
-                                  : "border-brown-glass bg-transparent",
+                                  ? "bg-accent border-accent"
+                                  : "border-rule bg-transparent",
                               )}
                             >
                               {checked && (
-                                <Check className="w-3.5 h-3.5 text-cream stroke-[3]" />
+                                <Check className="w-3.5 h-3.5 text-accent-on stroke-[3]" />
                               )}
                             </div>
                             <span
                               className={cn(
-                                "font-serif text-[14px] transition-all",
+                                "font-sans text-[14px] transition-all",
                                 checked
                                   ? "text-ink-mute line-through"
                                   : "text-ink",

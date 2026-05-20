@@ -19,10 +19,10 @@ export default async function FoodLogPage() {
     <div className="min-h-screen pt-20 lg:pt-10 pb-32 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <header className="mb-8 px-1">
-          <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink leading-tight mb-1">
+          <h1 className="font-display text-[40px] sm:text-[52px] text-ink leading-[1.05] mb-1">
             Food log
           </h1>
-          <p className="font-serif text-base text-ink-soft">
+          <p className="font-sans text-base text-ink-soft">
             Log a meal when you eat. We&apos;ll do the macros.
           </p>
         </header>

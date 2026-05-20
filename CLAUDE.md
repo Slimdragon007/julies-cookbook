@@ -120,6 +120,7 @@ Wired in `.github/workflows/deploy.yml` GH secrets. Resolved in `src/lib/supabas
 @docs/architecture/infra.md    → Cloudflare Pages deploy state, GH Action CI/CD
 @docs/adr/ADR-001-deploy-target.md     → accepted (Cloudflare Pages)
 @docs/adr/ADR-002-dual-scraper-paths.md → accepted + implemented 2026-04-26 (Option B, src/lib/scraper/*)
+@docs/adr/ADR-006-tweaks-persistence.md → proposed 2026-05-20 (Option B, public.user_preferences table; gates TASK-026)
 ```
 
 **Load triggers:**

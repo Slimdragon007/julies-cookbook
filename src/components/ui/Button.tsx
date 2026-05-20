@@ -13,14 +13,14 @@ const buttonBase =
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    "px-6 py-3.5 text-[15px] font-semibold bg-brown text-cream " +
-    "hover:bg-brown-deep hover:-translate-y-px hover:shadow-lift " +
+    "px-6 py-3.5 text-[15px] font-semibold bg-accent text-accent-on " +
+    "hover:bg-accent-ink hover:-translate-y-px hover:shadow-lift " +
     "active:translate-y-0 active:shadow-lift-sm " +
     "disabled:bg-ink-mute disabled:hover:translate-y-0 disabled:hover:shadow-none",
   secondary:
-    "px-6 py-3.5 text-[15px] font-semibold bg-transparent text-brown " +
-    "border border-brown-glass " +
-    "hover:bg-brown-glass",
+    "px-6 py-3.5 text-[15px] font-semibold bg-transparent text-accent " +
+    "border border-accent-soft " +
+    "hover:bg-accent-soft",
   ghost:
     "px-4 py-2.5 text-sm font-medium bg-transparent text-ink-soft " +
     "hover:text-ink",

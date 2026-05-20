@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lora, Playfair_Display } from "next/font/google";
+import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
@@ -9,15 +9,17 @@ const inter = Inter({
   display: "swap",
 });
 
-const playfair = Playfair_Display({
+const instrument = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-playfair",
+  weight: "400",
+  style: "italic",
+  variable: "--font-instrument",
   display: "swap",
 });
 
-const lora = Lora({
+const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-lora",
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
@@ -36,7 +38,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#C9A96E",
+  themeColor: "#D97757",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -55,7 +57,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
-        className={`${inter.variable} ${playfair.variable} ${lora.variable} font-sans antialiased text-ink bg-cream`}
+        className={`${inter.variable} ${instrument.variable} ${jetbrains.variable} font-sans antialiased text-ink bg-paper`}
       >
         <div className="ambient-bg">
           <div className="grid-overlay" />

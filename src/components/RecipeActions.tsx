@@ -113,11 +113,11 @@ export default function RecipeActions({ recipe }: Props) {
   // Delete confirmation
   if (deleting) {
     return (
-      <div className="bg-linen rounded shadow-lift-sm p-6 mb-8">
-        <h3 className="font-display text-lg font-semibold text-rust mb-2">
+      <div className="bg-card border border-rule rounded shadow-lift-sm p-6 mb-8">
+        <h3 className="font-display text-[22px] text-accent-ink mb-2">
           Delete this recipe?
         </h3>
-        <p className="font-serif text-sm text-ink-soft mb-6">
+        <p className="font-sans text-sm text-ink-soft mb-6">
           This will permanently remove <strong>{recipe.name}</strong> and all
           its ingredients. This cannot be undone.
         </p>
@@ -127,7 +127,7 @@ export default function RecipeActions({ recipe }: Props) {
             disabled={saving}
             className={cn(
               buttonClass("primary"),
-              "bg-rust hover:bg-rust disabled:bg-ink-mute",
+              "bg-accent-ink hover:bg-accent-ink disabled:bg-ink-mute",
             )}
           >
             {saving ? (
@@ -152,17 +152,15 @@ export default function RecipeActions({ recipe }: Props) {
   // Edit form
   if (editing) {
     return (
-      <div className="bg-linen rounded shadow-lift-sm p-6 mb-8">
+      <div className="bg-card border border-rule rounded shadow-lift-sm p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display text-lg font-semibold text-ink">
-            Edit recipe
-          </h3>
+          <h3 className="font-display text-[22px] text-ink">Edit recipe</h3>
           <Button
             variant="icon"
             onClick={() => setEditing(false)}
             aria-label="Close edit form"
           >
-            <span className="w-8 h-8 rounded-full bg-cream flex items-center justify-center text-ink-soft hover:bg-linen-dim transition-colors">
+            <span className="w-8 h-8 rounded-full bg-paper flex items-center justify-center text-ink-soft hover:bg-rule/40 transition-colors">
               <X className="w-4 h-4" />
             </span>
           </Button>
@@ -191,7 +189,7 @@ export default function RecipeActions({ recipe }: Props) {
               id="edit-cuisine"
               value={cuisineTag}
               onChange={(e) => setCuisineTag(e.target.value)}
-              className="w-full px-4 py-3 rounded bg-cream border border-brown-glass font-sans text-[15px] text-ink outline-none transition-colors focus:border-brown"
+              className="w-full px-4 py-3 rounded bg-paper border border-rule font-sans text-[15px] text-ink outline-none transition-colors focus:border-accent"
             >
               <option value="">None</option>
               {CUISINES.map((c) => (
@@ -238,10 +236,7 @@ export default function RecipeActions({ recipe }: Props) {
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setEditing(true)}
-          className={cn(
-            buttonClass("ghost"),
-            "border border-brown-glass px-4 py-2.5",
-          )}
+          className={cn(buttonClass("ghost"), "border border-rule px-4 py-2.5")}
         >
           <Pencil className="w-4 h-4" />
           Edit
@@ -249,10 +244,7 @@ export default function RecipeActions({ recipe }: Props) {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className={cn(
-            buttonClass("ghost"),
-            "border border-brown-glass px-4 py-2.5",
-          )}
+          className={cn(buttonClass("ghost"), "border border-rule px-4 py-2.5")}
         >
           {uploading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -265,7 +257,7 @@ export default function RecipeActions({ recipe }: Props) {
           onClick={() => setDeleting(true)}
           className={cn(
             buttonClass("ghost"),
-            "border border-brown-glass px-4 py-2.5 text-rust hover:text-rust",
+            "border border-rule px-4 py-2.5 text-accent-ink hover:text-accent-ink",
           )}
         >
           <Trash2 className="w-4 h-4" />
@@ -280,7 +272,7 @@ export default function RecipeActions({ recipe }: Props) {
         onChange={handlePhotoSelected}
       />
       {uploadError && (
-        <div className="mt-3 bg-cream border border-rust/30 rounded px-4 py-2 font-sans text-sm text-rust flex items-center gap-2">
+        <div className="mt-3 bg-paper border border-accent-ink/30 rounded px-4 py-2 font-sans text-sm text-accent-ink flex items-center gap-2">
           <Upload className="w-4 h-4" />
           {uploadError}
         </div>

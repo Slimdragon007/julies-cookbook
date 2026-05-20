@@ -23,17 +23,17 @@
 
 ## 🏗️ 2. STACK
 
-| Layer     | Tool                | Version | Notes                                                                                                     |
-| --------- | ------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| Framework | Next.js             | 14.2.35 | App Router, dynamic rendering via cookie auth                                                             |
-| Database  | Supabase            | —       | Project: `cqfszhxuvvsgusvjdyqx`, us-east-1, replaced Airtable Mar 2026                                    |
-| Auth      | Supabase Auth       | —       | Email/password, middleware-enforced, invite-only signup                                                   |
-| Styling   | Tailwind            | 3.4     | Hearth theme (Magnolia palette + Liquid Glass surfaces), Playfair + Lora + Inter, gold accent (`#C9A96E`) |
-| Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001)                           |
-| AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                                                       |
-| Storage   | Cloudinary          | —       | Image hosting                                                                                             |
-| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                                                         |
-| Hooks     | Husky               | —       | Pre-commit lint + tsc                                                                                     |
+| Layer     | Tool                | Version | Notes                                                                                                                                                                             |
+| --------- | ------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | Next.js             | 14.2.35 | App Router, dynamic rendering via cookie auth                                                                                                                                     |
+| Database  | Supabase            | —       | Project: `cqfszhxuvvsgusvjdyqx`, us-east-1, replaced Airtable Mar 2026                                                                                                            |
+| Auth      | Supabase Auth       | —       | Email/password, middleware-enforced, invite-only signup                                                                                                                           |
+| Styling   | Tailwind            | 3.4     | Paper Editorial theme (paper `#F2EFE8` + card `#FCFBF7`), Instrument Serif italic + Inter + JetBrains Mono, terracotta accent (`#D97757`). Replaced Hearth 2026-05-20 (TASK-018). |
+| Hosting   | Cloudflare Pages    | —       | `@cloudflare/next-on-pages`, deployed via GH Action on push to `main` (ADR-001)                                                                                                   |
+| AI        | Anthropic SDK       | 0.78    | `claude-sonnet-4-20250514` for chat                                                                                                                                               |
+| Storage   | Cloudinary          | —       | Image hosting                                                                                                                                                                     |
+| Tests     | Vitest + Playwright | —       | 93 unit (86 pass / 7 pre-existing skips) + 28 e2e                                                                                                                                 |
+| Hooks     | Husky               | —       | Pre-commit lint + tsc                                                                                                                                                             |
 
 Full env var contract: see `@docs/REFERENCE.md`.
 

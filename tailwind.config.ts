@@ -1,6 +1,7 @@
 // tailwind.config.ts — drop-in replacement for julies-cookbook
-// Hearth aesthetic: Magnolia warmth + Liquid Glass polish
-// Generated 2026-04-30 from DESIGN LAW: julies-cookbook
+// Paper Editorial aesthetic: warm paper background, terracotta accent,
+// Instrument Serif italic for display, Inter for body, JetBrains Mono for numbers.
+// Replaces the Hearth (Magnolia + Liquid Glass) token foundation as of 2026-05-20.
 
 import type { Config } from "tailwindcss";
 
@@ -13,35 +14,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream: "#FAF8F4",
-        linen: {
-          DEFAULT: "#F0EAE0",
-          dim: "#E6DFD2",
-        },
+        paper: "#F2EFE8",
+        card: "#FCFBF7",
+        rule: "#E5DFD0",
         ink: {
-          DEFAULT: "#2A2520",
-          soft: "#5C5249",
-          mute: "#8A7F73",
+          DEFAULT: "#14130F",
+          soft: "#5A5953",
+          mute: "#B8B0A2",
         },
-        brown: {
-          DEFAULT: "#8B7355",
-          deep: "#6B5742",
-          glass: "rgba(139, 115, 85, 0.12)",
+        accent: {
+          DEFAULT: "#D97757",
+          soft: "#F6E7DC",
+          ink: "#8E3F1F",
+          on: "#FCFBF7",
         },
-        leaf: "#7A8B5C",
-        ember: "#C77D4A",
-        rust: "#A04A3C",
-        gold: "#C9A96E",
       },
       fontFamily: {
-        // CSS variables come from next/font in src/app/layout.tsx. Georgia is
-        // the FOIT/FOUT fallback during the Google Fonts load.
-        display: ["var(--font-playfair)", "Georgia", "serif"],
-        serif: ["var(--font-lora)", "Georgia", "serif"],
+        // CSS variables come from next/font in src/app/layout.tsx. The fallback
+        // chain protects the FOIT/FOUT window during Google Fonts load.
+        display: ["var(--font-instrument)", "Georgia", "serif"],
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        mono: ["var(--font-jetbrains)", "ui-monospace", "monospace"],
       },
       fontSize: {
-        // Display / H scales (line-height bundled)
         "display-mobile": [
           "36px",
           { lineHeight: "1.15", letterSpacing: "-0.01em" },
@@ -62,11 +57,11 @@ const config: Config = {
         pill: "9999px",
       },
       boxShadow: {
-        "lift-sm": "0 1px 2px rgba(42, 37, 32, 0.06)",
-        lift: "0 4px 16px rgba(42, 37, 32, 0.08)",
-        "lift-lg": "0 12px 32px rgba(42, 37, 32, 0.12)",
+        "lift-sm": "0 1px 2px rgba(20, 19, 15, 0.05)",
+        lift: "0 4px 16px rgba(20, 19, 15, 0.06)",
+        "lift-lg": "0 12px 32px rgba(20, 19, 15, 0.10)",
         glass:
-          "0 8px 24px rgba(42, 37, 32, 0.06), inset 0 1px 0 rgba(255,255,255,0.4)",
+          "0 8px 24px rgba(20, 19, 15, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)",
       },
       backdropBlur: {
         glass: "20px",
@@ -75,10 +70,10 @@ const config: Config = {
         glass: "140%",
       },
       backgroundColor: {
-        "glass-base": "rgba(250, 248, 244, 0.72)",
+        "glass-base": "rgba(252, 251, 247, 0.72)",
       },
       borderColor: {
-        "glass-line": "rgba(139, 115, 85, 0.16)",
+        "glass-line": "rgba(20, 19, 15, 0.08)",
       },
       transitionTimingFunction: {
         hearth: "cubic-bezier(0.2, 0.8, 0.2, 1)",

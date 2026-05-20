@@ -75,13 +75,11 @@ export default function NutritionTab({
 
   return (
     <div>
-      <h2 className="font-display text-2xl font-semibold text-ink mb-6">
-        Nutrition
-      </h2>
+      <h2 className="font-display text-[32px] text-ink mb-6">Nutrition</h2>
 
-      {/* Totals — MacroGrid per spec §9. */}
+      {/* Totals — MacroGrid. */}
       <section className="mb-8">
-        <h3 className="font-sans text-xs font-semibold tracking-[0.06em] uppercase text-brown mb-3">
+        <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-3">
           Total
           {scale !== 1 && (
             <span className="text-ink-mute font-medium ml-2 normal-case tracking-normal">
@@ -92,21 +90,21 @@ export default function NutritionTab({
         <MacroGrid values={scaledTotals} />
       </section>
 
-      {/* Portion calculator — keeps existing logic, reskinned per spec §10 inspiration. */}
-      <section className="mb-8 bg-gradient-to-b from-linen to-linen-dim rounded-lg p-6 relative overflow-hidden">
+      {/* Portion calculator — keeps existing logic. Card surface, accent-soft halo. */}
+      <section className="mb-8 bg-card border border-rule rounded-lg p-6 relative overflow-hidden">
         <div
-          className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-leaf/10"
+          className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-accent-soft/60"
           aria-hidden
         />
         <div className="relative">
-          <div className="font-sans text-[11px] tracking-[0.1em] uppercase text-brown font-semibold mb-1">
+          <div className="font-sans text-[11px] tracking-[0.1em] uppercase text-accent font-semibold mb-1">
             Tare scale → exact macros
           </div>
-          <h3 className="font-display text-xl font-semibold text-ink mb-4">
+          <h3 className="font-display text-[24px] text-ink mb-4">
             What&apos;s on your plate
           </h3>
 
-          <div className="flex items-baseline gap-2 bg-cream px-5 py-4 rounded border border-brown-glass mb-5">
+          <div className="flex items-baseline gap-2 bg-paper px-5 py-4 rounded border border-rule mb-5">
             <input
               id="portion-input"
               type="number"
@@ -115,7 +113,7 @@ export default function NutritionTab({
               placeholder={portionUnit === "servings" ? "1" : "0"}
               value={portionAmount}
               onChange={(e) => setPortionAmount(e.target.value)}
-              className="flex-1 min-w-0 font-sans text-[28px] font-semibold text-ink bg-transparent outline-none p-0 tabular-nums"
+              className="flex-1 min-w-0 font-mono text-[28px] font-semibold text-ink bg-transparent outline-none p-0 tabular-nums"
               aria-label="Portion amount"
             />
             <select
@@ -137,7 +135,7 @@ export default function NutritionTab({
           {useServingsFallback && (
             <>
               <MacroGrid values={fallbackValues} />
-              <p className="font-serif text-[13px] italic text-ink-mute mt-3">
+              <p className="font-sans text-[13px] italic text-ink-mute mt-3">
                 Per-serving estimate. Set batch weight for exact tracking.
               </p>
             </>
@@ -146,7 +144,7 @@ export default function NutritionTab({
           {amount > 0 && !portionResult && !useServingsFallback && (
             <>
               <MacroGrid values={fallbackValues} />
-              <p className="font-serif text-[13px] italic text-ink-mute mt-3">
+              <p className="font-sans text-[13px] italic text-ink-mute mt-3">
                 Set batch weight for exact {portionUnit} tracking. Showing
                 per-serving estimate.
               </p>
@@ -154,7 +152,7 @@ export default function NutritionTab({
           )}
 
           {hasBatchWeight && (
-            <p className="font-serif text-[13px] italic text-ink-mute mt-3">
+            <p className="font-sans text-[13px] italic text-ink-mute mt-3">
               Total batch: {totalBatchWeightG}g · {servings} {servingsLabel} ·{" "}
               {Math.round(totalBatchWeightG! / servings)}g per serving
             </p>
@@ -162,14 +160,14 @@ export default function NutritionTab({
         </div>
       </section>
 
-      {/* Per-ingredient breakdown — linen card with table. */}
-      <section className="bg-linen rounded p-6 overflow-x-auto">
-        <h3 className="font-sans text-xs font-semibold tracking-[0.06em] uppercase text-brown mb-4">
+      {/* Per-ingredient breakdown — card with table. */}
+      <section className="bg-card border border-rule rounded p-6 overflow-x-auto">
+        <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-4">
           Per Ingredient
         </h3>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-linen-dim">
+            <tr className="border-b border-rule">
               <th className="py-2 pr-4 text-left font-sans text-[11px] font-semibold tracking-[0.06em] uppercase text-ink-mute">
                 Ingredient
               </th>
@@ -199,21 +197,21 @@ export default function NutritionTab({
               return (
                 <tr
                   key={ing.id}
-                  className="border-b border-linen-dim last:border-b-0"
+                  className="border-b border-rule last:border-b-0"
                 >
-                  <td className="py-2.5 pr-4 font-serif text-base text-ink">
+                  <td className="py-2.5 pr-4 font-sans text-base text-ink">
                     {ing.name}
                   </td>
-                  <td className="py-2.5 px-2 text-right font-sans text-sm text-ink-soft tabular-nums">
+                  <td className="py-2.5 px-2 text-right font-mono text-sm text-ink-soft tabular-nums">
                     {fmt(ing.calories)}
                   </td>
-                  <td className="py-2.5 px-2 text-right font-sans text-sm text-ink-soft tabular-nums">
+                  <td className="py-2.5 px-2 text-right font-mono text-sm text-ink-soft tabular-nums">
                     {fmt(ing.protein, "g")}
                   </td>
-                  <td className="py-2.5 px-2 text-right font-sans text-sm text-ink-soft tabular-nums">
+                  <td className="py-2.5 px-2 text-right font-mono text-sm text-ink-soft tabular-nums">
                     {fmt(ing.carbs, "g")}
                   </td>
-                  <td className="py-2.5 pl-2 text-right font-sans text-sm text-ink-soft tabular-nums">
+                  <td className="py-2.5 pl-2 text-right font-mono text-sm text-ink-soft tabular-nums">
                     {fmt(ing.fat, "g")}
                   </td>
                 </tr>

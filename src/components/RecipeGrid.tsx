@@ -64,7 +64,7 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center mb-8">
         <div className="flex-1 relative group">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-mute w-4 h-4 transition-colors group-focus-within:text-brown"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-mute w-4 h-4 transition-colors group-focus-within:text-accent"
             aria-hidden
           />
           <input
@@ -72,7 +72,7 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
             placeholder="Search recipes, ingredients…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 pl-11 py-3 rounded-pill bg-linen border border-transparent font-sans text-[15px] text-ink placeholder:text-ink-mute outline-none transition-colors focus:border-brown-glass focus:bg-cream"
+            className="w-full px-4 pl-11 py-3 rounded-pill bg-card border border-rule font-sans text-[15px] text-ink placeholder:text-ink-mute outline-none transition-colors focus:border-accent focus:bg-card"
             aria-label="Search recipes"
           />
         </div>
@@ -94,11 +94,11 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
                 className={cn(
                   "inline-flex items-center px-3 py-1.5 rounded-pill",
                   "font-sans font-medium text-[13px]",
-                  "border border-transparent transition-colors duration-150 ease-hearth",
+                  "border transition-colors duration-150 ease-hearth",
                   "whitespace-nowrap",
                   isActive
-                    ? "bg-brown text-cream"
-                    : "bg-linen text-ink-soft hover:bg-linen-dim",
+                    ? "bg-accent text-accent-on border-accent"
+                    : "bg-card text-ink-soft border-rule hover:bg-accent-soft hover:text-accent-ink",
                 )}
               >
                 {tag}
@@ -110,10 +110,10 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
 
       {/* Results header */}
       <div className="flex items-baseline justify-between mb-5 px-1">
-        <h2 className="font-display text-xl font-semibold text-ink">
+        <h2 className="font-display text-[24px] text-ink">
           {activeTag === "All" ? "Your recipes" : activeTag}
         </h2>
-        <span className="font-sans text-sm font-medium text-ink-mute tabular-nums">
+        <span className="font-mono text-sm font-medium text-ink-mute tabular-nums">
           {filtered.length} {filtered.length === 1 ? "recipe" : "recipes"}
         </span>
       </div>
@@ -128,13 +128,13 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
       ) : search || activeTag !== "All" ? (
         // EmptyState (filtered to nothing) — spec §17 with "useful copy" tone.
         <div className="text-center py-12 px-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linen text-brown mb-5">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-5">
             <Search size={28} aria-hidden />
           </div>
-          <h3 className="font-display font-semibold text-xl text-ink mb-2">
+          <h3 className="font-display text-[24px] text-ink mb-2">
             Nothing matches that.
           </h3>
-          <p className="font-serif text-sm text-ink-mute leading-relaxed max-w-[260px] mx-auto mb-5">
+          <p className="font-sans text-sm text-ink-mute leading-relaxed max-w-[260px] mx-auto mb-5">
             Try a different word, or clear the filter to see everything.
           </p>
           <Button
@@ -150,13 +150,13 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
       ) : (
         // EmptyState (no recipes at all) — spec §17 verbatim copy.
         <div className="text-center py-12 px-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-linen text-brown mb-5">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-accent-soft text-accent-ink mb-5">
             <BookOpen size={36} aria-hidden />
           </div>
-          <h3 className="font-display font-semibold text-xl text-ink mb-2">
+          <h3 className="font-display text-[24px] text-ink mb-2">
             The kitchen is quiet.
           </h3>
-          <p className="font-serif text-sm text-ink-mute leading-relaxed max-w-[260px] mx-auto mb-5">
+          <p className="font-sans text-sm text-ink-mute leading-relaxed max-w-[260px] mx-auto mb-5">
             Import your first recipe from any URL. We&apos;ll handle the rest.
           </p>
           <Link href="/add-recipe" className={buttonClass("primary")}>

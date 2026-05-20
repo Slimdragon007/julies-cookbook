@@ -49,9 +49,10 @@ export function StepRibbon({
                   "font-sans font-semibold text-sm",
                   "transition-all duration-240 ease-hearth",
                   "border-2 border-transparent",
-                  complete && "bg-leaf text-cream",
-                  active && "bg-brown text-cream shadow-lift-sm",
-                  upcoming && "bg-linen text-ink-mute group-hover:bg-linen-dim",
+                  complete && "bg-accent-ink text-accent-on",
+                  active && "bg-accent text-accent-on shadow-lift-sm",
+                  upcoming &&
+                    "bg-card text-ink-mute border-rule group-hover:bg-rule/30",
                 )}
               >
                 {complete ? (
@@ -79,10 +80,10 @@ export function StepRibbon({
             </button>
 
             {i < steps.length - 1 && (
-              <div className="flex-1 h-0.5 bg-linen-dim rounded-full mt-4 relative">
+              <div className="flex-1 h-0.5 bg-rule rounded-full mt-4 relative">
                 <div
                   className={cn(
-                    "absolute inset-0 bg-leaf rounded-full transition-[transform] duration-240 ease-hearth origin-left",
+                    "absolute inset-0 bg-accent rounded-full transition-[transform] duration-240 ease-hearth origin-left",
                     complete ? "scale-x-100" : "scale-x-0",
                   )}
                 />

@@ -28,7 +28,7 @@ export default function MacroGrid({ values }: { values: MacroValues }) {
       {FIELDS.map(({ key, label, unit }) => {
         const v = values[key];
         return (
-          <div key={key} className="bg-linen rounded p-4">
+          <div key={key} className="bg-card border border-rule rounded p-4">
             <div className="font-sans text-[11px] tracking-[0.08em] uppercase text-ink-mute font-semibold mb-1.5">
               {label}
             </div>

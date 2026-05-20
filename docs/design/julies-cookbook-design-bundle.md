@@ -6,6 +6,8 @@
 > **Created:** 2026-04-30
 > **How to use:** Paste this entire file to Claude design as a single message. Section 1 is the system spec. Section 2 is the prompt that tells Claude design what to do with it.
 
+> **⚠️ 2026-05-20 — Hearth deprecated in favor of Paper Editorial.** Sections 1 + 2 below describe the original Hearth aesthetic and are kept for historical reference only. The active design system is now Paper Editorial; see [§3 — Paper Editorial direction (2026-05)](#section-3--paper-editorial-direction-2026-05) at the bottom of this file for the live token + typography contract.
+
 ---
 
 # SECTION 1 — DESIGN LAW (system spec)
@@ -37,15 +39,19 @@
 These extend, never override, the engineering CLAUDE.md.
 
 #### Law 1 — Warmth over slickness
+
 Cream backgrounds, serif headers, organic edges. If a screen feels like a B2B SaaS dashboard, it has failed.
 
 #### Law 2 — Precision is invisible until summoned
+
 Macros, gram math, portion calculators are present but never shouty. Numbers earn their visual weight only when Julie asks for them (Nutrition tab, portion calculator, weekly summary). Everywhere else, food and photos lead.
 
 #### Law 3 — Thumb-zone first, eyes-can-be-anywhere
+
 Primary actions sit in the bottom 40% of the viewport. The Chat FAB, Log Meal CTA, and tab bar all fall under the right thumb. Top of screen is for content, not controls.
 
 #### Law 4 — One signature interaction per surface
+
 Every screen has exactly one moment of delight. Gallery: card hover lift. Recipe Detail: live servings scaler. Nutrition tab: portion calculator. Food Log: meal-card swipe. Don't pile on. One per surface.
 
 ---
@@ -54,21 +60,21 @@ Every screen has exactly one moment of delight. Gallery: card hover lift. Recipe
 
 #### Color Palette
 
-| Token | Hex | Usage |
-|---|---|---|
-| `--cream` | `#FAF8F4` | App background |
-| `--linen` | `#F0EAE0` | Card backgrounds, raised surfaces |
-| `--linen-dim` | `#E6DFD2` | Hover state for cards, dividers |
-| `--ink` | `#2A2520` | Primary text (warm near-black) |
-| `--ink-soft` | `#5C5249` | Secondary text |
-| `--ink-mute` | `#8A7F73` | Tertiary text, captions |
-| `--brown` | `#8B7355` | Primary accent, buttons, active states |
-| `--brown-deep` | `#6B5742` | Hover/pressed buttons |
-| `--brown-glass` | `rgba(139, 115, 85, 0.12)` | Translucent overlays, chip backgrounds |
-| `--leaf` | `#7A8B5C` | Secondary accent (Chat FAB, success states) |
-| `--ember` | `#C77D4A` | Warning, partial-success amber |
-| `--rust` | `#A04A3C` | Errors, destructive actions |
-| `--gold` | `#C9A96E` | Splash particles only |
+| Token           | Hex                        | Usage                                       |
+| --------------- | -------------------------- | ------------------------------------------- |
+| `--cream`       | `#FAF8F4`                  | App background                              |
+| `--linen`       | `#F0EAE0`                  | Card backgrounds, raised surfaces           |
+| `--linen-dim`   | `#E6DFD2`                  | Hover state for cards, dividers             |
+| `--ink`         | `#2A2520`                  | Primary text (warm near-black)              |
+| `--ink-soft`    | `#5C5249`                  | Secondary text                              |
+| `--ink-mute`    | `#8A7F73`                  | Tertiary text, captions                     |
+| `--brown`       | `#8B7355`                  | Primary accent, buttons, active states      |
+| `--brown-deep`  | `#6B5742`                  | Hover/pressed buttons                       |
+| `--brown-glass` | `rgba(139, 115, 85, 0.12)` | Translucent overlays, chip backgrounds      |
+| `--leaf`        | `#7A8B5C`                  | Secondary accent (Chat FAB, success states) |
+| `--ember`       | `#C77D4A`                  | Warning, partial-success amber              |
+| `--rust`        | `#A04A3C`                  | Errors, destructive actions                 |
+| `--gold`        | `#C9A96E`                  | Splash particles only                       |
 
 **Liquid Glass note:** Frosted-glass surfaces (modals, drawers, sticky tab bars) use `backdrop-filter: blur(20px) saturate(140%)` over a `rgba(250, 248, 244, 0.72)` base. Borders on glass surfaces are `rgba(139, 115, 85, 0.16)`, 1px.
 
@@ -76,23 +82,23 @@ Every screen has exactly one moment of delight. Gallery: card hover lift. Recipe
 
 #### Typography
 
-| Token | Font | Weight | Usage |
-|---|---|---|---|
-| `--font-display` | Playfair Display | 600, 700 | Recipe titles, page headers, splash |
-| `--font-serif` | Lora | 400, 500 | Body, ingredient lists, instructions |
-| `--font-sans` | Inter | 500, 600 | Numbers, macros, UI chrome, buttons |
+| Token            | Font             | Weight   | Usage                                |
+| ---------------- | ---------------- | -------- | ------------------------------------ |
+| `--font-display` | Playfair Display | 600, 700 | Recipe titles, page headers, splash  |
+| `--font-serif`   | Lora             | 400, 500 | Body, ingredient lists, instructions |
+| `--font-sans`    | Inter            | 500, 600 | Numbers, macros, UI chrome, buttons  |
 
-**Why three:** Playfair for editorial moments, Lora for content density, Inter for anything numeric or interface-y. Inter exists *only* to make macro tables and timers legible. Don't let it leak into headers.
+**Why three:** Playfair for editorial moments, Lora for content density, Inter for anything numeric or interface-y. Inter exists _only_ to make macro tables and timers legible. Don't let it leak into headers.
 
-| Scale | Size | Line-height | Usage |
-|---|---|---|---|
-| Display | 36px / 48px desktop | 1.15 | Page titles, "Julie's Cookbook" splash |
-| H1 | 28px | 1.2 | Recipe titles |
-| H2 | 22px | 1.3 | Section headers |
-| H3 | 18px | 1.4 | Tab labels, card titles |
-| Body | 16px | 1.6 | All readable content. **Never below 16px on mobile.** |
-| Caption | 14px | 1.5 | Stats row, chips, helper text |
-| Mono | 14px Inter | 1.4 | Macros, gram values, timers |
+| Scale   | Size                | Line-height | Usage                                                 |
+| ------- | ------------------- | ----------- | ----------------------------------------------------- |
+| Display | 36px / 48px desktop | 1.15        | Page titles, "Julie's Cookbook" splash                |
+| H1      | 28px                | 1.2         | Recipe titles                                         |
+| H2      | 22px                | 1.3         | Section headers                                       |
+| H3      | 18px                | 1.4         | Tab labels, card titles                               |
+| Body    | 16px                | 1.6         | All readable content. **Never below 16px on mobile.** |
+| Caption | 14px                | 1.5         | Stats row, chips, helper text                         |
+| Mono    | 14px Inter          | 1.4         | Macros, gram values, timers                           |
 
 #### Spacing
 
@@ -100,53 +106,62 @@ Every screen has exactly one moment of delight. Gallery: card hover lift. Recipe
 
 #### Radii
 
-| Token | Value | Usage |
-|---|---|---|
-| `--radius-sm` | 8px | Chips, tags, small inputs |
-| `--radius` | 16px | Cards, buttons, drawers |
-| `--radius-lg` | 24px | Hero images, modals |
+| Token           | Value  | Usage                           |
+| --------------- | ------ | ------------------------------- |
+| `--radius-sm`   | 8px    | Chips, tags, small inputs       |
+| `--radius`      | 16px   | Cards, buttons, drawers         |
+| `--radius-lg`   | 24px   | Hero images, modals             |
 | `--radius-pill` | 9999px | FAB, primary CTAs, filter chips |
 
 No sharp corners. Anywhere.
 
 #### Shadows
 
-| Token | Value | Usage |
-|---|---|---|
-| `--lift-sm` | `0 1px 2px rgba(42, 37, 32, 0.06)` | Resting cards |
-| `--lift` | `0 4px 16px rgba(42, 37, 32, 0.08)` | Hover cards, drawers |
-| `--lift-lg` | `0 12px 32px rgba(42, 37, 32, 0.12)` | Modals, FAB |
-| `--glass` | `0 8px 24px rgba(42, 37, 32, 0.06), inset 0 1px 0 rgba(255,255,255,0.4)` | Frosted surfaces |
+| Token       | Value                                                                    | Usage                |
+| ----------- | ------------------------------------------------------------------------ | -------------------- |
+| `--lift-sm` | `0 1px 2px rgba(42, 37, 32, 0.06)`                                       | Resting cards        |
+| `--lift`    | `0 4px 16px rgba(42, 37, 32, 0.08)`                                      | Hover cards, drawers |
+| `--lift-lg` | `0 12px 32px rgba(42, 37, 32, 0.12)`                                     | Modals, FAB          |
+| `--glass`   | `0 8px 24px rgba(42, 37, 32, 0.06), inset 0 1px 0 rgba(255,255,255,0.4)` | Frosted surfaces     |
 
 ---
 
 ### 📜 4. PROJECT-SPECIFIC DESIGN RULES
 
 #### Rule 1 — Photos earn the cream
+
 Every recipe card uses warm, natural-light food photography (slight overhead angle, real plates, no staged steam). If a photo is missing, fall back to a tonal cream-on-linen pattern, never a generic placeholder gray.
 
 #### Rule 2 — Macros use Inter, recipes use Lora
+
 Never mix. A calorie count on a recipe card is Inter. The instruction "Whisk 3 eggs" is Lora. This separation is what keeps the editorial feeling editorial.
 
 #### Rule 3 — One serif weight per surface
+
 Don't mix Playfair 600 and Playfair 700 on the same screen. Pick one. The hierarchy comes from size, not weight.
 
 #### Rule 4 — Glass goes on top, never on bottom
-Frosted surfaces (drawers, sticky tab bars, modals) sit *above* warm content. Never use glass as a base layer. Cream is always the floor.
+
+Frosted surfaces (drawers, sticky tab bars, modals) sit _above_ warm content. Never use glass as a base layer. Cream is always the floor.
 
 #### Rule 5 — The FAB pulses, nothing else does
+
 The Chat FAB has a subtle 3.5-second-delayed pulse (scale 1.0 → 1.04 → 1.0, 1.6s ease). No other element animates on idle. Don't add bouncing icons, breathing buttons, or shimmering skeletons. One ambient motion, one place.
 
 #### Rule 6 — Numbers round, prose doesn't
+
 All macros round to whole integers. All times round to whole minutes. Recipe text preserves original casing and punctuation. The system is precise about data, generous about language.
 
 #### Rule 7 — Servings scaler is live, not a form
+
 The +/- buttons on the Recipe Detail page recalculate ingredient quantities instantly. No "Apply" button. No reload. If the scaler ever requires confirmation, the implementation is wrong.
 
 #### Rule 8 — Portion calculator is the hero of the Nutrition tab
+
 This is Julie's killer feature. It must feel premium: large input (Inter 28px), live macro updates as she types, soft animation on the macro grid when values change. Don't bury it under a fold.
 
 #### Rule 9 — Keep the meditative tone of existing copy
+
 The live app reads "A meditative space to organize your recipes and simplify your kitchen workflow." Don't replace that voice with editorial-magazine breathlessness. The redesign warms the existing tone, doesn't overwrite it.
 
 ---
@@ -154,36 +169,43 @@ The live app reads "A meditative space to organize your recipes and simplify you
 ### 🚧 5. DESIGN PITFALLS
 
 #### Pitfall 1 — Generic AI aesthetic creep
+
 **Symptom:** Purple gradients, neon accents, glassmorphism with rainbow borders, AI-stock-illustration vibes.
 **Cause:** Default LLM design tendencies.
 **Rule:** If a screen could ship from any of 50 SaaS startups, throw it out. Cream + brown + serif is the entire identity.
 
 #### Pitfall 2 — Emoji as iconography
+
 **Symptom:** 🍳 in headers, ✅ in success states, 🔥 on featured recipes.
 **Cause:** Easy. Lazy. Wrong.
 **Rule:** Lucide line icons in `--brown` only. Emoji are allowed in user-generated content (recipe notes), nowhere in chrome.
 
 #### Pitfall 3 — Dashboard-itis
+
 **Symptom:** The Weekly Nutrition Summary starts looking like a fitness tracker with rings, gauges, and percentages.
 **Cause:** Treating the data as the product.
 **Rule:** Julie wants to know "did I eat well this week," not stare at telemetry. Bar chart + 4 stat cards. That's it. Resist the urge to add streaks, badges, or progress rings.
 
 #### Pitfall 4 — Dark mode requests
+
 **Symptom:** Someone asks for a dark variant. Someone always does.
 **Cause:** Convention.
 **Rule:** Refuse. The warmth is the brand. A dark variant breaks the entire premise.
 
 #### Pitfall 5 — Three serifs collision
+
 **Symptom:** Playfair, Lora, AND a third serif somewhere (often a script font for "elegance").
 **Cause:** Wedding-invitation instincts.
 **Rule:** Two serifs + Inter. Final answer.
 
 #### Pitfall 6 — Mobile-as-afterthought
+
 **Symptom:** Beautiful 1440px desktop mockup, mobile feels like a squished version.
 **Cause:** Designing desktop first.
 **Rule:** Mobile (390x844) is the primary canvas. Desktop is the responsive variant. Build mobile first, every time.
 
 #### Pitfall 7 — Inventing screens that don't exist
+
 **Symptom:** Designer adds "Profile," "Achievements," or "Discover" tabs that aren't in the live app.
 **Cause:** Filling perceived gaps.
 **Rule:** This is a reskin. The screen inventory in Section 7 is the complete set. Adding a screen requires Slim's sign-off.
@@ -218,6 +240,7 @@ The live app reads "A meditative space to organize your recipes and simplify you
 ```
 
 **Load triggers:**
+
 - New screen → load tokens + relevant screen spec + photography
 - Component work → tokens + component spec
 - Animation → motion.md
@@ -229,18 +252,18 @@ The live app reads "A meditative space to organize your recipes and simplify you
 
 Every screen ships in production today. The redesign covers all of them. No additions, no removals.
 
-| # | Screen | Route | Mobile | Desktop | Signature interaction |
-|---|---|---|---|---|---|
-| 1 | Login | `/login` | ✅ | ✅ | Particle convergence intro |
-| 2 | Signup | `/signup` | ✅ | ✅ | Calm form pacing |
-| 3 | Public Demo | `/demo` | ✅ | ✅ | 4-step ribbon (Paste → Extract → Ready → Grocery) |
-| 4 | Recipe Gallery | `/` | ✅ | ✅ | Card hover lift |
-| 5 | Recipe Detail | `/recipe/[slug]` | ✅ | ✅ | Live servings scaler |
-| 6 | Add Recipe (admin) | `/admin/import` (or current path) | ✅ | ✅ | 6-state import flow |
-| 7 | Food Log | `/food-log` | ✅ | — | Log Meal sheet slide-up |
-| 8 | Weekly Summary | `/weekly` | ✅ | ✅ | Day drill-down on tap |
-| 9 | Chat Drawer | overlay (global) | ✅ | ✅ | Web search citation render |
-| 10 | Settings | `/settings` | ✅ | — | (none — quietest screen) |
+| #   | Screen             | Route                             | Mobile | Desktop | Signature interaction                             |
+| --- | ------------------ | --------------------------------- | ------ | ------- | ------------------------------------------------- |
+| 1   | Login              | `/login`                          | ✅     | ✅      | Particle convergence intro                        |
+| 2   | Signup             | `/signup`                         | ✅     | ✅      | Calm form pacing                                  |
+| 3   | Public Demo        | `/demo`                           | ✅     | ✅      | 4-step ribbon (Paste → Extract → Ready → Grocery) |
+| 4   | Recipe Gallery     | `/`                               | ✅     | ✅      | Card hover lift                                   |
+| 5   | Recipe Detail      | `/recipe/[slug]`                  | ✅     | ✅      | Live servings scaler                              |
+| 6   | Add Recipe (admin) | `/admin/import` (or current path) | ✅     | ✅      | 6-state import flow                               |
+| 7   | Food Log           | `/food-log`                       | ✅     | —       | Log Meal sheet slide-up                           |
+| 8   | Weekly Summary     | `/weekly`                         | ✅     | ✅      | Day drill-down on tap                             |
+| 9   | Chat Drawer        | overlay (global)                  | ✅     | ✅      | Web search citation render                        |
+| 10  | Settings           | `/settings`                       | ✅     | —       | (none — quietest screen)                          |
 
 **Empty states required for:** Gallery (no recipes), Food Log (no meals today), Weekly Summary (insufficient data), Chat (first open). No empty state ships as "Nothing here yet." Each gets warm, useful copy.
 
@@ -272,30 +295,39 @@ Every screen ships in production today. The redesign covers all of them. No addi
 ### 🎬 9. MOTION & INTERACTION SPECS
 
 #### Splash particle convergence (Login)
+
 80 particles in `--gold`, sized 2-4px. Spawn at random screen edges. Converge to center over 1.4s with eased deceleration (`cubic-bezier(0.2, 0.8, 0.2, 1)`). Text reveals: "Julie's" at 0.8s, "Cookbook" at 1.2s, both with a 12px upward drift + opacity 0→1 over 600ms. Form fade-in at 2.0s. Skip on subsequent same-session loads (sessionStorage flag).
 
 #### Chat FAB pulse
+
 Trigger at 3500ms after page settle. Scale 1.0 → 1.04 → 1.0 over 1600ms ease-in-out. Pulse twice, then rest. Repeat every 45s while idle.
 
 #### Servings scaler
+
 Quantity numbers crossfade (200ms) when scaled. No layout shift. Numbers use Inter 16px, scaler buttons are 36x36 pill-shaped, `--brown` background.
 
 #### Portion calculator
+
 As Julie types grams, macro grid updates in real time. Each macro value uses a 180ms scale-up bounce (1.0 → 1.06 → 1.0) on change. Subtle. The whole grid never animates at once, just the values that changed.
 
 #### Tab bar (sticky on Recipe Detail)
+
 Becomes glass-frosted on scroll past hero (translateY transition 240ms). Underline indicator slides between tabs over 220ms ease-out.
 
 #### Log Meal sheet
+
 Slides up from bottom, 320ms ease-out, with backdrop fade-in (rgba black 0 → 0.32). Drag-to-dismiss enabled. Snap points: 60% height (default), 90% (expanded for notes).
 
 #### Card hover (desktop only)
+
 Translate-y -2px, shadow `--lift-sm` → `--lift`, 180ms ease.
 
 #### Web search loading state
+
 "Searching the web..." with three dots that fade-pulse sequentially at 600ms intervals. Brown text, 14px Inter.
 
 #### Demo step ribbon
+
 Active step in `--brown`, completed steps in `--leaf`, upcoming in `--ink-mute`. Connector lines fill left-to-right over 240ms when advancing.
 
 ---
@@ -304,27 +336,27 @@ Active step in `--brown`, completed steps in `--leaf`, upcoming in `--ink-mute`.
 
 Listed roughly in dependency order.
 
-| Component | Used on | Notes |
-|---|---|---|
-| `Button` | Everywhere | Primary (`--brown`), Secondary (outline), Ghost. Pill on mobile, `--radius` on desktop |
-| `Chip` | Gallery filters, recipe tags | `--linen` background, `--ink-soft` text, `--radius-pill` |
-| `Card` | Gallery, Food Log, Weekly stats | `--linen` bg, `--radius`, `--lift-sm` resting |
-| `RecipeCard` | Gallery only | Photo (4:3), title, stats row, rating |
-| `StatRow` | Recipe Detail | Time, servings, calories, condensed |
-| `ServingsScaler` | Recipe Detail | +/- buttons, live qty update |
-| `IngredientList` | Recipe Detail (Ingredients tab) | Grouped by category |
-| `InstructionList` | Recipe Detail (Instructions tab) | Numbered, generous line height |
-| `MacroGrid` | Nutrition tab, Food Log | 2x2 on mobile, 4-up on desktop |
-| `PortionCalculator` | Nutrition tab | Hero input + live macro grid |
-| `TabBar` | Recipe Detail | Sticky, frosted on scroll |
-| `ChatFAB` | Global (except Login) | Bottom-right, leaf icon, pulse |
-| `ChatDrawer` | Global overlay | Slides up, frosted glass |
-| `LogMealSheet` | Food Log | Bottom sheet, recipe picker + portion |
-| `WeekStrip` | Food Log header | 7-day row, today highlighted |
-| `BarChart` | Weekly Summary | Calorie totals per day |
-| `EmptyState` | Gallery, Food Log, Chat | Illustration + warm copy + primary action |
-| `ErrorState` | Scrape blocked, API failures | `--ember` or `--rust`, recoverable copy |
-| `StepRibbon` | Demo only | 4-step progression indicator |
+| Component           | Used on                          | Notes                                                                                  |
+| ------------------- | -------------------------------- | -------------------------------------------------------------------------------------- |
+| `Button`            | Everywhere                       | Primary (`--brown`), Secondary (outline), Ghost. Pill on mobile, `--radius` on desktop |
+| `Chip`              | Gallery filters, recipe tags     | `--linen` background, `--ink-soft` text, `--radius-pill`                               |
+| `Card`              | Gallery, Food Log, Weekly stats  | `--linen` bg, `--radius`, `--lift-sm` resting                                          |
+| `RecipeCard`        | Gallery only                     | Photo (4:3), title, stats row, rating                                                  |
+| `StatRow`           | Recipe Detail                    | Time, servings, calories, condensed                                                    |
+| `ServingsScaler`    | Recipe Detail                    | +/- buttons, live qty update                                                           |
+| `IngredientList`    | Recipe Detail (Ingredients tab)  | Grouped by category                                                                    |
+| `InstructionList`   | Recipe Detail (Instructions tab) | Numbered, generous line height                                                         |
+| `MacroGrid`         | Nutrition tab, Food Log          | 2x2 on mobile, 4-up on desktop                                                         |
+| `PortionCalculator` | Nutrition tab                    | Hero input + live macro grid                                                           |
+| `TabBar`            | Recipe Detail                    | Sticky, frosted on scroll                                                              |
+| `ChatFAB`           | Global (except Login)            | Bottom-right, leaf icon, pulse                                                         |
+| `ChatDrawer`        | Global overlay                   | Slides up, frosted glass                                                               |
+| `LogMealSheet`      | Food Log                         | Bottom sheet, recipe picker + portion                                                  |
+| `WeekStrip`         | Food Log header                  | 7-day row, today highlighted                                                           |
+| `BarChart`          | Weekly Summary                   | Calorie totals per day                                                                 |
+| `EmptyState`        | Gallery, Food Log, Chat          | Illustration + warm copy + primary action                                              |
+| `ErrorState`        | Scrape blocked, API failures     | `--ember` or `--rust`, recoverable copy                                                |
+| `StepRibbon`        | Demo only                        | 4-step progression indicator                                                           |
 
 For each component, deliver: anatomy (mobile + desktop), states (default, hover, active, disabled, loading, error), and Tailwind class examples.
 
@@ -340,7 +372,7 @@ For each component, deliver: anatomy (mobile + desktop), states (default, hover,
 
 ### 🚦 12. CURRENT STATE
 
-*(Last edit: 2026-04-30)*
+_(Last edit: 2026-04-30)_
 
 **Decided:** Hearth aesthetic locked (Magnolia + Liquid Glass hybrid). Tokens canonical. Three-font system confirmed (Playfair / Lora / Inter). 10 screens scoped (matches production exactly). 4 signature interactions named. Tailwind config currently bare; redesign output must include the `theme.extend` block to bring it up to spec.
 
@@ -432,4 +464,92 @@ the order you'd design them in.
 
 ---
 
-*End of bundle. Hand the whole file to Claude design.*
+_End of original Hearth bundle._
+
+---
+
+# SECTION 3 — Paper Editorial direction (2026-05)
+
+> **Status:** Active. Replaces the Hearth aesthetic above as of 2026-05-20 (TASK-018).
+> **Source:** Omelette prototype handoff (May 2026) for "Mise" reskinned as Julie's Cookbook. Prototype source files live outside this repo (per the trust contract); the tokens + decisions are absorbed here as canon.
+
+## Why the shift
+
+Hearth shipped clean (Phase 1 → Phase 3 closed 2026-04-30) but read as "B2B SaaS with warm colors" on Julie's phone in real kitchen light. The Paper Editorial direction trades the Magnolia/brown system for a warm-paper background with cream cards floating on top, a single terracotta accent, and an italic display serif. Reads more like a torn-out cookbook page than a productivity dashboard.
+
+## Tokens
+
+| Token         | Hex       | Usage                                                                                                         |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
+| `paper`       | `#F2EFE8` | Page background. The "stage."                                                                                 |
+| `card`        | `#FCFBF7` | Card / surface background. Brighter than paper (inverted from Hearth, where cards were darker than the page). |
+| `ink`         | `#14130F` | Primary text (warm near-black).                                                                               |
+| `ink-soft`    | `#5A5953` | Secondary text.                                                                                               |
+| `ink-mute`    | `#B8B0A2` | Tertiary / placeholder text.                                                                                  |
+| `rule`        | `#E5DFD0` | Dividers, borders. The pencil-line on the page.                                                               |
+| `accent`      | `#D97757` | Terracotta. Primary accent, buttons, active states.                                                           |
+| `accent-soft` | `#F6E7DC` | Tinted accent background (chip bg, halo wash).                                                                |
+| `accent-ink`  | `#8E3F1F` | Burnt sienna. Hover/pressed accent + destructive cues.                                                        |
+| `accent-on`   | `#FCFBF7` | Text color when placed ON an accent fill.                                                                     |
+
+**No dark mode.** **No splash gold.** **No leaf-green.** All amber/leaf/gold from Hearth collapse to the single accent ramp.
+
+## Typography
+
+| Role      | Font             | Weight / style | CSS variable        | Usage                                                                                 |
+| --------- | ---------------- | -------------- | ------------------- | ------------------------------------------------------------------------------------- |
+| Display   | Instrument Serif | 400 italic     | `--font-instrument` | Recipe titles, page headers, section headers. Italic-only — the font loads as italic. |
+| Body / UI | Inter            | 400, 500, 600  | `--font-inter`      | All readable content, labels, buttons.                                                |
+| Numerals  | JetBrains Mono   | 400, 500, 600  | `--font-jetbrains`  | Macros, timers, quantities, ratings. Pair with `tabular-nums`.                        |
+
+**Scale (unchanged from Hearth):** display 36/48px, h1 28px, h2 22px, h3 18px, body 16px, caption 14px, mono 14px. Never below 16px on mobile body.
+
+**Why three:** Instrument Serif (italic) is the editorial moment — recipe names and "What's on your plate." Inter handles everything ambient. JetBrains Mono is for any number Julie's eye is going to land on — a tabular-nums rhythm that reads like a kitchen scale display.
+
+## Component primitive deltas
+
+The Hearth primitives (`Button`, `Input`, `MacroGrid`, `MeasurementToggle`, `StepRibbon`) stay; their tokens are retoned but the shape and props are unchanged.
+
+New primitives added in TASK-018:
+
+- **`Surface`** (`src/components/ui/Surface.tsx`) — `treatment="bordered" | "glass" | "flat"` card wrapper.
+- **`Tag`** (`src/components/ui/Tag.tsx`) — pill chip, `accent` and `active` props.
+- **`MacroPill`** (`src/components/ui/MacroPill.tsx`) — atomic macro display for inline use (label + mono value + unit).
+
+## Inline patterns (no new files)
+
+- `<span className="font-display">` — Instrument Serif italic. The `italic` modifier is redundant; the font face IS the italic.
+- `<span className="font-mono tabular-nums">` — JetBrains Mono with locked-width digits. Use for every number Julie will compare.
+
+## Step numbers
+
+Accent-soft disc (`bg-accent-soft text-accent-ink`), 36×36, with the numeral rendered in Instrument Serif italic at 20px. Editorial moment, not a Linear ticket badge.
+
+## Ingredient row notes
+
+Asterisk superscript + footnote block below the ingredient list. Don't inline comma-notes ("salt, kosher" → "salt*" + footnote "*kosher"). Future Phase 2 work.
+
+## Decisions deferred from Phase 1 (TASK-018)
+
+- **Tweaks panel + multi-palette switcher** (Voice/Imagery/Paper toggles + Paper/Bone-Sage/Ink/Terra palettes from the prototype) → TASK-026. Requires persistence layer design (localStorage vs Supabase) before code lands.
+- **Hand-rolled SVG icon set** from the prototype's `ui.jsx Icon` system → Lucide stays for now. Icon swap is its own design pass, not bundled with the reskin.
+
+## Migration status
+
+| Surface                                                                                            | Phase 1 (TASK-018) | Notes                                                           |
+| -------------------------------------------------------------------------------------------------- | ------------------ | --------------------------------------------------------------- |
+| Foundation: `tailwind.config.ts`, `globals.css`, `layout.tsx`, `next/font`                         | ✅ Done            | Single-PR token swap.                                           |
+| UI primitives: `Button`, `Input`, `MacroGrid`, `MeasurementToggle`, `StepRibbon`                   | ✅ Retoned         |                                                                 |
+| New primitives: `Surface`, `Tag`, `MacroPill`                                                      | ✅ Added           |                                                                 |
+| `/` (gallery): `(main)/page.tsx`, `RecipeCard`, `RecipeGrid`                                       | ✅ Done            |                                                                 |
+| `/recipe/[id]`: `RecipeTabs`, `IngredientsTab`, `InstructionsTab`, `NutritionTab`, `RecipeActions` | ✅ Done            |                                                                 |
+| `MainNav`                                                                                          | ⏳ TASK-019        | Still pre-Hearth amber/slate; visually broken under new tokens. |
+| `/log` + `FoodLogForm` + `MealCard`                                                                | ⏳ TASK-020        |                                                                 |
+| `/summary` + `WeeklySummary`                                                                       | ⏳ TASK-021        |                                                                 |
+| `/grocery-list` + `GroceryListBuilder`                                                             | ⏳ TASK-022        |                                                                 |
+| `ChatDrawer` + `ChatFAB` (→ "Kitchen line")                                                        | ⏳ TASK-023        |                                                                 |
+| `/login`, `/signup`, `/auth/*`, `/demo`                                                            | ⏳ TASK-024        |                                                                 |
+| `/add-recipe`, `/profile`                                                                          | ⏳ TASK-025        |                                                                 |
+| Tweaks panel + multi-palette                                                                       | ⏳ TASK-026        | Persistence design first.                                       |
+
+_End of Section 3._

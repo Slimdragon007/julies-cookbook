@@ -24,7 +24,7 @@ function formatMessage(text: string) {
       elements.push(
         <ul key={`ul-${elements.length}`} className="space-y-1.5 my-1.5">
           {listItems}
-        </ul>
+        </ul>,
       );
       listItems = [];
     }
@@ -35,16 +35,16 @@ function formatMessage(text: string) {
     if (bulletMatch) {
       listItems.push(
         <li key={`li-${i}`} className="flex gap-1.5">
-          <span className="text-amber-500 shrink-0">&#8226;</span>
+          <span className="text-accent shrink-0">&#8226;</span>
           <span>{renderInline(bulletMatch[1])}</span>
-        </li>
+        </li>,
       );
     } else {
       flushList();
       elements.push(
         <p key={`p-${i}`} className={i > 0 ? "mt-1.5" : ""}>
           {renderInline(line)}
-        </p>
+        </p>,
       );
     }
   });
@@ -59,7 +59,7 @@ function renderInline(text: string): React.ReactNode {
     const boldMatch = part.match(/^\*\*(.+)\*\*$/);
     if (boldMatch) {
       return (
-        <strong key={i} className="font-bold text-slate-800">
+        <strong key={i} className="font-semibold text-ink">
           {boldMatch[1]}
         </strong>
       );
@@ -72,7 +72,7 @@ function renderInline(text: string): React.ReactNode {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-amber-700 underline hover:text-amber-800"
+          className="text-accent underline hover:text-accent-ink"
         >
           {display}
         </a>
@@ -100,7 +100,9 @@ export default function ChatDrawer({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Thinking...");
-  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(
+    null,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,8 +118,18 @@ export default function ChatDrawer({
     setLastFailedMessage(null);
     setLoading(true);
 
-    const searchWords = ["find", "search", "look up", "new recipe", "online", "discover", "browse the web"];
-    const isSearchQuery = searchWords.some((w) => text.toLowerCase().includes(w));
+    const searchWords = [
+      "find",
+      "search",
+      "look up",
+      "new recipe",
+      "online",
+      "discover",
+      "browse the web",
+    ];
+    const isSearchQuery = searchWords.some((w) =>
+      text.toLowerCase().includes(w),
+    );
     setLoadingText(isSearchQuery ? "Searching the web..." : "Thinking...");
 
     try {
@@ -134,14 +146,22 @@ export default function ChatDrawer({
       if (data.response) {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.response, citations: data.citations },
+          {
+            role: "assistant",
+            content: data.response,
+            citations: data.citations,
+          },
         ]);
       }
     } catch {
       setLastFailedMessage(text);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Couldn't connect right now. Check your connection and try again." },
+        {
+          role: "assistant",
+          content:
+            "Couldn't connect right now. Check your connection and try again.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -153,26 +173,33 @@ export default function ChatDrawer({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
-        className="absolute inset-0 bg-black/10 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/10 backdrop-blur-sm"
         onClick={onClose}
-        onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+        }}
         role="button"
         tabIndex={0}
-        aria-label="Close chat"
+        aria-label="Close Kitchen line"
       />
-      <div className="relative bg-white/80 backdrop-blur-2xl border border-white/60 rounded-t-[2rem] w-full max-w-lg shadow-[0_-12px_48px_rgba(0,0,0,0.08)] flex flex-col" style={{ maxHeight: "70vh" }}>
+      <div
+        className="relative bg-paper/95 backdrop-blur-2xl border border-rule rounded-t-[2rem] w-full max-w-lg shadow-[0_-12px_48px_rgba(20,19,15,0.08)] flex flex-col"
+        style={{ maxHeight: "70vh" }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100/50">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-rule">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-accent-on" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">Ask Julie&apos;s Assistant</h2>
+            <h2 className="font-display text-[22px] text-ink leading-none">
+              Kitchen line
+            </h2>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close chat"
-            className="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors active:scale-95"
+            aria-label="Close Kitchen line"
+            className="w-11 h-11 rounded-full bg-card border border-rule hover:bg-accent-soft hover:text-accent-ink flex items-center justify-center text-ink-soft transition-colors active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
@@ -182,13 +209,15 @@ export default function ChatDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {messages.length === 0 && (
             <div className="space-y-3">
-              <p className="text-slate-400 text-sm font-medium">Try asking:</p>
+              <p className="text-ink-mute font-sans text-sm font-medium">
+                Try asking:
+              </p>
               <div className="flex flex-wrap gap-2">
                 {QUICK_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => sendMessage(prompt)}
-                    className="glass text-slate-600 text-xs px-4 py-2 rounded-full hover:bg-white/60 transition-colors font-bold"
+                    className="bg-card border border-rule text-ink-soft font-sans font-medium text-xs px-4 py-2 rounded-full hover:bg-accent-soft hover:text-accent-ink hover:border-accent-soft transition-colors"
                   >
                     {prompt}
                   </button>
@@ -199,31 +228,29 @@ export default function ChatDrawer({
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`text-sm ${
-                msg.role === "user"
-                  ? "ml-8 text-right"
-                  : "mr-8"
-              }`}
+              className={`text-sm ${msg.role === "user" ? "ml-8 text-right" : "mr-8"}`}
             >
               <span
-                className={`inline-block px-4 py-3 rounded-2xl text-left font-medium ${
+                className={`inline-block px-4 py-3 rounded-2xl text-left font-sans font-medium ${
                   msg.role === "user"
-                    ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white"
-                    : "glass text-slate-700"
+                    ? "bg-accent text-accent-on"
+                    : "bg-card border border-rule text-ink"
                 }`}
               >
                 {msg.role === "user" ? msg.content : formatMessage(msg.content)}
               </span>
               {msg.citations && msg.citations.length > 0 && (
                 <div className="mt-1 space-y-0.5">
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Sources</p>
+                  <p className="font-sans text-[10px] text-ink-mute uppercase tracking-wide font-semibold">
+                    Sources
+                  </p>
                   {msg.citations.map((cite, ci) => (
                     <a
                       key={ci}
                       href={cite.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-[11px] text-amber-700 hover:text-amber-800 truncate font-medium"
+                      className="block text-[11px] text-accent hover:text-accent-ink truncate font-sans font-medium"
                     >
                       {cite.title}
                     </a>
@@ -234,7 +261,7 @@ export default function ChatDrawer({
           ))}
           {loading && (
             <div className="text-sm mr-8">
-              <span className="inline-block px-4 py-3 rounded-2xl glass text-slate-500 animate-pulse font-medium">
+              <span className="inline-block px-4 py-3 rounded-2xl bg-card border border-rule text-ink-soft font-sans font-medium animate-pulse">
                 {loadingText}
               </span>
             </div>
@@ -243,7 +270,7 @@ export default function ChatDrawer({
             <div className="flex justify-center">
               <button
                 onClick={() => sendMessage(lastFailedMessage)}
-                className="text-xs font-bold text-amber-700 bg-amber-50 px-4 py-2 rounded-full hover:bg-amber-100 active:scale-95 transition-all"
+                className="font-sans text-xs font-semibold text-accent-ink bg-accent-soft px-4 py-2 rounded-full hover:bg-accent hover:text-accent-on active:scale-95 transition-all"
               >
                 Retry last message
               </button>
@@ -258,20 +285,22 @@ export default function ChatDrawer({
             e.preventDefault();
             sendMessage(input);
           }}
-          className="px-6 py-4 border-t border-slate-100/50 flex gap-2"
+          className="px-6 py-4 border-t border-rule flex gap-2"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={loading ? "Waiting for response..." : "Ask about recipes..."}
+            placeholder={
+              loading ? "Waiting for response..." : "Ask about recipes..."
+            }
             disabled={loading}
-            className="flex-1 glass-input rounded-2xl px-5 py-3 text-sm text-slate-800 font-medium placeholder:text-slate-300 disabled:opacity-50"
+            className="flex-1 bg-card border border-rule rounded-2xl px-5 py-3 font-sans text-sm text-ink placeholder:text-ink-mute outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/15 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="w-12 h-12 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(196,149,46,0.25)] hover:scale-105 active:scale-95"
+            className="w-12 h-12 bg-accent text-accent-on rounded-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-[0_4px_16px_rgba(217,119,87,0.25)] hover:bg-accent-ink hover:scale-105 active:scale-95"
           >
             <Send className="w-5 h-5" />
           </button>

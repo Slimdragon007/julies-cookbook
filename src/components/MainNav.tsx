@@ -36,14 +36,14 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] flex flex-col relative pb-20 lg:pb-0 overflow-x-hidden selection:bg-amber-100 selection:text-amber-900">
+    <div className="min-h-screen bg-paper flex flex-col relative pb-20 lg:pb-0 overflow-x-hidden selection:bg-accent-soft selection:text-accent-ink">
       {/* Desktop sidebar */}
       <nav className="hidden lg:flex flex-col fixed left-4 top-4 bottom-4 w-20 xl:w-64 glass-strong rounded-3xl z-50">
         <div className="flex items-center gap-3 px-5 py-8 xl:px-8">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-300/30">
-            <BookHeart className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 bg-accent rounded-2xl flex items-center justify-center shadow-lift">
+            <BookHeart className="w-5 h-5 text-accent-on" />
           </div>
-          <span className="hidden xl:block text-[18px] font-bold text-slate-800 tracking-tight">
+          <span className="hidden xl:block font-display text-[22px] text-ink leading-none">
             Cookbook
           </span>
         </div>
@@ -58,17 +58,17 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
                 className={clsx(
                   "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all relative group",
                   active
-                    ? "text-amber-800 bg-white/60 border border-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-white/30",
+                    ? "text-accent-ink bg-card border border-rule shadow-lift-sm"
+                    : "text-ink-soft hover:text-ink hover:bg-card/60",
                 )}
               >
                 <Icon
                   className={clsx(
                     "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
-                    active && "text-amber-700",
+                    active && "text-accent",
                   )}
                 />
-                <span className="hidden xl:block text-[14px] font-semibold">
+                <span className="hidden xl:block font-sans text-[14px] font-semibold">
                   {label}
                 </span>
               </Link>
@@ -76,14 +76,14 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        <div className="px-3 xl:px-4 pb-6 mt-auto border-t border-slate-100/50 pt-6 space-y-2">
+        <div className="px-3 xl:px-4 pb-6 mt-auto border-t border-rule/60 pt-6 space-y-2">
           <button
             onClick={() => setChatOpen(true)}
-            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-all w-full group"
+            className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-ink-soft hover:text-accent hover:bg-accent-soft transition-all w-full group"
           >
             <MessageCircle className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="hidden xl:block text-[14px] font-semibold">
-              Ask AI
+            <span className="hidden xl:block font-sans text-[14px] font-semibold">
+              Kitchen line
             </span>
           </button>
           <Link
@@ -91,12 +91,12 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
             className={clsx(
               "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all w-full group",
               isActive(pathname, "/profile")
-                ? "text-amber-800 bg-white/60 border border-white shadow-sm"
-                : "text-slate-500 hover:text-slate-800 hover:bg-white/30",
+                ? "text-accent-ink bg-card border border-rule shadow-lift-sm"
+                : "text-ink-soft hover:text-ink hover:bg-card/60",
             )}
           >
             <User className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="hidden xl:block text-[14px] font-semibold">
+            <span className="hidden xl:block font-sans text-[14px] font-semibold">
               Profile
             </span>
           </Link>
@@ -106,29 +106,29 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
       {/* Mobile top bar */}
       {!hideNav && (
         <div
-          className="fixed top-0 left-0 right-0 lg:hidden z-40 bg-white/95 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+          className="fixed top-0 left-0 right-0 lg:hidden z-40 bg-paper/95 backdrop-blur-2xl border-b border-rule shadow-[0_1px_3px_rgba(20,19,15,0.04)]"
           style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
         >
           <div className="flex items-center justify-between max-w-lg mx-auto px-5 py-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl flex items-center justify-center shadow-sm">
-                <BookHeart className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center shadow-lift-sm">
+                <BookHeart className="w-4 h-4 text-accent-on" />
               </div>
-              <span className="text-[16px] font-bold text-slate-800 tracking-tight">
+              <span className="font-display text-[20px] text-ink leading-none">
                 Cookbook
               </span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setChatOpen(true)}
-                aria-label="Open chat assistant"
-                className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 hover:bg-amber-100 active:scale-95 transition-all"
+                aria-label="Open Kitchen line"
+                className="w-9 h-9 rounded-xl bg-accent-soft flex items-center justify-center text-accent-ink hover:bg-accent hover:text-accent-on active:scale-95 transition-all"
               >
                 <MessageCircle className="w-[18px] h-[18px]" />
               </button>
               <Link
                 href="/profile"
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white active:scale-95 transition-all"
+                className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center text-accent-on active:scale-95 transition-all"
                 aria-label="Profile"
               >
                 <User className="w-[16px] h-[16px]" />
@@ -152,7 +152,7 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom nav — iOS-style tab bar */}
       {!hideNav && (
         <nav
-          className="mobile-bottom-nav fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200/60 shadow-[0_-1px_3px_rgba(0,0,0,0.04)]"
+          className="mobile-bottom-nav fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-paper/95 backdrop-blur-2xl border-t border-rule shadow-[0_-1px_3px_rgba(20,19,15,0.04)]"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 6px)" }}
         >
           <div className="px-2 pt-1.5 pb-1 w-full max-w-lg mx-auto flex items-end">
@@ -166,10 +166,10 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
                     href={href}
                     className="flex-1 min-w-0 flex flex-col items-center justify-center px-1 py-1 active:scale-95 transition-transform"
                   >
-                    <div className="w-11 h-11 bg-gradient-to-br from-amber-600 to-amber-700 rounded-[14px] flex items-center justify-center shadow-lg shadow-amber-300/30 -mt-3 mb-0.5">
-                      <PlusCircle className="w-6 h-6 text-white" />
+                    <div className="w-11 h-11 bg-accent rounded-[14px] flex items-center justify-center shadow-lift -mt-3 mb-0.5">
+                      <PlusCircle className="w-6 h-6 text-accent-on" />
                     </div>
-                    <span className="text-[10px] font-semibold text-amber-600">
+                    <span className="font-sans text-[10px] font-semibold text-accent">
                       Add
                     </span>
                   </Link>
@@ -182,7 +182,7 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
                   href={href}
                   className={clsx(
                     "flex-1 min-w-0 flex flex-col items-center justify-center px-1 py-1 active:scale-95 transition-all",
-                    active ? "text-amber-600" : "text-slate-400",
+                    active ? "text-accent" : "text-ink-mute",
                   )}
                 >
                   <Icon
@@ -193,7 +193,7 @@ export default function MainNav({ children }: { children: React.ReactNode }) {
                   />
                   <span
                     className={clsx(
-                      "text-[10px]",
+                      "font-sans text-[10px]",
                       active ? "font-bold" : "font-medium",
                     )}
                   >

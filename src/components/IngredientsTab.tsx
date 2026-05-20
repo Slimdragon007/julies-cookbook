@@ -67,14 +67,14 @@ export default function IngredientsTab({
 
   return (
     <div>
-      {/* Header band — units toggle on top, servings scaler below. Single cream
-          surface so the two related controls read as one group. */}
-      <div className="mb-8 -mx-6 sm:-mx-10 lg:mx-0 lg:rounded border-y border-linen-dim bg-cream">
+      {/* Header band — units toggle on top, servings scaler below. Card surface
+          so the two related controls read as one group. */}
+      <div className="mb-8 -mx-6 sm:-mx-10 lg:mx-0 lg:rounded border-y border-rule bg-card">
         <div className="flex items-center justify-end px-5 pt-3">
           <MeasurementToggle />
         </div>
         <div className="flex items-center justify-between gap-3 flex-wrap px-5 pb-4 pt-2">
-          <span className="font-serif text-sm text-ink-soft">Scale recipe</span>
+          <span className="font-sans text-sm text-ink-soft">Scale recipe</span>
           <div className="flex items-center gap-2.5">
             <Button
               variant="icon"
@@ -82,11 +82,11 @@ export default function IngredientsTab({
               disabled={servings <= 1}
               aria-label="Decrease servings"
             >
-              <span className="w-8 h-8 rounded-full bg-brown text-cream flex items-center justify-center transition-transform duration-150 hover:bg-brown-deep hover:scale-105">
+              <span className="w-8 h-8 rounded-full bg-accent text-accent-on flex items-center justify-center transition-transform duration-150 hover:bg-accent-ink hover:scale-105">
                 <Minus size={16} />
               </span>
             </Button>
-            <span className="font-sans text-base font-semibold text-ink min-w-[80px] text-center transition-opacity duration-200 tabular-nums">
+            <span className="font-mono text-base font-semibold text-ink min-w-[80px] text-center transition-opacity duration-200 tabular-nums">
               {servings} {servingsLabel}
             </span>
             <Button
@@ -94,7 +94,7 @@ export default function IngredientsTab({
               onClick={() => onServingsChange(servings + 1)}
               aria-label="Increase servings"
             >
-              <span className="w-8 h-8 rounded-full bg-brown text-cream flex items-center justify-center transition-transform duration-150 hover:bg-brown-deep hover:scale-105">
+              <span className="w-8 h-8 rounded-full bg-accent text-accent-on flex items-center justify-center transition-transform duration-150 hover:bg-accent-ink hover:scale-105">
                 <Plus size={16} />
               </span>
             </Button>
@@ -102,12 +102,12 @@ export default function IngredientsTab({
         </div>
       </div>
 
-      {/* IngredientList — spec §7. Grouped sections, linen-dim row dividers. */}
+      {/* IngredientList — paper editorial. Grouped sections, rule row dividers. */}
       <div>
         {categories.map((category) => (
           <section key={category} className="mb-6">
             {showHeadings && (
-              <h4 className="font-sans text-xs font-semibold tracking-[0.06em] uppercase text-brown mb-2.5">
+              <h4 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-2.5">
                 {category}
               </h4>
             )}
@@ -116,12 +116,12 @@ export default function IngredientsTab({
               return (
                 <div
                   key={ing.id}
-                  className="flex justify-between gap-4 py-2.5 border-b border-linen-dim last:border-b-0"
+                  className="flex justify-between gap-4 py-2.5 border-b border-rule last:border-b-0"
                 >
-                  <span className="font-serif text-base text-ink">
+                  <span className="font-sans text-base text-ink">
                     {ing.name}
                   </span>
-                  <span className="font-sans text-sm font-medium text-ink-soft tabular-nums whitespace-nowrap">
+                  <span className="font-mono text-sm font-medium text-ink-soft tabular-nums whitespace-nowrap">
                     {qty && <>{qty} </>}
                     {unit}
                   </span>

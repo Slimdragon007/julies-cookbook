@@ -55,7 +55,7 @@ export default function RecipeTabs({
                 "flex-1 py-3.5 px-2 font-sans text-sm font-semibold",
                 "border-b-2 border-transparent transition-all duration-200 ease-hearth",
                 isActive
-                  ? "text-brown border-brown"
+                  ? "text-accent border-accent"
                   : "text-ink-mute hover:text-ink-soft",
               )}
             >

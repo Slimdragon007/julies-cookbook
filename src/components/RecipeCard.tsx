@@ -27,11 +27,11 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   return (
     <button
       onClick={handleClick}
-      className="group flex flex-col text-left bg-linen rounded shadow-lift-sm overflow-hidden transition-all duration-200 ease-hearth hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+      className="group flex flex-col text-left bg-card border border-rule rounded shadow-lift-sm overflow-hidden transition-all duration-200 ease-hearth hover:-translate-y-0.5 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
       aria-label={`Open ${recipe.name}`}
     >
       {/* Image — spec §4: 4:3 mobile, 16:11 desktop. */}
-      <div className="relative aspect-[4/3] md:aspect-[16/11] overflow-hidden bg-linen-dim">
+      <div className="relative aspect-[4/3] md:aspect-[16/11] overflow-hidden bg-rule/40">
         {recipe.imageUrl ? (
           <Image
             src={recipe.imageUrl}
@@ -42,21 +42,21 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
             style={{ viewTransitionName: `recipe-img-${recipe.slug}` }}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-linen-dim to-linen flex items-center justify-center">
-            <UtensilsCrossed className="w-10 h-10 text-brown/30" />
+          <div className="w-full h-full bg-gradient-to-br from-rule/30 to-card flex items-center justify-center">
+            <UtensilsCrossed className="w-10 h-10 text-accent/30" />
           </div>
         )}
       </div>
 
-      {/* Body — title (Playfair) + meta row (Lora) + stars (gold). */}
+      {/* Body — title (Instrument Serif italic) + meta row (Inter) + stars (terracotta). */}
       <div className="p-3.5 pb-4">
         <h3
-          className="font-display font-semibold text-[15px] text-ink leading-tight mb-2 line-clamp-2"
+          className="font-display text-[18px] text-ink leading-tight mb-2 line-clamp-2"
           style={{ viewTransitionName: `recipe-title-${recipe.slug}` }}
         >
           {recipe.name}
         </h3>
-        <div className="flex items-center gap-2.5 font-sans text-xs text-ink-mute font-medium">
+        <div className="flex items-center gap-2.5 font-mono tabular-nums text-xs text-ink-mute font-medium">
           {totalTime && (
             <span className="flex items-center gap-1">
               <Clock size={11} aria-hidden /> {totalTime}m
@@ -70,11 +70,11 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
         </div>
         {recipe.julieRating && (
           <div
-            className="text-gold text-[11px] mt-1.5 tracking-wider"
+            className="text-accent text-[11px] mt-1.5 tracking-wider"
             aria-label={`Julie rated this ${recipe.julieRating} of 5 stars`}
           >
             {"★".repeat(recipe.julieRating)}
-            <span className="text-linen-dim">
+            <span className="text-rule">
               {"★".repeat(5 - recipe.julieRating)}
             </span>
           </div>

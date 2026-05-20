@@ -23,7 +23,7 @@ export function MeasurementToggle({ className }: Props) {
       role="group"
       aria-label="Measurement units"
       className={cn(
-        "inline-flex items-center rounded-pill bg-cream p-0.5 border border-linen-dim",
+        "inline-flex items-center rounded-pill bg-card p-0.5 border border-rule",
         className,
       )}
     >
@@ -40,7 +40,7 @@ export function MeasurementToggle({ className }: Props) {
               "px-3 py-1.5 rounded-pill font-sans text-xs font-semibold tracking-wide",
               "transition-all duration-200 ease-hearth",
               active
-                ? "bg-brown text-cream shadow-lift-sm"
+                ? "bg-accent text-accent-on shadow-lift-sm"
                 : "text-ink-soft hover:text-ink",
             )}
           >

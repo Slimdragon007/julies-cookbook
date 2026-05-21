@@ -5,6 +5,9 @@ import useSWR from "swr";
 import { Loader2, BarChart3 } from "lucide-react";
 import { buttonClass } from "@/components/ui/Button";
 import MacroGrid, { type MacroValues } from "@/components/ui/MacroGrid";
+import { Mono } from "@/components/ui/Mono";
+import { SerifIt } from "@/components/ui/SerifIt";
+import type { MostCookedRecipe } from "@/lib/data";
 
 interface DaySummary {
   date: string;
@@ -15,12 +18,26 @@ interface DaySummary {
   meals: number;
 }
 
+// Daily targets matching prototype data.js. Same constants used in
+// TodaySnapshot + FoodLogForm. Extract to shared module when 4th call
+// site materializes.
+const DAILY_TARGETS = {
+  cal: 2100,
+};
+
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-export default function WeeklySummary() {
+interface WeeklySummaryProps {
+  topRecipes: MostCookedRecipe[];
+}
+
+export default function WeeklySummary({ topRecipes }: WeeklySummaryProps) {
   const today = new Date().toISOString().split("T")[0];
+  // Fetch 14 days so we can split into current week + previous week for the
+  // trend % delta. Previous-week fallback gracefully handles thin data
+  // (returns 0% delta if there's nothing to compare against).
   const { data, isLoading } = useSWR(
-    `/api/log-meal?date=${today}&days=7`,
+    `/api/log-meal?date=${today}&days=14`,
     fetcher,
     { revalidateOnFocus: false },
   );
@@ -33,12 +50,12 @@ export default function WeeklySummary() {
     );
   }
 
-  // Process entries into daily summaries.
+  // Aggregate entries by date over the full 14-day window.
   const byDate = new Map<
     string,
     { cal: number; p: number; c: number; f: number; count: number }
   >();
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const key = d.toISOString().split("T")[0];
@@ -63,9 +80,10 @@ export default function WeeklySummary() {
     }
   }
 
-  const days: DaySummary[] = [];
+  // Split into two 7-day windows: current (last 7 days) and previous (7 days before that).
+  const allDays: DaySummary[] = [];
   byDate.forEach((vals, date) => {
-    days.push({
+    allDays.push({
       date,
       calories: vals.cal,
       protein: vals.p,
@@ -74,9 +92,12 @@ export default function WeeklySummary() {
       meals: vals.count,
     });
   });
-  days.sort((a, b) => b.date.localeCompare(a.date));
+  allDays.sort((a, b) => a.date.localeCompare(b.date)); // ASC for chronological windows
 
-  const daysWithData = days.filter((d) => d.meals > 0);
+  const currentWeek = allDays.slice(-7);
+  const previousWeek = allDays.slice(0, 7);
+
+  const daysWithData = currentWeek.filter((d) => d.meals > 0);
 
   if (daysWithData.length === 0) {
     return (
@@ -97,11 +118,32 @@ export default function WeeklySummary() {
     );
   }
 
+  // Average kcal per day (over days with data).
   const avgCount = daysWithData.length;
+  const avgCal = Math.round(
+    daysWithData.reduce((s, d) => s + d.calories, 0) / avgCount,
+  );
+
+  // Previous-week average for trend % computation.
+  const prevDaysWithData = previousWeek.filter((d) => d.meals > 0);
+  const prevAvgCal =
+    prevDaysWithData.length > 0
+      ? Math.round(
+          prevDaysWithData.reduce((s, d) => s + d.calories, 0) /
+            prevDaysWithData.length,
+        )
+      : 0;
+
+  // Trend %: positive = current > prev. Null when prev had no data.
+  const trendPct =
+    prevAvgCal > 0
+      ? Math.round(((avgCal - prevAvgCal) / prevAvgCal) * 1000) / 10
+      : null;
+
+  const onTargetPct = Math.round((avgCal / DAILY_TARGETS.cal) * 100);
+
   const averages: MacroValues = {
-    calories: Math.round(
-      daysWithData.reduce((s, d) => s + d.calories, 0) / avgCount,
-    ),
+    calories: avgCal,
     protein: Math.round(
       daysWithData.reduce((s, d) => s + d.protein, 0) / avgCount,
     ),
@@ -109,7 +151,14 @@ export default function WeeklySummary() {
     fat: Math.round(daysWithData.reduce((s, d) => s + d.fat, 0) / avgCount),
   };
 
-  function formatDate(dateStr: string) {
+  // Bar chart: max of (target × 1.15, max-day) so the target line sits within
+  // the chart area even on a low-intake week.
+  const maxKcal = Math.max(
+    DAILY_TARGETS.cal * 1.15,
+    ...currentWeek.map((d) => d.calories),
+  );
+
+  function formatShortDate(dateStr: string) {
     const d = new Date(dateStr + "T12:00:00");
     if (dateStr === today) return "Today";
     return d.toLocaleDateString("en-US", {
@@ -119,17 +168,154 @@ export default function WeeklySummary() {
     });
   }
 
+  function dayLetter(dateStr: string) {
+    const d = new Date(dateStr + "T12:00:00");
+    return d
+      .toLocaleDateString("en-US", { weekday: "short" })
+      .charAt(0)
+      .toUpperCase();
+  }
+
+  // Bar color: ink when within ±10% of target, ink-mute otherwise, ink/15 when
+  // partial (no data day).
+  function barColor(d: DaySummary): string {
+    if (d.meals === 0) return "bg-ink/15";
+    const ratio = d.calories / DAILY_TARGETS.cal;
+    if (ratio >= 0.9 && ratio <= 1.1) return "bg-ink";
+    return "bg-ink-mute";
+  }
+
   return (
     <div>
-      {/* Seven-day averages: uses retoned MacroGrid for consistency with food log + nutrition tab. */}
+      {/* Avg-kcal hero — TASK-027 Phase 5 prototype-parity (mobile.jsx MSummary
+          lines 542-555). Editorial italic display number is the centerpiece. */}
       <section className="mb-8">
+        <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-ink-soft mb-1">
+          Avg kcal · weekday
+        </div>
+        <div className="flex items-baseline gap-2.5">
+          <span className="font-display text-[56px] leading-none tracking-[-0.03em] text-ink">
+            <SerifIt>{avgCal}</SerifIt>
+          </span>
+          <span className="text-sm text-ink-mute">kcal / day</span>
+        </div>
+        <div className="mt-2 text-[13px] text-ink-soft">
+          {trendPct !== null && (
+            <>
+              <span
+                className={
+                  trendPct < 0
+                    ? "text-accent-ink font-semibold"
+                    : trendPct > 0
+                      ? "text-ink font-semibold"
+                      : "text-ink-mute font-semibold"
+                }
+              >
+                {trendPct > 0 ? "+" : ""}
+                <Mono>{trendPct}%</Mono>
+              </span>{" "}
+              vs last week.{" "}
+            </>
+          )}
+          On target <Mono>{onTargetPct}%</Mono> of goal.
+        </div>
+      </section>
+
+      {/* Bar chart — 7 days with dashed target line and labels above bars. */}
+      <section className="mb-10">
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-ink-soft">
+            This week
+          </h3>
+          <span className="font-sans text-xs text-ink-mute">kcal / day</span>
+        </div>
+        <div className="relative h-44 mt-4">
+          {/* Target line — dashed horizontal at target/max ratio. */}
+          <div
+            aria-hidden
+            className="absolute left-0 right-0 border-t border-dashed border-accent/55 pointer-events-none"
+            style={{ bottom: `${(DAILY_TARGETS.cal / maxKcal) * 100}%` }}
+          />
+          <div
+            aria-hidden
+            className="absolute right-0 -translate-y-1/2 text-[9px] font-semibold tracking-[0.08em] uppercase text-accent-ink bg-paper px-1"
+            style={{ bottom: `${(DAILY_TARGETS.cal / maxKcal) * 100}%` }}
+          >
+            target
+          </div>
+
+          <div className="flex items-end gap-2.5 h-full">
+            {currentWeek.map((d) => {
+              const h = Math.max(2, (d.calories / maxKcal) * 100);
+              return (
+                <div
+                  key={d.date}
+                  className="flex-1 h-full flex flex-col justify-end relative"
+                >
+                  <div
+                    className={`relative rounded-md transition-all duration-300 ${barColor(d)}`}
+                    style={{ height: `${h}%` }}
+                  >
+                    {d.meals > 0 && (
+                      <span className="absolute -top-4 left-0 right-0 text-center text-[10px] text-ink-soft">
+                        <Mono>{d.calories}</Mono>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* Day-letter labels under bars. */}
+        <div className="flex gap-2.5 mt-2.5">
+          {currentWeek.map((d) => (
+            <span
+              key={d.date}
+              className={`flex-1 text-center text-[11px] font-medium ${
+                d.meals === 0 ? "text-ink-mute" : "text-ink-soft"
+              }`}
+            >
+              {dayLetter(d.date)}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* Seven-day macro averages — kept under the bar chart. */}
+      <section className="mb-10">
         <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-3">
           Seven-day averages
         </h3>
         <MacroGrid values={averages} />
       </section>
 
-      {/* Daily breakdown: card surface with rule dividers, mono tabular nums. */}
+      {/* Most-cooked this month — ranked list from server prop. */}
+      {topRecipes.length > 0 && (
+        <section className="mb-10">
+          <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-3">
+            Most-cooked this month
+          </h3>
+          <ol>
+            {topRecipes.map((r, i) => (
+              <li
+                key={r.id}
+                className="flex items-center gap-4 py-3 border-b border-rule last:border-b-0"
+              >
+                <Mono className="text-xs text-ink-mute w-6">
+                  {String(i + 1).padStart(2, "0")}
+                </Mono>
+                <span className="flex-1 font-display text-[16px] text-ink truncate">
+                  <SerifIt>{r.name}</SerifIt>
+                </span>
+                <Mono className="text-sm text-ink-soft">{r.cookedCount}×</Mono>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {/* Daily breakdown table — preserved for power users. */}
       <section className="bg-card border border-rule rounded shadow-lift-sm p-6 overflow-x-auto">
         <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-4">
           Daily breakdown
@@ -158,7 +344,7 @@ export default function WeeklySummary() {
             </tr>
           </thead>
           <tbody>
-            {days.map((day) => {
+            {[...currentWeek].reverse().map((day) => {
               const empty = day.meals === 0;
               return (
                 <tr
@@ -166,7 +352,7 @@ export default function WeeklySummary() {
                   className="border-b border-rule last:border-b-0"
                 >
                   <td className="py-3 pr-4 font-sans text-sm font-medium text-ink">
-                    {formatDate(day.date)}
+                    {formatShortDate(day.date)}
                   </td>
                   <td className="py-3 px-2 text-right font-mono text-sm text-ink-mute tabular-nums">
                     {empty ? "—" : day.meals}

@@ -1,5 +1,7 @@
 import WeeklySummary from "@/components/WeeklySummary";
 import { BarChart3 } from "lucide-react";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import { getMostCookedRecipes } from "@/lib/data";
 
 export const runtime = "edge";
 
@@ -7,7 +9,18 @@ export const metadata = {
   title: "Weekly Summary — Julie's Cookbook",
 };
 
-export default function SummaryPage() {
+export default async function SummaryPage() {
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Server-fetch the 30-day top-5 most-cooked recipes for the Pulse ranked
+  // list. Client-side WeeklySummary still SWR-fetches the 14-day food_log
+  // for the bar chart + trend % delta, since that data changes within a
+  // session (logged meals refresh on focus).
+  const topRecipes = await getMostCookedRecipes(user?.id, 30, 5);
+
   return (
     <div className="min-h-screen pt-20 lg:pt-10 pb-32 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
@@ -28,7 +41,7 @@ export default function SummaryPage() {
             kept coming back to.
           </p>
         </header>
-        <WeeklySummary />
+        <WeeklySummary topRecipes={topRecipes} />
       </div>
     </div>
   );

@@ -208,6 +208,57 @@ export async function getCookedCounts(
   return counts;
 }
 
+// getMostCookedRecipes — server-side aggregate of food_log entries grouped
+// by recipe_id, sorted by count desc, limited. Used by the Pulse screen's
+// "Most-cooked this month" ranked list. Added per TASK-027 Phase 5.
+//
+// Same read-only pattern as getCookedCounts; no schema changes. The join
+// to recipes(id, name) is in the same query so the result has display
+// names ready without a follow-up lookup.
+export interface MostCookedRecipe {
+  id: string;
+  name: string;
+  cookedCount: number;
+}
+
+export async function getMostCookedRecipes(
+  userId: string | undefined,
+  days = 30,
+  limit = 5,
+): Promise<MostCookedRecipe[]> {
+  if (!userId) return [];
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceStr = since.toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("food_log")
+    .select("recipe_id, recipes(id, name)")
+    .eq("user_id", userId)
+    .gte("log_date", sinceStr);
+
+  if (error) {
+    throw new Error(`Failed to fetch most-cooked recipes: ${error.message}`);
+  }
+
+  const counts = new Map<string, { name: string; count: number }>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (data || []).forEach((row: any) => {
+    if (!row.recipe_id || !row.recipes) return;
+    const existing = counts.get(row.recipe_id);
+    counts.set(row.recipe_id, {
+      name: row.recipes.name,
+      count: (existing?.count || 0) + 1,
+    });
+  });
+
+  return Array.from(counts.entries())
+    .map(([id, { name, count }]) => ({ id, name, cookedCount: count }))
+    .sort((a, b) => b.cookedCount - a.cookedCount)
+    .slice(0, limit);
+}
+
 export async function getAllRecipeIds(userId?: string): Promise<string[]> {
   if (!userId) return [];
 

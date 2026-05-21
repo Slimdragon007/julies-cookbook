@@ -1,6 +1,8 @@
 import WeeklySummary from "@/components/WeeklySummary";
 import { BarChart3 } from "lucide-react";
 
+export const runtime = "edge";
+
 export const metadata = {
   title: "Weekly Summary — Julie's Cookbook",
 };

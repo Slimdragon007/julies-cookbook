@@ -11,51 +11,27 @@
 // the Preferences union below is the TypeScript mirror.
 
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { createSupabaseBrowser } from "@/lib/supabase/client";
+import {
+  DEFAULT_PREFERENCES,
+  IMAGERY_VALUES,
+  PALETTE_VALUES,
+  PAPER_VALUES,
+  VOICE_VALUES,
+  type Preferences,
+} from "@/lib/preferences-contract";
 
-export type Voice = "editorial" | "notebook" | "studio";
-export type Imagery = "photographic" | "filmic" | "mono";
-export type Paper = "smooth" | "linen" | "newsprint";
-export type Palette = "paper" | "bone & sage" | "ink" | "terra wash";
-
-export interface Preferences {
-  voice: Voice;
-  imagery: Imagery;
-  paper: Paper;
-  palette: Palette;
-}
-
-export const DEFAULT_PREFERENCES: Preferences = {
-  voice: "editorial",
-  imagery: "photographic",
-  paper: "smooth",
-  palette: "paper",
-};
-
-export const VOICE_VALUES: readonly Voice[] = [
-  "editorial",
-  "notebook",
-  "studio",
-] as const;
-
-export const IMAGERY_VALUES: readonly Imagery[] = [
-  "photographic",
-  "filmic",
-  "mono",
-] as const;
-
-export const PAPER_VALUES: readonly Paper[] = [
-  "smooth",
-  "linen",
-  "newsprint",
-] as const;
-
-export const PALETTE_VALUES: readonly Palette[] = [
-  "paper",
-  "bone & sage",
-  "ink",
-  "terra wash",
-] as const;
+export {
+  DEFAULT_PREFERENCES,
+  IMAGERY_VALUES,
+  PALETTE_VALUES,
+  PAPER_VALUES,
+  VOICE_VALUES,
+  type Imagery,
+  type Palette,
+  type Paper,
+  type Preferences,
+  type Voice,
+} from "@/lib/preferences-contract";
 
 function coerce<T extends string>(
   value: unknown,
@@ -83,17 +59,4 @@ export async function getPreferences(userId: string): Promise<Preferences> {
     paper: coerce(data.paper, PAPER_VALUES, DEFAULT_PREFERENCES.paper),
     palette: coerce(data.palette, PALETTE_VALUES, DEFAULT_PREFERENCES.palette),
   };
-}
-
-export async function setPreferences(
-  userId: string,
-  partial: Partial<Preferences>,
-): Promise<{ ok: boolean; error?: string }> {
-  const supabase = createSupabaseBrowser();
-  const { error } = await supabase
-    .from("user_preferences")
-    .upsert({ user_id: userId, ...partial });
-
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
 }

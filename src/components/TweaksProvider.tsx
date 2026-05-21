@@ -20,7 +20,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { setPreferences, type Preferences } from "@/lib/preferences";
+import { setPreferences } from "@/lib/preferences-client";
+import type { Preferences } from "@/lib/preferences-contract";
 
 interface TweaksContextValue {
   preferences: Preferences;

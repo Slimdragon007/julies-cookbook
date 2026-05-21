@@ -25,7 +25,7 @@ import {
   IMAGERY_VALUES,
   PAPER_VALUES,
   PALETTE_VALUES,
-} from "@/lib/preferences";
+} from "@/lib/preferences-contract";
 import { cn } from "@/lib/utils";
 
 const VOICE_LABELS: Record<Voice, string> = {

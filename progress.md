@@ -2,6 +2,42 @@
 
 > Append-only. Every executor adds an entry on task completion. See base handbook Law 3.
 
+## 2026-05-21 — TASK-026 PR C Cloudflare build close-out
+
+**Executor:** Codex
+
+**Branch:** `feat/task-026-settings-ui`
+
+**Task:** Finish the Paper Editorial settings/tweaks UI branch enough to deploy on Cloudflare Pages.
+
+**Changed:**
+
+- `src/lib/preferences-contract.ts` — new client-safe shared preference contract for the Voice / Imagery / Paper / Palette unions, defaults, and value arrays.
+- `src/lib/preferences-client.ts` — new client-safe Supabase browser upsert helper for saving preferences.
+- `src/lib/preferences.ts` — narrowed to server-side preference reads plus re-exported contract types. This removes `next/headers` from the client import graph.
+- `src/components/TweaksProvider.tsx` — imports `setPreferences` from the client module and `Preferences` from the contract module.
+- `src/components/SettingsForm.tsx` — imports shared values from the contract module.
+- `src/app/(main)/add-recipe/page.tsx` and `src/app/(main)/summary/page.tsx` — added `export const runtime = "edge"` so `@cloudflare/next-on-pages` accepts both dynamic routes.
+
+**Root causes fixed:**
+
+1. `TweaksProvider` imported `src/lib/preferences.ts`, which imported `createSupabaseServer()` and therefore `next/headers`. Next included that server-only module in the client graph and production build failed.
+2. Cloudflare Pages build required all dynamic routes to opt into the Edge runtime. `/add-recipe` and `/summary` were the two remaining dynamic routes without that export.
+
+**Verification:**
+
+- `npm run lint` — clean, 0 ESLint warnings or errors.
+- `npx tsc --noEmit` — clean, 0 TypeScript errors.
+- `npm run test` — 164 passed / 7 skipped across 16 files.
+- `npm run build` — clean with network access for Google Fonts; `/settings` generated as a dynamic route.
+- `npm run build:cf` — clean. `@cloudflare/next-on-pages` produced the Cloudflare worker output and listed 15 Edge Function routes including `/settings`, `/add-recipe`, and `/summary`.
+- `npm run test:e2e` — blocked locally before tests ran. First by sandbox port binding (`listen EPERM 0.0.0.0:3000`), then after escalation by local `workerd` rejecting `--debug-port`. Cloudflare build verification replaced local e2e as the deployment gate for this close-out.
+
+**Notes:**
+
+- Browser plugin runtime was not exposed in this session after tool discovery, so rendered browser QA could not use the in-app Browser path.
+- Existing untracked workspace files were left untouched.
+
 ## 2026-05-19 — Imperial/metric unit toggle on recipe detail page
 
 **Executor:** Claude Code (Opus 4.7, 1M context) — explanatory mode

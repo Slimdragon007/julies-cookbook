@@ -14,6 +14,7 @@ import {
   ShoppingBasket,
 } from "lucide-react";
 import clsx from "clsx";
+import { Button, buttonClass } from "@/components/ui/Button";
 
 interface ScrapeResult {
   recipe: {
@@ -100,8 +101,6 @@ export default function AddRecipeForm() {
 
       setResult(data);
       setStatus(data.recipe?.hasImage ? "success" : "partial");
-      // Bust the Next.js router cache so the gallery re-fetches on next nav.
-      // Pairs with the SW change (TASK-009) that stopped caching HTML pages.
       router.refresh();
     } catch {
       clearInterval(interval);
@@ -171,52 +170,45 @@ export default function AddRecipeForm() {
     return (
       <div className="min-h-screen pt-20 lg:pt-10 pb-32">
         <div className="max-w-2xl mx-auto px-4 text-center py-12">
-          <div
-            className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${status === "success" ? "bg-emerald-50 border border-emerald-100" : "bg-amber-50 border border-amber-100"}`}
-          >
-            <CheckCircle2
-              className={`w-10 h-10 ${status === "success" ? "text-emerald-500" : "text-amber-500"}`}
-            />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-accent-soft border border-accent-soft">
+            <CheckCircle2 className="w-10 h-10 text-accent-ink" />
           </div>
 
-          <h3 className="text-2xl font-bold text-slate-800 mb-3">
+          <h3 className="font-display text-[32px] text-ink mb-3">
             {result.recipe.name}
           </h3>
 
-          <div className="flex justify-center gap-4 text-sm text-slate-500 font-semibold mb-4">
+          <div className="flex justify-center gap-4 font-mono text-sm text-ink-soft tabular-nums mb-4">
             {result.recipe.servings && (
               <span>{result.recipe.servings} servings</span>
             )}
             <span>{result.recipe.ingredientCount} ingredients</span>
             {result.recipe.hasImage ? (
-              <span className="text-emerald-600">Photo added</span>
+              <span className="text-accent">Photo added</span>
             ) : (
-              <span className="text-amber-600">No photo found</span>
+              <span className="text-accent-ink">No photo found</span>
             )}
           </div>
 
           {status === "partial" && (
-            <p className="text-xs text-amber-600 font-medium mb-4">
+            <p className="font-sans text-xs text-accent-ink font-medium mb-4">
               Recipe saved but no photo was available. You can add one later.
             </p>
           )}
 
-          <p className="text-xs text-slate-400 mb-8 font-medium">
-            Live on the site within 60 seconds
+          <p className="font-sans text-xs text-ink-mute mb-8 font-medium">
+            Live on the site within 60 seconds.
           </p>
 
           <div className="flex gap-3 justify-center">
             <a
               href={`/recipe/${result.recipe.slug}`}
-              className="px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className={buttonClass("primary")}
             >
-              View Recipe
+              View recipe
             </a>
-            <button
-              onClick={reset}
-              className="px-8 py-4 glass rounded-2xl text-slate-600 font-bold hover:bg-white/60 transition-all"
-            >
-              Add Another
+            <button onClick={reset} className={buttonClass("secondary")}>
+              Add another
             </button>
           </div>
         </div>
@@ -225,32 +217,32 @@ export default function AddRecipeForm() {
   }
 
   return (
-    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-amber-100 selection:text-amber-900">
-      <div className="max-w-2xl mx-auto px-4">
+    <div className="min-h-screen pt-20 lg:pt-10 pb-32">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 glass rounded-3xl shadow-sm mb-6">
-            <Plus className="w-8 h-8 text-amber-600" />
+        <header className="mb-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent-soft text-accent-ink rounded-full mb-6">
+            <Plus className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-3 tracking-tight">
-            Expand Your Collection
+          <h1 className="font-display text-[40px] sm:text-[52px] text-ink leading-[1.05] mb-3">
+            Expand your collection
           </h1>
-          <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-            Paste a recipe URL or copy-paste the recipe text to add it to your
-            cookbook.
+          <p className="font-sans text-base text-ink-soft max-w-sm mx-auto leading-relaxed">
+            Paste a recipe URL or the recipe text itself; we&apos;ll do the
+            rest.
           </p>
-        </div>
+        </header>
 
-        {/* Tab Switcher */}
+        {/* Tab switcher */}
         <div className="max-w-md mx-auto mb-10">
-          <div className="glass p-1.5 rounded-[2rem] relative flex items-center">
+          <div className="bg-card border border-rule p-1 rounded-pill relative flex items-center">
             <div
-              className="absolute bg-white border border-white/60 shadow-md rounded-[1.75rem] z-0 transition-all duration-300"
+              className="absolute bg-accent rounded-pill z-0 transition-all duration-300 ease-hearth"
               style={{
-                left: activeTab === "link" ? "6px" : "calc(50% + 2px)",
-                width: "calc(50% - 8px)",
-                height: "calc(100% - 12px)",
-                top: "6px",
+                left: activeTab === "link" ? "4px" : "calc(50% + 0px)",
+                width: "calc(50% - 4px)",
+                height: "calc(100% - 8px)",
+                top: "4px",
               }}
             />
             <button
@@ -259,14 +251,14 @@ export default function AddRecipeForm() {
                 if (status === "error") setStatus("idle");
               }}
               className={clsx(
-                "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
+                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-pill font-sans text-sm font-semibold transition-colors relative z-10",
                 activeTab === "link"
-                  ? "text-amber-700"
-                  : "text-slate-400 hover:text-slate-600",
+                  ? "text-accent-on"
+                  : "text-ink-soft hover:text-ink",
               )}
             >
               <Link2 className="w-4 h-4" />
-              Paste Link
+              Paste link
             </button>
             <button
               onClick={() => {
@@ -274,34 +266,37 @@ export default function AddRecipeForm() {
                 if (status === "error") setStatus("idle");
               }}
               className={clsx(
-                "flex-1 flex items-center justify-center gap-3 py-3 rounded-[1.75rem] text-sm font-bold transition-all relative z-10",
+                "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-pill font-sans text-sm font-semibold transition-colors relative z-10",
                 activeTab === "text"
-                  ? "text-amber-700"
-                  : "text-slate-400 hover:text-slate-600",
+                  ? "text-accent-on"
+                  : "text-ink-soft hover:text-ink",
               )}
             >
               <Type className="w-4 h-4" />
-              Paste Text
+              Paste text
             </button>
           </div>
         </div>
 
-        {/* Form Card */}
+        {/* Form card */}
         <div className="relative">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-200/15 rounded-full blur-[60px] pointer-events-none" />
+          <div
+            className="absolute -top-10 -right-10 w-40 h-40 bg-accent-soft/60 rounded-full blur-[60px] pointer-events-none"
+            aria-hidden
+          />
 
-          <div className="glass-strong rounded-[3rem] p-8 sm:p-12 overflow-hidden relative">
-            {/* Loading Overlay */}
+          <div className="bg-card border border-rule rounded-lg shadow-lift p-8 sm:p-12 overflow-hidden relative">
+            {/* Loading overlay */}
             {status === "scraping" && (
-              <div className="absolute inset-0 bg-white/60 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-20 h-20 glass rounded-3xl flex items-center justify-center mb-6 mx-auto relative overflow-hidden">
+              <div className="absolute inset-0 bg-paper/85 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-20 h-20 bg-accent-soft text-accent-ink rounded-full flex items-center justify-center mb-6 mx-auto">
                   {activeTab === "link" ? (
-                    <Link2 className="w-8 h-8 text-amber-600" />
+                    <Link2 className="w-8 h-8" />
                   ) : (
-                    <ScanLine className="w-8 h-8 text-amber-600" />
+                    <ScanLine className="w-8 h-8" />
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                <h3 className="font-display text-[24px] text-ink mb-2">
                   {steps[step]}
                 </h3>
                 <div className="flex justify-center gap-2 my-4">
@@ -310,15 +305,15 @@ export default function AddRecipeForm() {
                       key={i}
                       className={clsx(
                         "w-2.5 h-2.5 rounded-full transition-colors",
-                        i <= step ? "bg-amber-600" : "bg-slate-200",
+                        i <= step ? "bg-accent" : "bg-rule",
                       )}
                     />
                   ))}
                 </div>
-                <p className="text-slate-500 text-sm font-medium">
-                  This usually takes 15-30 seconds
+                <p className="font-sans text-sm text-ink-soft">
+                  This usually takes 15-30 seconds.
                 </p>
-                <Loader2 className="w-6 h-6 text-amber-500 animate-spin mt-6" />
+                <Loader2 className="w-6 h-6 text-accent animate-spin mt-6" />
               </div>
             )}
 
@@ -326,18 +321,18 @@ export default function AddRecipeForm() {
               <form onSubmit={handleUrlSubmit} className="relative z-10">
                 <div className="mb-10">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-amber-600" />
+                    <div className="w-8 h-8 bg-accent-soft text-accent-ink rounded-full flex items-center justify-center">
+                      <Zap className="w-4 h-4" />
                     </div>
-                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
-                      Smart Import
+                    <span className="font-sans text-[10px] font-semibold text-accent uppercase tracking-[0.15em]">
+                      Smart import
                     </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">
-                    Paste a Link
+                  <h2 className="font-display text-[28px] text-ink mb-2 leading-tight">
+                    Paste a link
                   </h2>
-                  <p className="text-slate-500 font-medium text-sm">
-                    We&apos;ll automatically strip out the ads and long stories.
+                  <p className="font-sans text-sm text-ink-soft">
+                    We&apos;ll strip the ads and long stories automatically.
                   </p>
                 </div>
 
@@ -348,40 +343,40 @@ export default function AddRecipeForm() {
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="https://cooking.nytimes.com/recipes/..."
-                    className="w-full h-16 glass-input text-slate-800 px-6 rounded-2xl text-[15px] font-medium placeholder:text-slate-300 shadow-sm"
+                    className="w-full px-5 py-4 rounded font-sans text-[15px] text-ink placeholder:text-ink-mute bg-paper border border-rule outline-none transition-colors hover:border-accent/30 focus:border-accent focus:ring-2 focus:ring-accent/15"
                   />
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium mb-6">
+                  <div className="bg-accent-soft border border-accent-ink/30 rounded px-4 py-3 font-sans text-sm text-accent-ink mb-6">
                     {error}
                   </div>
                 )}
 
-                <button
+                <Button
                   type="submit"
                   disabled={!url.trim() || status === "scraping"}
-                  className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Extract Recipe
-                </button>
+                  Extract recipe
+                </Button>
               </form>
             ) : (
               <form onSubmit={handleTextSubmit} className="relative z-10">
                 <div className="mb-10">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center">
-                      <ScanLine className="w-4 h-4 text-orange-500" />
+                    <div className="w-8 h-8 bg-accent-soft text-accent-ink rounded-full flex items-center justify-center">
+                      <ScanLine className="w-4 h-4" />
                     </div>
-                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
-                      Text Input
+                    <span className="font-sans text-[10px] font-semibold text-accent uppercase tracking-[0.15em]">
+                      Text input
                     </span>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-800 mb-2">
-                    Paste Recipe Text
+                  <h2 className="font-display text-[28px] text-ink mb-2 leading-tight">
+                    Paste recipe text
                   </h2>
-                  <p className="text-slate-500 font-medium text-sm">
+                  <p className="font-sans text-sm text-ink-soft">
                     Copy the recipe from any page and paste it below.
                   </p>
                 </div>
@@ -391,42 +386,42 @@ export default function AddRecipeForm() {
                     value={pasteText}
                     onChange={(e) => setPasteText(e.target.value)}
                     placeholder={
-                      "Paste the recipe here — ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out!"
+                      "Paste the recipe here. Ingredients, instructions, everything you see on the page.\n\nTip: on the recipe page, tap Select All then Copy and paste it all in here. We'll sort it out."
                     }
                     rows={8}
-                    className="w-full glass-input text-slate-800 px-6 py-4 rounded-2xl text-[15px] font-medium placeholder:text-slate-300 shadow-sm resize-y min-h-[200px]"
+                    className="w-full px-5 py-4 rounded font-sans text-[15px] text-ink placeholder:text-ink-mute bg-paper border border-rule outline-none transition-colors hover:border-accent/30 focus:border-accent focus:ring-2 focus:ring-accent/15 resize-y min-h-[200px]"
                     required
                   />
                 </div>
 
                 {blockedUrl && (
-                  <p className="text-xs text-slate-400 truncate mb-4 font-medium">
+                  <p className="font-mono text-xs text-ink-mute truncate mb-4">
                     Source: {blockedUrl}
                   </p>
                 )}
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-sm text-red-600 font-medium mb-6">
+                  <div className="bg-accent-soft border border-accent-ink/30 rounded px-4 py-3 font-sans text-sm text-accent-ink mb-6">
                     {error}
                   </div>
                 )}
 
-                <button
+                <Button
                   type="submit"
                   disabled={!pasteText.trim() || status === "scraping"}
-                  className="w-full h-16 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Extract Recipe
-                </button>
+                  Extract recipe
+                </Button>
 
                 {blockedUrl && (
                   <button
                     type="button"
                     onClick={reset}
-                    className="w-full mt-3 h-14 glass rounded-2xl text-slate-500 font-bold hover:bg-white/60 transition-all"
+                    className={clsx(buttonClass("secondary"), "w-full mt-3")}
                   >
-                    Try a Different URL
+                    Try a different URL
                   </button>
                 )}
               </form>
@@ -434,26 +429,30 @@ export default function AddRecipeForm() {
           </div>
         </div>
 
-        {/* Quick Tips */}
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-6 px-4">
-          <div className="p-6 glass rounded-[2rem]">
-            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-              <Sparkles className="w-5 h-5 text-amber-500" />
+        {/* Quick tips */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="p-6 bg-card border border-rule rounded shadow-lift-sm">
+            <div className="w-10 h-10 bg-accent-soft text-accent-ink rounded-full flex items-center justify-center mb-4">
+              <Sparkles className="w-5 h-5" />
             </div>
-            <h4 className="font-bold text-slate-800 mb-1">Ad-Free Content</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              We extract only the core recipe data, leaving behind the clutter
-              and long intros.
+            <h4 className="font-display text-[18px] text-ink mb-1">
+              Ad-free content
+            </h4>
+            <p className="font-sans text-xs text-ink-soft leading-relaxed">
+              We extract only the core recipe data, leaving the clutter and the
+              long intros behind.
             </p>
           </div>
-          <div className="p-6 glass rounded-[2rem]">
-            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-              <ShoppingBasket className="w-5 h-5 text-amber-500" />
+          <div className="p-6 bg-card border border-rule rounded shadow-lift-sm">
+            <div className="w-10 h-10 bg-accent-soft text-accent-ink rounded-full flex items-center justify-center mb-4">
+              <ShoppingBasket className="w-5 h-5" />
             </div>
-            <h4 className="font-bold text-slate-800 mb-1">Auto-List Sync</h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
-              Ingredients are automatically formatted so you can add them to
-              your grocery list with one tap.
+            <h4 className="font-display text-[18px] text-ink mb-1">
+              Auto-list sync
+            </h4>
+            <p className="font-sans text-xs text-ink-soft leading-relaxed">
+              Ingredients are auto-formatted so you can drop them into your
+              grocery list with one tap.
             </p>
           </div>
         </div>

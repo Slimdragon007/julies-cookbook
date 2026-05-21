@@ -55,12 +55,15 @@ export function TweaksProvider({
 
   const setPreference = useCallback<TweaksContextValue["setPreference"]>(
     async (key, value) => {
-      // Optimistic update so the data-* attribute on the wrapper div
-      // changes immediately; CSS variable overrides cascade without
-      // waiting for the network round-trip.
-      const prev = preferences;
-      const next = { ...prev, [key]: value };
-      setLocal(next);
+      // Optimistic update via functional setter so two quick calls before a
+      // re-render can't drop each other's changes. We capture the prior
+      // value-for-this-key from inside the setter so a failure rolls back
+      // only the column we wrote, not the whole snapshot.
+      let prevValueForKey: Preferences[typeof key] | undefined;
+      setLocal((current) => {
+        prevValueForKey = current[key];
+        return { ...current, [key]: value };
+      });
 
       if (!userId) {
         // No user (shouldn't happen inside (main)/layout.tsx, but defend the
@@ -69,13 +72,13 @@ export function TweaksProvider({
       }
 
       const result = await setPreferences(userId, { [key]: value });
-      if (!result.ok) {
-        // Roll back on persistence failure.
-        setLocal(prev);
+      if (!result.ok && prevValueForKey !== undefined) {
+        // Roll back only this key, preserving any other in-flight updates.
+        setLocal((current) => ({ ...current, [key]: prevValueForKey! }));
       }
       return result;
     },
-    [preferences, userId],
+    [userId],
   );
 
   return (

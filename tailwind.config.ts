@@ -13,24 +13,28 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Color values wrap CSS custom properties with the original Paper
-      // Editorial hex as a fallback. This lets the TweaksProvider override
-      // the variables via `[data-palette="..."]` selectors (TASK-026) without
-      // changing visual output when no override is active.
+      // Color values wrap CSS custom properties using channel-decomposed RGB
+      // + Tailwind's <alpha-value> placeholder. This preserves slash-opacity
+      // utilities (bg-paper/95, text-accent/30, border-rule/40) AND lets the
+      // TweaksProvider override the variables via [data-palette="..."]
+      // selectors (TASK-026) without changing visual output when no override
+      // is active. Variables are defined in globals.css as space-separated
+      // RGB channels (e.g. --paper: 242 239 232) so rgb(var(--paper) / 0.95)
+      // resolves to a valid color at runtime.
       colors: {
-        paper: "var(--paper, #F2EFE8)",
-        card: "var(--card, #FCFBF7)",
-        rule: "var(--rule, #E5DFD0)",
+        paper: "rgb(var(--paper) / <alpha-value>)",
+        card: "rgb(var(--card) / <alpha-value>)",
+        rule: "rgb(var(--rule) / <alpha-value>)",
         ink: {
-          DEFAULT: "var(--ink, #14130F)",
-          soft: "var(--ink-soft, #5A5953)",
-          mute: "var(--ink-mute, #B8B0A2)",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          mute: "rgb(var(--ink-mute) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "var(--accent, #D97757)",
-          soft: "var(--accent-soft, #F6E7DC)",
-          ink: "var(--accent-ink, #8E3F1F)",
-          on: "var(--accent-on, #FCFBF7)",
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          soft: "rgb(var(--accent-soft) / <alpha-value>)",
+          ink: "rgb(var(--accent-ink) / <alpha-value>)",
+          on: "rgb(var(--accent-on) / <alpha-value>)",
         },
       },
       fontFamily: {

@@ -2,8 +2,10 @@ export const runtime = "edge";
 
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getAllRecipes } from "@/lib/data";
+import { getAllRecipes, getCookedCounts } from "@/lib/data";
 import RecipeGrid from "@/components/RecipeGrid";
+import TodaySnapshot from "@/components/TodaySnapshot";
+import { SerifIt } from "@/components/ui/SerifIt";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -22,13 +24,12 @@ async function WelcomeHeader() {
     );
 
   return (
-    <header className="mb-8 px-1">
+    <header className="mb-2 px-1">
       <h1 className="font-display text-[40px] sm:text-[52px] text-ink leading-[1.05] mb-1">
-        Hello, {displayName}.
+        <span className="font-sans font-normal text-ink-soft">Hi, </span>
+        <SerifIt>{displayName}</SerifIt>
       </h1>
-      <p className="font-sans text-base text-ink-soft">
-        Find your next favorite meal today.
-      </p>
+      <TodaySnapshot displayName={displayName} />
     </header>
   );
 }
@@ -38,8 +39,14 @@ async function RecipeSection() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const recipes = await getAllRecipes(false, user?.id);
-  return <RecipeGrid recipes={recipes} />;
+  // Include ingredients so RecipeCard can compute protein-per-serving for
+  // the new mobile horizontal layout (per TASK-027 Phase 2). Parallel with
+  // cooked-count fetch to avoid sequential round-trips.
+  const [recipes, cookedCounts] = await Promise.all([
+    getAllRecipes(true, user?.id),
+    getCookedCounts(user?.id),
+  ]);
+  return <RecipeGrid recipes={recipes} cookedCounts={cookedCounts} />;
 }
 
 function RecipeGridSkeleton() {

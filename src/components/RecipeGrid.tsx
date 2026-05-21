@@ -24,7 +24,15 @@ const ALL_DIETARY = [
   "Comfort Food",
 ];
 
-export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
+interface RecipeGridProps {
+  recipes: Recipe[];
+  /** Map of recipe_id → number of times logged. Threaded to each RecipeCard
+   *  so the mobile horizontal layout can render the "cooked Nx" eyebrow.
+   *  Optional; defaults to empty Map. */
+  cookedCounts?: Map<string, number>;
+}
+
+export default function RecipeGrid({ recipes, cookedCounts }: RecipeGridProps) {
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("All");
 
@@ -120,9 +128,15 @@ export default function RecipeGrid({ recipes }: { recipes: Recipe[] }) {
 
       {/* Grid — spec: 2-col mobile, 4-col desktop (sm step at 2-col stays). */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        // Mobile: single-column horizontal cards (Phase 2 prototype-parity).
+        // Desktop md+: 2-col / 4-col grid of portrait cards (existing).
+        <div className="flex flex-col gap-1 md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-4 lg:gap-6">
           {filtered.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              cookedCount={cookedCounts?.get(recipe.id)}
+            />
           ))}
         </div>
       ) : search || activeTag !== "All" ? (

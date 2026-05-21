@@ -176,6 +176,38 @@ export async function getRecipeById(
   return mapRecipe(recipe as SupabaseRecipe, mappedIngredients);
 }
 
+// getCookedCounts — read-only aggregate against food_log. Returns a Map of
+// recipe_id → number-of-times-logged. Used by the Library screen to display
+// the prototype's "cooked Nx" eyebrow on each recipe card. Added per
+// TASK-027 Phase 2.
+//
+// The query loads every food_log row for the user (just recipe_id column;
+// no other fields needed) and aggregates in memory. For a family cookbook
+// with hundreds of log entries this is trivial; if it grows to millions we
+// can move to a per-recipe count() materialized view, but that's a long way
+// off. No schema changes — read-only against the existing table.
+export async function getCookedCounts(
+  userId?: string,
+): Promise<Map<string, number>> {
+  if (!userId) return new Map();
+
+  const { data, error } = await supabase
+    .from("food_log")
+    .select("recipe_id")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(`Failed to fetch cooked counts: ${error.message}`);
+  }
+
+  const counts = new Map<string, number>();
+  (data || []).forEach((row: { recipe_id: string | null }) => {
+    if (!row.recipe_id) return;
+    counts.set(row.recipe_id, (counts.get(row.recipe_id) || 0) + 1);
+  });
+  return counts;
+}
+
 export async function getAllRecipeIds(userId?: string): Promise<string[]> {
   if (!userId) return [];
 

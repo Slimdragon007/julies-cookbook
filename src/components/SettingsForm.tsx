@@ -12,7 +12,7 @@
 // inactive uses bg-card border-rule. Same visual pattern as the
 // MeasurementToggle but expanded for multi-option selection.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Settings as SettingsIcon } from "lucide-react";
 import { useTweaks } from "@/components/TweaksProvider";
 import {
@@ -149,12 +149,26 @@ export default function SettingsForm() {
   const [savingFor, setSavingFor] = useState<keyof Preferences | null>(null);
   const [state, setState] = useState<SavingState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current !== null) {
+        clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+    };
+  }, []);
 
   async function pick<K extends keyof Preferences>(
     key: K,
     value: Preferences[K],
   ) {
     if (preferences[key] === value) return;
+    if (resetTimerRef.current !== null) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
     setSavingFor(key);
     setState("saving");
     setErrorMessage(null);
@@ -162,7 +176,10 @@ export default function SettingsForm() {
     setSavingFor(null);
     if (result.ok) {
       setState("saved");
-      setTimeout(() => setState("idle"), 1600);
+      resetTimerRef.current = setTimeout(() => {
+        setState("idle");
+        resetTimerRef.current = null;
+      }, 1600);
     } else {
       setState("error");
       setErrorMessage(result.error ?? "Couldn't save. Try again.");

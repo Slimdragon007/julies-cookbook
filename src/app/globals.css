@@ -12,6 +12,7 @@
   --accent: #d97757;
   --accent-soft: #f6e7dc;
   --accent-ink: #8e3f1f;
+  --accent-on: #fcfbf7;
 }
 
 body {
@@ -234,4 +235,63 @@ body {
   ::view-transition-new(recipe-img) {
     animation-duration: 0.3s;
   }
+}
+
+/* -------------------------------------------------------------------------
+ * TASK-026 tweaks-panel CSS variable overrides.
+ *
+ * TweaksProvider sets data-palette / data-imagery / data-voice / data-paper
+ * on a wrapper div inside (main)/layout.tsx. Tailwind config wraps each
+ * Paper Editorial color in `var(--name, fallback-hex)`, so overriding the
+ * variables here cascades through every utility class on descendants.
+ *
+ * Pre-auth surfaces (login/signup/demo) sit outside the (main) wrapper, so
+ * they always render with the :root defaults regardless of user preferences.
+ * That's by design: logged-out visitors don't have prefs in scope.
+ *
+ * Palette = default ("paper") inherits :root values; no override needed.
+ * Voice / paper-texture overrides land in PR C alongside font loading and
+ * the SVG grain assets. Imagery filters land here since they're CSS-only.
+ * ------------------------------------------------------------------------- */
+
+[data-palette="bone & sage"] {
+  --accent: #5a7045;
+  --accent-soft: #e0e5d2;
+  --accent-ink: #3a4a2c;
+  --accent-on: #fcfbf7;
+}
+
+[data-palette="ink"] {
+  --paper: #15140f;
+  --card: #1f1e18;
+  --ink: #f2efe8;
+  --ink-soft: #d4d0c5;
+  --ink-mute: #8f8b7e;
+  --rule: #2a2820;
+  --accent: #e8a26a;
+  --accent-soft: #3d2e1f;
+  --accent-ink: #fcd89c;
+  --accent-on: #15140f;
+}
+
+[data-palette="terra wash"] {
+  --accent: #8e3f1f;
+  --accent-soft: #f2d9c8;
+  --accent-ink: #5c2810;
+  --accent-on: #fcfbf7;
+}
+
+/* Imagery filters target every img inside the wrapper. CSS variable approach
+ * picks defaults from --image-filter, set by each data-imagery selector. */
+[data-imagery] img {
+  filter: var(--image-filter, none);
+  transition: filter 0.25s ease-out;
+}
+
+[data-imagery="filmic"] {
+  --image-filter: contrast(0.92) saturate(0.88) sepia(0.08);
+}
+
+[data-imagery="mono"] {
+  --image-filter: grayscale(1) contrast(1.05);
 }

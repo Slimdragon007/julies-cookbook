@@ -13,20 +13,24 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Color values wrap CSS custom properties with the original Paper
+      // Editorial hex as a fallback. This lets the TweaksProvider override
+      // the variables via `[data-palette="..."]` selectors (TASK-026) without
+      // changing visual output when no override is active.
       colors: {
-        paper: "#F2EFE8",
-        card: "#FCFBF7",
-        rule: "#E5DFD0",
+        paper: "var(--paper, #F2EFE8)",
+        card: "var(--card, #FCFBF7)",
+        rule: "var(--rule, #E5DFD0)",
         ink: {
-          DEFAULT: "#14130F",
-          soft: "#5A5953",
-          mute: "#B8B0A2",
+          DEFAULT: "var(--ink, #14130F)",
+          soft: "var(--ink-soft, #5A5953)",
+          mute: "var(--ink-mute, #B8B0A2)",
         },
         accent: {
-          DEFAULT: "#D97757",
-          soft: "#F6E7DC",
-          ink: "#8E3F1F",
-          on: "#FCFBF7",
+          DEFAULT: "var(--accent, #D97757)",
+          soft: "var(--accent-soft, #F6E7DC)",
+          ink: "var(--accent-ink, #8E3F1F)",
+          on: "var(--accent-on, #FCFBF7)",
         },
       },
       fontFamily: {

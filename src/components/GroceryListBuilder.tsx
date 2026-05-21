@@ -2,10 +2,18 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Recipe } from "@/lib/types";
 import { formatQuantity } from "@/lib/fractions";
-import { ShoppingBasket, Check, ChevronRight, ChevronLeft, LayoutGrid } from "lucide-react";
+import {
+  ShoppingBasket,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  LayoutGrid,
+} from "lucide-react";
 import clsx from "clsx";
+import { Button, buttonClass } from "@/components/ui/Button";
 
 interface GroceryItem {
   name: string;
@@ -15,8 +23,15 @@ interface GroceryItem {
 }
 
 const CATEGORY_ORDER = [
-  "Produce", "Protein", "Dairy", "Grains & Pasta",
-  "Canned & Jarred", "Spices & Seasonings", "Oils & Condiments", "Baking", "Other",
+  "Produce",
+  "Protein",
+  "Dairy",
+  "Grains & Pasta",
+  "Canned & Jarred",
+  "Spices & Seasonings",
+  "Oils & Condiments",
+  "Baking",
+  "Other",
 ];
 
 function combineIngredients(recipes: Recipe[]): Array<[string, GroceryItem[]]> {
@@ -116,64 +131,65 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
   if (groceryList) {
     for (const [, items] of groceryList) totalItems += items.length;
   }
-  const progress = totalItems === 0 ? 0 : Math.round((checked.size / totalItems) * 100);
+  const progress =
+    totalItems === 0 ? 0 : Math.round((checked.size / totalItems) * 100);
 
   return (
-    <div className="min-h-screen pt-20 lg:pt-10 pb-32 selection:bg-amber-100 selection:text-amber-900">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen pt-20 lg:pt-10 pb-32">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-10">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-12 h-12 glass rounded-2xl flex items-center justify-center shadow-sm">
-                  <ShoppingBasket className="w-6 h-6 text-amber-600" />
-                </div>
-                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Shopping List</h1>
-              </div>
-              <p className="text-slate-500 font-medium pl-1 text-[15px]">
-                {showList
-                  ? `${totalItems - checked.size} items left to pick up`
-                  : "Select recipes to generate a combined shopping list"}
-              </p>
+        <header className="mb-10 px-1">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-accent-soft text-accent-ink rounded-full flex items-center justify-center">
+              <ShoppingBasket className="w-5 h-5" />
             </div>
+            <span className="font-sans text-[11px] font-semibold tracking-[0.12em] uppercase text-accent">
+              Aisle list
+            </span>
           </div>
-        </div>
+          <h1 className="font-display text-[40px] sm:text-[52px] text-ink leading-[1.05] mb-1">
+            Shopping list
+          </h1>
+          <p className="font-sans text-base text-ink-soft">
+            {showList
+              ? `${totalItems - checked.size} items left to pick up.`
+              : "Pick the recipes for the week; we combine the ingredients by aisle."}
+          </p>
+        </header>
 
         {recipes.length === 0 ? (
-          <div className="text-center py-24 glass rounded-[3rem]">
-            <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-200">
-              <ShoppingBasket className="w-8 h-8 text-amber-200" />
+          <div className="text-center py-12 px-6 bg-card border border-rule rounded shadow-lift-sm">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-soft text-accent-ink mb-5">
+              <ShoppingBasket size={28} aria-hidden />
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">No recipes yet</h3>
-            <p className="text-slate-500 max-w-xs mx-auto mb-6">
-              Add some recipes first, then come back to build your shopping list.
+            <h3 className="font-display text-[24px] text-ink mb-2">
+              The pantry is empty.
+            </h3>
+            <p className="font-sans text-sm text-ink-mute leading-relaxed max-w-[280px] mx-auto mb-6">
+              Add a recipe or two, then come back to build a list.
             </p>
-            <a
-              href="/add-recipe"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              Add Your First Recipe
-            </a>
+            <Link href="/add-recipe" className={buttonClass("primary")}>
+              Add your first recipe
+            </Link>
           </div>
         ) : !showList ? (
           <>
             {/* Selection controls */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6 px-1">
               <button
                 onClick={selectAll}
-                className="text-amber-700 text-xs font-bold hover:underline transition-colors"
+                className="font-sans text-accent text-xs font-semibold hover:text-accent-ink transition-colors"
               >
                 Select all
               </button>
-              <div className="w-1 h-1 rounded-full bg-slate-200" />
+              <div className="w-1 h-1 rounded-full bg-rule" />
               <button
                 onClick={clearAll}
-                className="text-slate-400 text-xs font-bold hover:text-slate-600 transition-colors"
+                className="font-sans text-ink-mute text-xs font-semibold hover:text-ink-soft transition-colors"
               >
                 Clear
               </button>
-              <span className="ml-auto text-sm text-slate-500 font-semibold">
+              <span className="ml-auto font-mono text-sm text-ink-soft tabular-nums">
                 {selected.size} selected
               </span>
             </div>
@@ -187,22 +203,24 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                     key={recipe.id}
                     onClick={() => toggle(recipe.id)}
                     className={clsx(
-                      "text-left rounded-[1.75rem] overflow-hidden transition-all duration-200 border p-4",
+                      "text-left rounded overflow-hidden transition-all duration-200 ease-hearth border p-4",
                       isSelected
-                        ? "bg-amber-50/50 border-amber-200 shadow-[0_4px_12px_rgba(196,149,46,0.1)]"
-                        : "glass hover:bg-white/60"
+                        ? "bg-accent-soft border-accent shadow-lift-sm"
+                        : "bg-card border-rule hover:border-accent/40 hover:shadow-lift-sm",
                     )}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={clsx(
-                          "w-7 h-7 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                          "w-7 h-7 rounded-md border flex items-center justify-center flex-shrink-0 transition-all",
                           isSelected
-                            ? "bg-amber-600 border-amber-600 shadow-[0_4px_12px_rgba(196,149,46,0.3)]"
-                            : "border-amber-200 bg-white"
+                            ? "bg-accent border-accent"
+                            : "border-rule bg-card",
                         )}
                       >
-                        {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-accent-on stroke-[3]" />
+                        )}
                       </div>
                       {recipe.imageUrl && (
                         <Image
@@ -210,14 +228,14 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
                           alt={recipe.name}
                           width={40}
                           height={40}
-                          className="rounded-xl object-cover flex-shrink-0"
+                          className="rounded-md object-cover flex-shrink-0"
                         />
                       )}
                       <div className="min-w-0">
-                        <span className="text-sm font-bold text-slate-800 block truncate">
+                        <span className="font-display text-[16px] text-ink block truncate leading-tight">
                           {recipe.name}
                         </span>
-                        <span className="text-xs text-slate-400 font-medium">
+                        <span className="font-mono text-xs text-ink-mute tabular-nums">
                           {recipe.ingredients.length} ingredients
                         </span>
                       </div>
@@ -229,114 +247,135 @@ export default function GroceryListBuilder({ recipes }: { recipes: Recipe[] }) {
 
             {/* Generate button */}
             <div className="mt-8 text-center">
-              <button
+              <Button
                 onClick={() => setShowList(true)}
                 disabled={selected.size === 0}
-                className="px-10 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-bold transition-all disabled:opacity-40 shadow-[0_8px_24px_rgba(196,149,46,0.3)] hover:shadow-[0_12px_32px_rgba(196,149,46,0.4)] hover:scale-[1.02] active:scale-[0.98]"
               >
-                Generate Shopping List ({selected.size} {selected.size === 1 ? "recipe" : "recipes"})
-              </button>
+                Generate shopping list ({selected.size}{" "}
+                {selected.size === 1 ? "recipe" : "recipes"})
+              </Button>
             </div>
           </>
         ) : (
           <>
-            {/* Progress bar */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 mb-10 items-stretch">
-              <div className="glass p-6 rounded-[2rem] relative overflow-hidden group">
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-amber-200/15 rounded-full blur-[60px] pointer-events-none" />
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <LayoutGrid className="w-4 h-4 text-amber-500" />
-                    Progress
-                  </span>
-                  <span className="text-lg font-black text-amber-700">{progress}%</span>
-                </div>
-                <div className="relative h-4 bg-white/60 backdrop-blur-sm rounded-full overflow-hidden border border-white/40 shadow-inner z-10">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-600 to-amber-700 rounded-full relative transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  >
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[progress-shine_2s_linear_infinite]" />
-                  </div>
+            {/* Progress card */}
+            <div className="bg-card border border-rule rounded p-6 mb-10 relative overflow-hidden shadow-lift-sm">
+              <div
+                className="absolute -bottom-10 -right-10 w-40 h-40 bg-accent-soft/60 rounded-full blur-[60px] pointer-events-none"
+                aria-hidden
+              />
+              <div className="flex items-center justify-between mb-4 relative z-10">
+                <span className="font-sans text-sm font-semibold text-ink flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-accent" />
+                  Progress
+                </span>
+                <span className="font-mono text-lg font-semibold text-accent tabular-nums">
+                  {progress}%
+                </span>
+              </div>
+              <div className="relative h-3 bg-paper rounded-full overflow-hidden border border-rule z-10">
+                <div
+                  className="h-full bg-accent rounded-full relative transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.18)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.18)_50%,rgba(255,255,255,0.18)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[progress-shine_2s_linear_infinite]" />
                 </div>
               </div>
             </div>
 
             {/* Back button */}
             <button
-              onClick={() => { setShowList(false); setChecked(new Set()); }}
-              className="flex items-center gap-2 text-amber-700 font-bold text-sm mb-6 hover:gap-3 transition-all"
+              onClick={() => {
+                setShowList(false);
+                setChecked(new Set());
+              }}
+              className="inline-flex items-center gap-1.5 font-sans text-accent font-semibold text-sm mb-6 hover:gap-2.5 hover:text-accent-ink transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
               Change recipes
             </button>
 
             {/* Selected recipes summary */}
-            <div className="glass rounded-2xl px-5 py-3 mb-8">
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Shopping for:</p>
-              <p className="text-sm text-slate-800 font-bold">
+            <div className="bg-card border border-rule rounded px-5 py-3 mb-8 shadow-lift-sm">
+              <p className="font-sans text-[11px] text-ink-mute font-semibold uppercase tracking-[0.1em] mb-1">
+                Shopping for
+              </p>
+              <p className="font-sans text-sm text-ink-soft">
                 {selectedRecipes.map((r) => r.name).join(", ")}
               </p>
             </div>
 
-            {/* Grouped items */}
+            {/* Grouped items by aisle */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              {groceryList && groceryList.map(([category, items]) => (
-                <div key={category} className="flex flex-col">
-                  <div className="flex items-center gap-3 mb-4 px-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500" />
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
-                      {category}
-                    </h3>
-                    <div className="h-px bg-slate-100 flex-1 ml-2" />
-                  </div>
+              {groceryList &&
+                groceryList.map(([category, items]) => (
+                  <div key={category} className="flex flex-col">
+                    <div className="flex items-baseline gap-3 mb-4 px-1">
+                      <h3 className="font-display text-[22px] text-ink leading-none">
+                        {category}
+                      </h3>
+                      <div className="h-px bg-rule flex-1" />
+                      <span className="font-mono text-xs text-ink-mute tabular-nums">
+                        {items.length}
+                      </span>
+                    </div>
 
-                  <div className="space-y-3">
-                    {items.map((item) => {
-                      const key = `${item.name}|${item.unit}`;
-                      const isChecked = checked.has(key);
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => toggleChecked(key)}
-                          className={clsx(
-                            "w-full flex items-center gap-4 p-5 rounded-[1.75rem] transition-all text-left border group relative overflow-hidden",
-                            isChecked
-                              ? "bg-white/20 border-white/40 opacity-70"
-                              : "glass hover:bg-white/60 hover:border-amber-200"
-                          )}
-                        >
-                          <div className={clsx(
-                            "w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all",
-                            isChecked
-                              ? "bg-emerald-500 border-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.3)]"
-                              : "border-amber-200 bg-white group-hover:border-amber-300"
-                          )}>
-                            {isChecked && <Check className="w-5 h-5 text-white stroke-[4]" />}
-                          </div>
-                          <span className={clsx(
-                            "text-[15px] font-bold transition-all flex-1",
-                            isChecked ? "text-slate-400 line-through" : "text-slate-700"
-                          )}>
-                            {item.name}
-                          </span>
-                          {item.quantity !== null && (
-                            <span className={clsx(
-                              "text-xs flex-shrink-0 font-semibold transition-colors",
-                              isChecked ? "text-slate-300" : "text-slate-400"
-                            )}>
-                              {formatQty(item.quantity, item.unit)}
+                    <div className="space-y-2">
+                      {items.map((item) => {
+                        const key = `${item.name}|${item.unit}`;
+                        const isChecked = checked.has(key);
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => toggleChecked(key)}
+                            className={clsx(
+                              "w-full flex items-center gap-4 py-3 px-4 rounded transition-all text-left border group",
+                              isChecked
+                                ? "bg-accent-soft/60 border-accent-soft"
+                                : "bg-card border-rule hover:border-accent/40 hover:shadow-lift-sm",
+                            )}
+                          >
+                            <div
+                              className={clsx(
+                                "w-9 h-9 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
+                                isChecked
+                                  ? "bg-accent border-accent"
+                                  : "border-rule bg-paper",
+                              )}
+                            >
+                              {isChecked && (
+                                <Check className="w-5 h-5 text-accent-on stroke-[3]" />
+                              )}
+                            </div>
+                            <span
+                              className={clsx(
+                                "font-sans text-[15px] transition-all flex-1",
+                                isChecked
+                                  ? "text-ink-mute line-through"
+                                  : "text-ink",
+                              )}
+                            >
+                              {item.name}
                             </span>
-                          )}
-                          {!isChecked && (
-                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
-                          )}
-                        </button>
-                      );
-                    })}
+                            {item.quantity !== null && (
+                              <span
+                                className={clsx(
+                                  "font-mono text-xs flex-shrink-0 tabular-nums transition-colors",
+                                  isChecked ? "text-ink-mute" : "text-ink-soft",
+                                )}
+                              >
+                                {formatQty(item.quantity, item.unit)}
+                              </span>
+                            )}
+                            {!isChecked && (
+                              <ChevronRight className="w-4 h-4 text-ink-mute group-hover:text-accent transition-colors" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </>
         )}

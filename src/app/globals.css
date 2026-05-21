@@ -2,21 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color variables stored as space-separated RGB channels (not full
+ * rgb()/hex values) so Tailwind's <alpha-value> slash-opacity utilities
+ * still work. tailwind.config.ts wraps each in
+ * rgb(var(--name) / <alpha-value>); body/raw CSS uses rgb(var(--name))
+ * for opaque or rgb(var(--name) / 0.NN) for alpha. */
 :root {
-  --paper: #f2efe8;
-  --card: #fcfbf7;
-  --ink: #14130f;
-  --ink-soft: #5a5953;
-  --ink-mute: #b8b0a2;
-  --rule: #e5dfd0;
-  --accent: #d97757;
-  --accent-soft: #f6e7dc;
-  --accent-ink: #8e3f1f;
+  --paper: 242 239 232;
+  --card: 252 251 247;
+  --ink: 20 19 15;
+  --ink-soft: 90 89 83;
+  --ink-mute: 184 176 162;
+  --rule: 229 223 208;
+  --accent: 217 119 87;
+  --accent-soft: 246 231 220;
+  --accent-ink: 142 63 31;
+  --accent-on: 252 251 247;
 }
 
 body {
-  color: var(--ink);
-  background: var(--paper);
+  color: rgb(var(--ink));
+  background: rgb(var(--paper));
 }
 
 /* Ambient background — terracotta-tinted, low intensity (handoff: no aggressive gradients) */
@@ -25,7 +31,7 @@ body {
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: var(--paper);
+  background: rgb(var(--paper));
 }
 
 .ambient-bg::before {
@@ -128,12 +134,12 @@ body {
 }
 
 select.glass-input {
-  color: var(--ink);
+  color: rgb(var(--ink));
 }
 
 select.glass-input option {
   background: #ffffff;
-  color: var(--ink);
+  color: rgb(var(--ink));
 }
 
 /* Hide scrollbar */
@@ -234,4 +240,65 @@ body {
   ::view-transition-new(recipe-img) {
     animation-duration: 0.3s;
   }
+}
+
+/* -------------------------------------------------------------------------
+ * TASK-026 tweaks-panel CSS variable overrides.
+ *
+ * TweaksProvider sets data-palette / data-imagery / data-voice / data-paper
+ * on a wrapper div inside (main)/layout.tsx. Tailwind config wraps each
+ * Paper Editorial color in `rgb(var(--name) / <alpha-value>)` over
+ * channel-decomposed RGB tuples (see :root above), so overriding the
+ * variables here cascades through every utility class on descendants AND
+ * preserves slash-opacity utilities like bg-paper/95 and text-accent/30.
+ *
+ * Pre-auth surfaces (login/signup/demo) sit outside the (main) wrapper, so
+ * they always render with the :root defaults regardless of user preferences.
+ * That's by design: logged-out visitors don't have prefs in scope.
+ *
+ * Palette = default ("paper") inherits :root values; no override needed.
+ * Voice / paper-texture overrides land in PR C alongside font loading and
+ * the SVG grain assets. Imagery filters land here since they're CSS-only.
+ * ------------------------------------------------------------------------- */
+
+[data-palette="bone & sage"] {
+  --accent: 90 112 69;
+  --accent-soft: 224 229 210;
+  --accent-ink: 58 74 44;
+  --accent-on: 252 251 247;
+}
+
+[data-palette="ink"] {
+  --paper: 21 20 15;
+  --card: 31 30 24;
+  --ink: 242 239 232;
+  --ink-soft: 212 208 197;
+  --ink-mute: 143 139 126;
+  --rule: 42 40 32;
+  --accent: 232 162 106;
+  --accent-soft: 61 46 31;
+  --accent-ink: 252 216 156;
+  --accent-on: 21 20 15;
+}
+
+[data-palette="terra wash"] {
+  --accent: 142 63 31;
+  --accent-soft: 242 217 200;
+  --accent-ink: 92 40 16;
+  --accent-on: 252 251 247;
+}
+
+/* Imagery filters target every img inside the wrapper. CSS variable approach
+ * picks defaults from --image-filter, set by each data-imagery selector. */
+[data-imagery] img {
+  filter: var(--image-filter, none);
+  transition: filter 0.25s ease-out;
+}
+
+[data-imagery="filmic"] {
+  --image-filter: contrast(0.92) saturate(0.88) sepia(0.08);
+}
+
+[data-imagery="mono"] {
+  --image-filter: grayscale(1) contrast(1.05);
 }

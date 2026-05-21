@@ -13,20 +13,28 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Color values wrap CSS custom properties using channel-decomposed RGB
+      // + Tailwind's <alpha-value> placeholder. This preserves slash-opacity
+      // utilities (bg-paper/95, text-accent/30, border-rule/40) AND lets the
+      // TweaksProvider override the variables via [data-palette="..."]
+      // selectors (TASK-026) without changing visual output when no override
+      // is active. Variables are defined in globals.css as space-separated
+      // RGB channels (e.g. --paper: 242 239 232) so rgb(var(--paper) / 0.95)
+      // resolves to a valid color at runtime.
       colors: {
-        paper: "#F2EFE8",
-        card: "#FCFBF7",
-        rule: "#E5DFD0",
+        paper: "rgb(var(--paper) / <alpha-value>)",
+        card: "rgb(var(--card) / <alpha-value>)",
+        rule: "rgb(var(--rule) / <alpha-value>)",
         ink: {
-          DEFAULT: "#14130F",
-          soft: "#5A5953",
-          mute: "#B8B0A2",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          mute: "rgb(var(--ink-mute) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#D97757",
-          soft: "#F6E7DC",
-          ink: "#8E3F1F",
-          on: "#FCFBF7",
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          soft: "rgb(var(--accent-soft) / <alpha-value>)",
+          ink: "rgb(var(--accent-ink) / <alpha-value>)",
+          on: "rgb(var(--accent-on) / <alpha-value>)",
         },
       },
       fontFamily: {

@@ -13,12 +13,11 @@ import type { MeasurementSystem } from "@/lib/unit-conversions";
 export type { MeasurementSystem };
 
 const STORAGE_KEY = "julies-cookbook:measurement-system";
-const DEFAULT_SYSTEM: MeasurementSystem = "imperial";
+const DEFAULT_SYSTEM: MeasurementSystem = "original";
 
 interface MeasurementSystemContextValue {
   system: MeasurementSystem;
   setSystem: (s: MeasurementSystem) => void;
-  toggle: () => void;
 }
 
 const MeasurementSystemContext =
@@ -28,7 +27,10 @@ function readStored(): MeasurementSystem {
   if (typeof window === "undefined") return DEFAULT_SYSTEM;
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    return v === "metric" || v === "imperial" ? v : DEFAULT_SYSTEM;
+    if (v === "imperial") return "us";
+    return v === "original" || v === "us" || v === "metric"
+      ? v
+      : DEFAULT_SYSTEM;
   } catch {
     // Private browsing or storage disabled — fall back silently.
     return DEFAULT_SYSTEM;
@@ -58,12 +60,8 @@ export function MeasurementSystemProvider({
     }
   }, []);
 
-  const toggle = useCallback(() => {
-    setSystem(system === "imperial" ? "metric" : "imperial");
-  }, [system, setSystem]);
-
   return (
-    <MeasurementSystemContext.Provider value={{ system, setSystem, toggle }}>
+    <MeasurementSystemContext.Provider value={{ system, setSystem }}>
       {children}
     </MeasurementSystemContext.Provider>
   );

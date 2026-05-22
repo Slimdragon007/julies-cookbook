@@ -48,7 +48,8 @@ export function toGrams(
   if (unit === "g") return amount;
 
   if (unit === "servings") {
-    const s = opts?.servings || 1;
+    const suppliedServings = opts?.servings ?? 1;
+    const s = suppliedServings > 0 ? suppliedServings : 1;
     if (opts?.totalBatchWeightG && opts.totalBatchWeightG > 0) {
       // Exact: 1 serving = batch weight / servings
       return Math.round((amount * opts.totalBatchWeightG) / s);
@@ -79,7 +80,7 @@ export function formatPortion(amount: number, unit: PortionUnit): string {
 // rendered number/label changes.
 // ---------------------------------------------------------------------------
 
-export type MeasurementSystem = "imperial" | "metric";
+export type MeasurementSystem = "original" | "us" | "imperial" | "metric";
 
 export interface DisplayQuantity {
   amount: number;
@@ -107,8 +108,47 @@ const METRIC_CONVERSIONS: Record<string, { factor: number; label: string }> = {
   pounds: { factor: 454, label: "g" },
 };
 
+const US_WEIGHT_UNITS = new Set([
+  "oz",
+  "ounce",
+  "ounces",
+  "lb",
+  "lbs",
+  "pound",
+  "pounds",
+]);
+
+const US_VOLUME_UNITS = new Set([
+  "cup",
+  "cups",
+  "tbsp",
+  "tablespoon",
+  "tablespoons",
+  "tsp",
+  "teaspoon",
+  "teaspoons",
+]);
+
+const METRIC_TO_US_CONVERSIONS: Record<
+  string,
+  { factor: number; kind: "weight" | "volume" }
+> = {
+  g: { factor: 1, kind: "weight" },
+  gram: { factor: 1, kind: "weight" },
+  grams: { factor: 1, kind: "weight" },
+  kg: { factor: 1000, kind: "weight" },
+  kilogram: { factor: 1000, kind: "weight" },
+  kilograms: { factor: 1000, kind: "weight" },
+  ml: { factor: 1, kind: "volume" },
+  milliliter: { factor: 1, kind: "volume" },
+  milliliters: { factor: 1, kind: "volume" },
+  l: { factor: 1000, kind: "volume" },
+  liter: { factor: 1000, kind: "volume" },
+  liters: { factor: 1000, kind: "volume" },
+};
+
 function normalizeUnit(unit: string): string {
-  return unit.trim().toLowerCase().replace(/\.$/, "");
+  return unit.trim().toLowerCase().replace(/^\/+/, "").replace(/\.$/, "");
 }
 
 function roundSensibly(value: number): number {
@@ -118,10 +158,50 @@ function roundSensibly(value: number): number {
   return Math.round(value);
 }
 
+function roundForUsDisplay(value: number): number {
+  if (value === 0) return 0;
+  if (Number.isInteger(value)) return value;
+  return Math.round(value * 10) / 10;
+}
+
+function convertMetricWeightToUs(grams: number): DisplayQuantity {
+  const ounces = grams / 28.3495;
+  if (Math.abs(ounces) >= 16) {
+    return {
+      amount: roundForUsDisplay(ounces / 16),
+      label: "lb",
+    };
+  }
+  return {
+    amount: roundForUsDisplay(ounces),
+    label: "oz",
+  };
+}
+
+function convertMetricVolumeToUs(ml: number): DisplayQuantity {
+  if (Math.abs(ml) >= 60) {
+    return {
+      amount: roundForUsDisplay(ml / 240),
+      label: "cup",
+    };
+  }
+  if (Math.abs(ml) >= 15) {
+    return {
+      amount: roundForUsDisplay(ml / 15),
+      label: "tbsp",
+    };
+  }
+  return {
+    amount: roundForUsDisplay(ml / 5),
+    label: "tsp",
+  };
+}
+
 /**
  * Convert a scaled ingredient amount into the user's preferred display system.
  *
- * Imperial → pass-through (DB units are already imperial).
+ * Original → pass-through source unit.
+ * US → convert metric source units into familiar cups/spoons/ounces.
  * Metric → look up known conversions; unknown units like "each" or "can"
  * pass through unchanged so the user still sees something sensible.
  */
@@ -130,11 +210,40 @@ export function convertForDisplay(
   unit: string | null,
   system: MeasurementSystem,
 ): DisplayQuantity {
-  const safeUnit = unit ?? "";
-  if (system === "imperial") {
+  const safeUnit = unit ? normalizeUnit(unit) : "";
+  if (system === "original" || system === "imperial") {
     return { amount, label: safeUnit };
   }
-  const conversion = METRIC_CONVERSIONS[normalizeUnit(safeUnit)];
+  if (system === "us") {
+    if (US_WEIGHT_UNITS.has(safeUnit) || US_VOLUME_UNITS.has(safeUnit)) {
+      return { amount, label: safeUnit };
+    }
+    const conversion = METRIC_TO_US_CONVERSIONS[safeUnit];
+    if (!conversion) {
+      return { amount, label: safeUnit };
+    }
+    const metricAmount = amount * conversion.factor;
+    return conversion.kind === "weight"
+      ? convertMetricWeightToUs(metricAmount)
+      : convertMetricVolumeToUs(metricAmount);
+  }
+  if (safeUnit === "g" || safeUnit === "gram" || safeUnit === "grams") {
+    return { amount, label: "g" };
+  }
+  if (
+    safeUnit === "ml" ||
+    safeUnit === "milliliter" ||
+    safeUnit === "milliliters"
+  ) {
+    return { amount, label: "ml" };
+  }
+  if (safeUnit === "kg" || safeUnit === "kilogram" || safeUnit === "kilograms") {
+    return { amount: roundSensibly(amount * 1000), label: "g" };
+  }
+  if (safeUnit === "l" || safeUnit === "liter" || safeUnit === "liters") {
+    return { amount: roundSensibly(amount * 1000), label: "ml" };
+  }
+  const conversion = METRIC_CONVERSIONS[safeUnit];
   if (!conversion) {
     return { amount, label: safeUnit };
   }

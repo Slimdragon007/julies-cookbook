@@ -21,14 +21,16 @@ export default function InstructionsTab({ preparation }: Props) {
 
   return (
     <div>
-      <h2 className="font-display text-[32px] text-ink mb-8">Method</h2>
+      <h2 className="font-display text-[34px] italic leading-none text-ink mb-7">
+        Method
+      </h2>
 
       {/* InstructionList — paper editorial. Accent-soft disc with Instrument
           Serif italic numeral inside (handoff §"Step numbers"). */}
-      <ol className="space-y-6 mb-10">
+      <ol className="mb-8 divide-y divide-rule border-y border-rule">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-4">
-            <div className="flex-none w-9 h-9 rounded-full bg-accent-soft text-accent-ink font-display text-[20px] flex items-center justify-center leading-none">
+          <li key={i} className="flex gap-4 py-4">
+            <div className="flex-none w-9 h-9 rounded-full bg-ink text-card font-display text-[20px] italic flex items-center justify-center leading-none">
               {i + 1}
             </div>
             <div className="font-sans text-base leading-[1.65] text-ink pt-1">
@@ -39,7 +41,7 @@ export default function InstructionsTab({ preparation }: Props) {
       </ol>
 
       {/* Completion card — restrained card surface, no gradients. */}
-      <div className="text-center py-8 px-6 bg-card border border-rule rounded shadow-lift-sm">
+      <div className="text-center py-8 px-6 bg-card border border-rule rounded">
         <div className="w-12 h-12 bg-accent-soft rounded-full flex items-center justify-center mx-auto mb-3">
           <CheckCircle2 className="w-6 h-6 text-accent-ink" />
         </div>

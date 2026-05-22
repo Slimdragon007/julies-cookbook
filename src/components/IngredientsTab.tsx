@@ -18,7 +18,7 @@ interface Props {
   onServingsChange: (s: number) => void;
 }
 
-function formatMetricAmount(n: number): string {
+function formatDisplayAmount(n: number): string {
   if (Number.isInteger(n)) return String(n);
   return n.toFixed(1).replace(/\.0$/, "");
 }
@@ -29,7 +29,8 @@ export default function IngredientsTab({
   servings,
   onServingsChange,
 }: Props) {
-  const baseServings = defaultServings || 1;
+  const fallbackServings = defaultServings ?? 1;
+  const baseServings = fallbackServings > 0 ? fallbackServings : 1;
   const scale = servings / baseServings;
   const { system } = useMeasurementSystem();
 
@@ -42,19 +43,17 @@ export default function IngredientsTab({
     setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
 
   function renderQuantity(ing: Ingredient): { qty: string; unit: string } {
-    if (ing.quantity == null) return { qty: "", unit: ing.unit ?? "" };
-    if (system === "imperial") {
-      return { qty: formatQuantity(ing.quantity, scale), unit: ing.unit ?? "" };
+    if (ing.quantity == null) {
+      const original = convertForDisplay(0, ing.unit, "original");
+      return { qty: "", unit: original.label };
     }
-    const { amount, label } = convertForDisplay(
-      ing.quantity * scale,
-      ing.unit,
-      "metric",
-    );
-    const isPassThrough = label === (ing.unit ?? "");
-    const qty = isPassThrough
-      ? formatQuantity(ing.quantity, scale)
-      : formatMetricAmount(amount);
+    const scaledAmount = ing.quantity * scale;
+    const original = convertForDisplay(scaledAmount, ing.unit, "original");
+    const { amount, label } = convertForDisplay(scaledAmount, ing.unit, system);
+    const wasConverted = amount !== original.amount || label !== original.label;
+    const qty = wasConverted
+      ? formatDisplayAmount(amount)
+      : formatQuantity(ing.quantity, scale);
     return { qty, unit: label };
   }
 
@@ -83,7 +82,10 @@ export default function IngredientsTab({
       {/* Header band — units toggle on top, servings scaler below. Card surface
           so the two related controls read as one group. */}
       <div className="mb-8 -mx-6 sm:-mx-10 lg:mx-0 lg:rounded border-y border-rule bg-card">
-        <div className="flex items-center justify-end px-5 pt-3">
+        <div className="flex items-center justify-between gap-3 px-5 pt-3">
+          <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-mute">
+            Ingredient units
+          </span>
           <MeasurementToggle />
         </div>
         <div className="flex items-center justify-between gap-3 flex-wrap px-5 pb-4 pt-2">

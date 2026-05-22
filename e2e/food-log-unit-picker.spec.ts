@@ -33,8 +33,8 @@ test.describe("FoodLogForm Unit Picker", () => {
   });
 
   test("can submit food log with servings unit", async ({ page }) => {
-    // Select recipe by finding the select with "Select a recipe..." placeholder
-    const recipeSelect = page.locator("select").filter({ hasText: "Select a recipe..." });
+    // Select recipe by its accessible label.
+    const recipeSelect = page.getByLabel("Recipe");
     await recipeSelect.selectOption({ label: "E2E Test Pasta" });
 
     // Enter portion amount
@@ -46,12 +46,12 @@ test.describe("FoodLogForm Unit Picker", () => {
     await page.getByRole("button", { name: /log meal/i }).click();
 
     // Verify success
-    await expect(page.getByText("Logged!")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Logged.")).toBeVisible({ timeout: 10000 });
   });
 
   test("logged entry displays user-friendly unit", async ({ page }) => {
     // Select recipe and log with cups
-    const recipeSelect = page.locator("select").filter({ hasText: "Select a recipe..." });
+    const recipeSelect = page.getByLabel("Recipe");
     await recipeSelect.selectOption({ label: "E2E Test Pasta" });
 
     const portionLabel = page.locator("text=Portion").first();
@@ -62,7 +62,7 @@ test.describe("FoodLogForm Unit Picker", () => {
     await unitSelect.selectOption("cups");
     await page.getByRole("button", { name: /log meal/i }).click();
 
-    await expect(page.getByText("Logged!")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Logged.")).toBeVisible({ timeout: 10000 });
 
     // Verify entry shows "2 cups" not grams
     await expect(page.getByText("2 cups").first()).toBeVisible();

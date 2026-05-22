@@ -29,19 +29,19 @@ export default function RecipeTabs({
   totalBatchWeightG,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabName>("ingredients");
-  const baseServings = defaultServings || 1;
+  const fallbackServings = defaultServings ?? 1;
+  const baseServings = fallbackServings > 0 ? fallbackServings : 1;
   const [servings, setServings] = useState(baseServings);
   const scale = servings / baseServings;
 
   return (
     <div>
-      {/* TabBar — spec §11. Sticky, frosted on scroll, brown active underline.
-          top-0 since the (main) MainNav is a side/bottom nav, not a top header.
-          Bleeds full-width via -mx so the underline divider runs edge-to-edge. */}
+      {/* TabBar — MISE segmented control. Sticky so long recipes keep the
+          section switcher reachable without bringing back the old glass tab. */}
       <div
         role="tablist"
         aria-label="Recipe sections"
-        className="sticky top-0 z-40 flex px-3 -mx-6 sm:-mx-10 lg:mx-0 mb-8 bg-glass-base backdrop-blur-glass backdrop-saturate-glass border-b border-glass-line"
+        className="sticky top-0 z-40 mb-8 grid grid-cols-3 gap-1 rounded-pill border border-rule bg-card p-1"
       >
         {TABS.map(({ key, label }) => {
           const isActive = activeTab === key;
@@ -52,11 +52,11 @@ export default function RecipeTabs({
               aria-selected={isActive}
               onClick={() => setActiveTab(key)}
               className={cn(
-                "flex-1 py-3.5 px-2 font-sans text-sm font-semibold",
-                "border-b-2 border-transparent transition-all duration-200 ease-hearth",
+                "min-h-11 rounded-pill px-2 font-sans text-[12px] font-semibold",
+                "transition-all duration-200 ease-hearth",
                 isActive
-                  ? "text-accent border-accent"
-                  : "text-ink-mute hover:text-ink-soft",
+                  ? "bg-ink text-card shadow-none"
+                  : "text-ink-soft hover:bg-ink/5 hover:text-ink",
               )}
             >
               {label}

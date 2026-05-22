@@ -76,7 +76,7 @@ export default async function RecipePage({
 
   return (
     <div className="min-h-screen bg-paper selection:bg-accent-soft selection:text-accent-ink">
-      <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:min-h-screen">
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-[minmax(0,1.05fr)_minmax(440px,0.95fr)]">
         {/* Image section */}
         <div className="relative aspect-[4/3] lg:aspect-auto lg:h-screen lg:sticky lg:top-0 w-full overflow-hidden">
           {recipe.imageUrl ? (
@@ -94,7 +94,7 @@ export default async function RecipePage({
               <Sparkles className="w-16 h-16 text-accent/30" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-ink/10" />
 
           {/* Top bar — back button. 44×44 hit area on the outer Link
               (matches ADR-005), 36px visual circle on the inner span. */}
@@ -117,14 +117,14 @@ export default async function RecipePage({
                 {recipe.cuisineTag}
               </span>
             )}
-            <h1 className="font-display text-[40px] sm:text-[52px] text-paper leading-[1.1] drop-shadow-[0_2px_8px_rgba(20,19,15,0.55)] line-clamp-2 break-words">
+            <h1 className="font-display text-[44px] italic sm:text-[54px] text-paper leading-none drop-shadow-[0_2px_8px_rgba(20,19,15,0.55)] line-clamp-2 break-words">
               {recipe.name}
             </h1>
           </div>
         </div>
 
         {/* Content section */}
-        <div className="relative -mt-8 lg:mt-0 bg-paper rounded-t-[2.5rem] lg:rounded-none px-6 sm:px-10 pt-12 lg:pt-12 lg:pl-16 lg:pr-12 pb-32 lg:pb-12 lg:overflow-y-auto lg:max-h-screen border-t lg:border-t-0 lg:border-l border-rule">
+        <div className="relative -mt-6 lg:mt-0 bg-paper rounded-t-3xl lg:rounded-none px-6 sm:px-10 pt-10 lg:pt-12 lg:pl-14 lg:pr-12 pb-32 lg:pb-12 lg:overflow-y-auto lg:max-h-screen border-t lg:border-t-0 lg:border-l border-rule">
           {/* Mobile drag indicator */}
           <div className="lg:hidden flex justify-center mb-8">
             <div className="w-9 h-1 bg-ink-mute/40 rounded-pill" />
@@ -137,15 +137,15 @@ export default async function RecipePage({
                 {recipe.cuisineTag}
               </span>
             )}
-            <h1 className="font-display text-[52px] xl:text-[64px] text-ink leading-[1.05] break-words">
+            <h1 className="font-display text-[54px] italic xl:text-[66px] text-ink leading-none break-words">
               {recipe.name}
             </h1>
           </div>
 
-          {/* StatRow — 4-col grid, divider lines via gap-px on rule bg. */}
-          <div className="grid grid-cols-4 gap-px bg-rule border-y border-rule mb-8 -mx-6 sm:-mx-10 lg:mx-0 lg:rounded lg:overflow-hidden">
+          {/* StatRow — MISE bordered metrics. */}
+          <div className="grid grid-cols-4 divide-x divide-rule overflow-hidden rounded border border-rule bg-card mb-7">
             {stats.map((s) => (
-              <div key={s.label} className="bg-card py-3.5 px-2 text-center">
+              <div key={s.label} className="py-3.5 px-2 text-center">
                 <div className="font-sans text-[10px] tracking-[0.08em] uppercase text-ink-mute font-semibold mb-1">
                   {s.label}
                 </div>
@@ -163,11 +163,11 @@ export default async function RecipePage({
 
           {/* Tags + Rating */}
           {(recipe.dietaryTags.length > 0 || recipe.julieRating) && (
-            <div className="flex flex-wrap items-center gap-2 mb-8">
+            <div className="flex flex-wrap items-center gap-2 mb-7">
               {recipe.dietaryTags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-3 py-1.5 bg-card border border-rule text-ink-soft font-sans text-[13px] font-medium rounded-pill"
+                  className="inline-flex min-h-8 items-center px-3 py-1.5 bg-card border border-rule text-ink-soft font-sans text-[12px] font-medium rounded-pill"
                 >
                   {tag}
                 </span>

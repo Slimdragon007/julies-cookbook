@@ -5,8 +5,8 @@ test.describe("NutritionTab Unit Picker", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto("/recipe/e2e-test-pasta", { waitUntil: "networkidle" });
-    // Click the Nutrition tab
-    await page.getByRole("button", { name: /nutrition/i }).click();
+    // Click the Nutrition tab.
+    await page.getByRole("tab", { name: /nutrition/i }).click();
   });
 
   test("renders portion input and unit dropdown", async ({ page }) => {
@@ -36,8 +36,13 @@ test.describe("NutritionTab Unit Picker", () => {
     await page.locator("#portion-input").fill("1");
     // Should show macro grid (calories, protein, carbs, fat)
     // The test recipe has batch weight so exact macros should appear
-    const macroGrid = page.locator(".grid.grid-cols-4").nth(1);
-    await expect(macroGrid).toBeVisible();
+    const portionSection = page
+      .getByRole("heading", { name: "What's on your plate" })
+      .locator("..");
+    await expect(portionSection.getByText("Calories")).toBeVisible();
+    await expect(portionSection.getByText("Protein")).toBeVisible();
+    await expect(portionSection.getByText("Carbs")).toBeVisible();
+    await expect(portionSection.getByText("Fat")).toBeVisible();
   });
 
   test("switching units updates the dropdown value", async ({ page }) => {

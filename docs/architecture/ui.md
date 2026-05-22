@@ -2,7 +2,19 @@
 
 > Load trigger: any UI work. See base handbook Law 3.
 
-**Status:** Real (populated 2026-04-27 after TASK-007). Refresh on next non-trivial UI surface change.
+**Status:** Mixed historical/current. Populated 2026-04-27 for Liquid Glass, then partially superseded by the Paper Editorial and MISE migration stack. Current-state notes below take precedence when they conflict with older Liquid Glass guidance.
+
+## Current state: Paper Editorial + MISE
+
+As of TASK-034 (2026-05-22), established app surfaces are no longer pure Liquid Glass. The active visual direction is Paper Editorial with MISE details:
+
+- Paper/card/rule tokens: `bg-paper`, `bg-card`, `border-rule`, `text-ink`, `text-ink-soft`, `text-accent`.
+- Typography: display-serif italic for major recipe headings, sans for controls and labels, mono/tabular numerals for measurements and macro values.
+- Recipe Detail tabs use ARIA tab semantics with a segmented pill shell. Active tab is `bg-ink text-card`; inactive tabs are quiet `text-ink-soft` controls.
+- Recipe Detail ingredient display units are a visible `Original / US / Metric` segmented control. Units are normalized before render, so slash-prefixed source units like `/cup` display as `cup`.
+- Recipe Detail keeps backend contracts unchanged. Data fetch, slug fallback, auth, nutrition math, scraper, and env naming are not part of UI migration work.
+
+The older Liquid Glass section remains as project history and for untouched surfaces that still carry those classes. When editing a migrated surface, prefer the current Paper/MISE tokens above.
 
 ## Design system: Liquid Glass (warm)
 
@@ -52,11 +64,11 @@ Used at the top of recipe detail. `grid-cols-2 sm:grid-cols-4 gap-4`, each cell 
 
 The reflow `grid-cols-2 sm:grid-cols-4` is deliberate: at narrow viewports four cells crammed into one row become unreadable; the 2×2 fallback is the better mobile shape.
 
-### 3. Sticky tab bar
+### 3. Tab bar patterns
 
-Implemented in `src/components/RecipeTabs.tsx`. The bar is `sticky top-0 z-10 glass rounded-2xl mb-8 p-1.5`; the active tab gets `bg-white border border-white shadow-sm` while inactive tabs use `text-slate-400 hover:text-slate-600`. Each button is `flex-1 py-3` so the bar evenly partitions horizontal space.
+Current Recipe Detail uses the TASK-034 MISE segmented control in `src/components/RecipeTabs.tsx`: `sticky top-0`, `grid grid-cols-3`, `rounded-pill`, `border-rule`, `bg-card`, with the active tab styled `bg-ink text-card`. Keep `role="tablist"` / `role="tab"` / `aria-selected` semantics intact so Playwright and assistive tech can target the tabs reliably.
 
-This is the reference implementation for any future tabbed surface (e.g. profile page sub-views, summary tabs).
+Older Liquid Glass tab bars used a glass underline pattern. Treat that as historical when touching migrated Paper/MISE surfaces.
 
 ### 4. Mobile/desktop hero responsive split
 

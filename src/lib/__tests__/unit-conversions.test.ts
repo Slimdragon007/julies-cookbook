@@ -101,6 +101,38 @@ describe("PORTION_UNITS", () => {
 });
 
 describe("convertForDisplay", () => {
+  describe("original system", () => {
+    it("keeps the source unit while normalizing database unit labels", () => {
+      expect(convertForDisplay(30, "/ml", "original")).toEqual({
+        amount: 30,
+        label: "ml",
+      });
+    });
+  });
+
+  describe("us system", () => {
+    it("converts metric weights to ounces for display", () => {
+      expect(convertForDisplay(420, "g", "us")).toEqual({
+        amount: 14.8,
+        label: "oz",
+      });
+    });
+
+    it("converts metric volumes to familiar spoon units for display", () => {
+      expect(convertForDisplay(30, "ml", "us")).toEqual({
+        amount: 2,
+        label: "tbsp",
+      });
+    });
+
+    it("keeps source US units when they are already familiar", () => {
+      expect(convertForDisplay(2, "/tbsp", "us")).toEqual({
+        amount: 2,
+        label: "tbsp",
+      });
+    });
+  });
+
   describe("imperial system", () => {
     it("passes amount and unit through unchanged", () => {
       expect(convertForDisplay(1.5, "cup", "imperial")).toEqual({
@@ -117,6 +149,13 @@ describe("convertForDisplay", () => {
       expect(convertForDisplay(2, null, "imperial")).toEqual({
         amount: 2,
         label: "",
+      });
+    });
+
+    it("renders slash-prefixed database units without the slash", () => {
+      expect(convertForDisplay(2, "/tbsp", "imperial")).toEqual({
+        amount: 2,
+        label: "tbsp",
       });
     });
   });
@@ -217,6 +256,13 @@ describe("convertForDisplay", () => {
       expect(convertForDisplay(1, "oz.", "metric")).toEqual({
         amount: 28,
         label: "g",
+      });
+    });
+
+    it("matches slash-prefixed database units", () => {
+      expect(convertForDisplay(2, "/tbsp", "metric")).toEqual({
+        amount: 30,
+        label: "ml",
       });
     });
   });

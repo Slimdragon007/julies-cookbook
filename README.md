@@ -1,4 +1,4 @@
-# Julie's Cookbook
+# The Cookbook
 
 Multi-user recipe cookbook with nutritional tracking, food logging, and an AI chat assistant. Invite-only family app.
 

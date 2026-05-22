@@ -2,7 +2,7 @@
 
 > **Purpose:** Apply the Hearth aesthetic (Magnolia warmth + Liquid Glass polish) as a UI reskin on top of the existing production app at `julies-cookbook.pages.dev`.
 > **Owner:** Michael Haslim
-> **Repo:** github.com/Slimdragon007/julies-cookbook
+> **Repo:** github.com/Slimdragon007/the-cookbook
 > **Created:** 2026-04-30
 > **How to use:** Paste this entire file to Claude design as a single message. Section 1 is the system spec. Section 2 is the prompt that tells Claude design what to do with it.
 
@@ -392,7 +392,7 @@ The app is feature-complete. I'm not changing functionality, routes, or
 information architecture. I want a full UI redesign of every existing screen,
 applied as a reskin on top of what's already shipping.
 
-Repo: github.com/Slimdragon007/julies-cookbook
+Repo: github.com/Slimdragon007/the-cookbook
 Stack: Next.js 14 App Router, Tailwind, Supabase, Cloudflare Pages
 
 WHAT EXISTS TODAY (do not change)

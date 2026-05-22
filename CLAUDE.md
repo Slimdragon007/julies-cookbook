@@ -1,4 +1,4 @@
-# 🧬 ENGINEERING LAW: julies-cookbook
+# 🧬 ENGINEERING LAW: the-cookbook
 
 > **Read `flowstateai-claude-md-base` skill first.** This file is the project-specific layer.
 > **Owner:** Michael Haslim | **Client:** Internal (Julie + family) | **Last updated:** 2026-04-26
@@ -13,7 +13,7 @@
 
 **Stage:** Production (Mar 2026 launch), active iteration
 
-**Repo:** `github.com/Slimdragon007/julies-cookbook`
+**Repo:** `github.com/Slimdragon007/the-cookbook`
 
 **Production URL:** https://julies-cookbook.pages.dev (Cloudflare Pages default; custom domain TBD)
 

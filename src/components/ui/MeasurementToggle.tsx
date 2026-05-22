@@ -7,7 +7,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const OPTIONS: { value: MeasurementSystem; label: string }[] = [
-  { value: "imperial", label: "Imperial" },
+  { value: "original", label: "Original" },
+  { value: "us", label: "US" },
   { value: "metric", label: "Metric" },
 ];
 
@@ -21,7 +22,7 @@ export function MeasurementToggle({ className }: Props) {
   return (
     <div
       role="group"
-      aria-label="Measurement units"
+      aria-label="Ingredient measurement units"
       className={cn(
         "inline-flex items-center rounded-pill bg-card p-0.5 border border-rule",
         className,
@@ -35,12 +36,12 @@ export function MeasurementToggle({ className }: Props) {
             type="button"
             onClick={() => setSystem(opt.value)}
             aria-pressed={active}
-            aria-label={`Show measurements in ${opt.label.toLowerCase()}`}
+            aria-label={`Show ingredient measurements in ${opt.label.toLowerCase()} units`}
             className={cn(
               "px-3 py-1.5 rounded-pill font-sans text-xs font-semibold tracking-wide",
               "transition-all duration-200 ease-hearth",
               active
-                ? "bg-accent text-accent-on shadow-lift-sm"
+                ? "bg-ink text-card shadow-none"
                 : "text-ink-soft hover:text-ink",
             )}
           >

@@ -49,7 +49,8 @@ export default function NutritionTab({
 
   const servingsLabel = servings === 1 ? "serving" : "servings";
 
-  const amount = parseFloat(portionAmount) || 0;
+  const parsedAmount = parseFloat(portionAmount);
+  const amount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
   const hasBatchWeight = totalBatchWeightG != null && totalBatchWeightG > 0;
 
   const portionGrams =
@@ -89,26 +90,30 @@ export default function NutritionTab({
   // batch's calories — all three hero numbers go wrong simultaneously.
   // Fix per Codex P1 finding on PR #43 (2026-05-21). Prototype reference:
   // mobile.jsx NutritionBlock lines 410-446.
-  const baseServings = defaultServings || 1;
+  const fallbackServings = defaultServings ?? 1;
+  const baseServings = fallbackServings > 0 ? fallbackServings : 1;
   const basePerServing = perServingMacros(totals, baseServings);
   const cal = basePerServing.calories;
   const p = basePerServing.protein;
   const c = basePerServing.carbs;
   const f = basePerServing.fat;
   // Macro split: protein/carbs/fat caloric contribution (4/4/9 kcal per gram).
-  const macroCalTotal = p * 4 + c * 4 + f * 9 || 1; // guard /0 with || 1
+  const macroCalRaw = p * 4 + c * 4 + f * 9;
+  const macroCalTotal = macroCalRaw > 0 ? macroCalRaw : 1;
   const pPct = Math.round(((p * 4) / macroCalTotal) * 100);
   const cPct = Math.round(((c * 4) / macroCalTotal) * 100);
   const fPct = Math.round(((f * 9) / macroCalTotal) * 100);
 
   return (
     <div>
-      <h2 className="font-display text-[32px] text-ink mb-6">Nutrition</h2>
+      <h2 className="font-display text-[34px] italic leading-none text-ink mb-6">
+        Nutrition
+      </h2>
 
       {/* Per-serving hero: Ring + total-kcal column. Phase 3 addition matching
           prototype mobile.jsx NutritionBlock. Ring is sized to the prototype's
           92px (slightly smaller on narrow viewports via min). */}
-      <section className="mb-6 flex items-center gap-4">
+      <section className="mb-6 flex items-center gap-4 rounded border border-rule bg-card p-4">
         <Ring
           pct={100}
           size={92}
@@ -136,7 +141,7 @@ export default function NutritionTab({
       </section>
 
       {/* Macro split — horizontal stacked bar + 3-row breakdown. */}
-      <section className="mb-8">
+      <section className="mb-8 rounded border border-rule bg-card p-4">
         <h3 className="font-sans text-xs font-semibold tracking-[0.08em] uppercase text-accent mb-3">
           Macro split
         </h3>
@@ -188,7 +193,7 @@ export default function NutritionTab({
       </section>
 
       {/* Portion calculator — keeps existing logic. Card surface, accent-soft halo. */}
-      <section className="mb-8 bg-card border border-rule rounded-lg p-6 relative overflow-hidden">
+      <section className="mb-8 bg-card border border-rule rounded p-6 relative overflow-hidden">
         <div
           className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-accent-soft/60"
           aria-hidden

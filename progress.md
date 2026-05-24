@@ -25,6 +25,20 @@
 
 **Residual:** I cannot verify the production upload succeeds until this code is deployed. The pre-fix production smoke is recorded above and cleaned up its disposable recipe.
 
+### Post-deploy follow-up, same day
+
+Deployed SHA `8175406` through the canonical GitHub Actions -> Cloudflare Pages workflow. Workflow run `26372624686` completed successfully, and Cloudflare listed production deployment `f74fffd1-6493-48ae-8558-8b6a11d0fd39` for source `8175406`.
+
+The post-deploy live smoke still failed: `POST /api/recipe/photo` returned `502 {"error":"Upload failed"}` and the disposable recipe's `image_url` stayed unchanged.
+
+Additional root-cause evidence:
+
+- Cloudflare tail still showed Cloudinary HTTP 401 from `uploadFileToCloudinary()`.
+- `/api/audit?usage=true` also reported `usage.cloudinary.error = "HTTP 401"`. That path uses Cloudinary Basic Auth against `/usage`, not the signed upload helper, so the remaining failure is the Cloudinary credential tuple rather than request signing.
+- Existing persisted Cloudinary image URLs use cloud name `dmor6raup`. I reset the non-sensitive Cloudflare Pages secret `CLOUDINARY_CLOUD_NAME=dmor6raup`; the audit usage check still returned HTTP 401.
+
+**Current blocker:** Cloudflare Pages production needs a valid `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` from the Cloudinary dashboard. After those two secrets are rotated, rerun `/api/audit?usage=true` and the disposable-recipe upload smoke.
+
 ## 2026-05-21 (late PM) — Session handoff: TASK-027 deploy verified, iPhone cache verification still open
 
 **Executor:** Claude (Sonnet 4.5, session ending)

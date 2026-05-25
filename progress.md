@@ -1427,3 +1427,43 @@ Recommended next-session work plan for ADR-002:
 - Cloudflare Pages project remains `julies-cookbook`.
 - Production URL remains `https://julies-cookbook.pages.dev`.
 - `wrangler.toml`, Supabase redirect URLs, Cloudinary folder names, package name, localStorage keys, and test emails remain unchanged deliberately because those are service/runtime identifiers, not just display copy.
+
+## 2026-05-25 - TASK-036 package-lock optional esbuild repair and live upload smoke
+
+**Executor:** Codex
+**Branch:** `codex/client-fixes-2026-05-25`
+**Task:** Get current GitHub `main` into a clean local worktree, verify the overdue client-facing Cloudinary upload fix, and repair the local install blocker discovered during setup.
+
+**Context:**
+
+- Local cookbook checkouts were stale or WIP. `/Users/michaelhaslim/Projects/julies-cookbook` was 69 commits behind `origin/main` with old scraper/macros work in progress.
+- GitHub repository identity is now `Slimdragon007/the-cookbook`; local origin metadata was updated to the renamed URL.
+- Current `origin/main` already contains TASK-035, the Cloudinary signed-upload fix and production verification notes.
+
+**Changed:**
+
+- Created clean worktree `/Users/michaelhaslim/Documents/Claude/Projects/Flowstate AI/the-cookbook-current` from `origin/main` on branch `codex/client-fixes-2026-05-25`.
+- Reconciled `package-lock.json` after `npm ci` failed on missing optional nested esbuild platform packages:
+  - `node_modules/tsx/node_modules/@esbuild/win32-x64`
+  - `node_modules/wrangler/node_modules/@esbuild/win32-x64`
+- No runtime source code changed.
+
+**Verification:**
+
+- `npm ci --dry-run` passed after the lockfile repair.
+- `npm run lint` passed.
+- `npx tsc --noEmit` passed.
+- `npm run test` passed: 170 passed, 7 skipped.
+- `node --env-file=/Users/michaelhaslim/Projects/julies-cookbook/.env.local ./node_modules/next/dist/bin/next build` passed.
+- `npm run build:cf` passed with the same env file loaded.
+- `npm run test:e2e -- e2e/recipe-detail-mise.spec.ts` passed locally against current `main`.
+- Live production smoke against `https://julies-cookbook.pages.dev` passed:
+  - `/login` returned 200.
+  - `/` redirected to `/login` and returned 200.
+  - Disposable E2E-user recipe photo replacement used the actual UI and `/api/recipe/photo`; response was 200 with a `res.cloudinary.com` URL.
+  - Temporary recipe cleanup verified: 0 `codex-photo-smoke-*` rows remained.
+
+**Not changed:**
+
+- No Supabase schema, API route, Cloudinary helper, env-var contract, or UI code changed.
+- Production audit endpoint was not used because the local `AUDIT_SECRET` did not match production and correctly returned 401.

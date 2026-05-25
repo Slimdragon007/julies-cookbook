@@ -39,6 +39,15 @@ Additional root-cause evidence:
 
 **Current blocker:** Cloudflare Pages production needs a valid `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` from the Cloudinary dashboard. After those two secrets are rotated, rerun `/api/audit?usage=true` and the disposable-recipe upload smoke.
 
+### Final credential verification
+
+The user corrected the Cloudinary secrets in Cloudflare Pages. Live verification now passes:
+
+- `/api/audit?usage=true` returns Cloudinary usage successfully (`storage_used_mb`, `bandwidth_used_mb`, `transformations_used`, `objects`) instead of HTTP 401.
+- Disposable recipe photo replacement returned `200 {"success":true,...}` from `POST /api/recipe/photo`.
+- The disposable recipe row changed from the demo image URL to a new `https://res.cloudinary.com/dmor6raup/image/upload/...` URL.
+- The disposable test recipe was cleaned up after the smoke.
+
 ## 2026-05-21 (late PM) — Session handoff: TASK-027 deploy verified, iPhone cache verification still open
 
 **Executor:** Claude (Sonnet 4.5, session ending)
